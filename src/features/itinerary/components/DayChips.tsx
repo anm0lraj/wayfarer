@@ -9,7 +9,7 @@ import type { ItineraryDay } from '@/types'
  */
 export function DayChips({ tripId, days, activeDayId, counts, dragging }: { tripId: string; days: ItineraryDay[]; activeDayId: string; counts: Map<string, number>; dragging: boolean }) {
   return (
-    <nav aria-label="Days" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+    <nav aria-label="Days" className="relative -mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
       <ul className="flex gap-2 pb-1">
         {days.map((d) => (
           <li key={d.id} className="shrink-0">

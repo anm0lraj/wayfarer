@@ -60,3 +60,13 @@ test('unknown URLs show the 404 state', async ({ page }) => {
   await page.goto('/no/such/page')
   await expect(page.getByText('We can’t find that page')).toBeVisible()
 })
+
+// A scrolling row whose hidden (sr-only) children sit outside it used to widen the whole page on phones.
+test('no page scrolls sideways', async ({ page }) => {
+  for (const path of ['/', '/explore', '/trips', '/trips/trip-bali', '/trips/trip-bali/itinerary/day/1', '/trips/trip-bali/bookings']) {
+    await page.goto(path)
+    await page.waitForLoadState('networkidle')
+    const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }))
+    expect(scroll, path).toBeLessThanOrEqual(client)
+  }
+})

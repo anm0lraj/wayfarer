@@ -96,7 +96,7 @@ export default function MapRoute() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Day" className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+        <div role="group" aria-label="Day" className="relative -mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
           <Chip className="shrink-0" selected={!day} onClick={() => setDay()}>All days</Chip>
           {days.map((d) => <Chip key={d.id} className="shrink-0" selected={day?.id === d.id} onClick={() => setDay(d.dayNumber)}>Day {d.dayNumber}</Chip>)}
         </div>

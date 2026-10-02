@@ -102,7 +102,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
 
         <TabsContent value="places" className="space-y-3 pt-4">
           <SearchField label="Search places" placeholder="Search places" value={term} onChange={(e) => setTerm(e.target.value)} />
-          <div role="group" aria-label="Place type" className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none]">
+          <div role="group" aria-label="Place type" className="relative -mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none]">
             {FILTERS.map((x) => <Chip key={x.id} className="shrink-0" selected={filter === x.id} onClick={() => setFilter(x.id)}>{x.label}</Chip>)}
           </div>
           {places.isPending && <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>}

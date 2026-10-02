@@ -3,7 +3,7 @@ import { forwardRef, type ComponentPropsWithoutRef } from 'react'
 import { NavLink, type NavLinkProps } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 
-const listClass = 'flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none]'
+const listClass = 'relative flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none]'
 const triggerClass =
   'inline-flex min-h-touch shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-4 text-base font-medium text-fg-muted transition-colors hover:text-fg data-[state=active]:border-primary data-[state=active]:text-fg'
 

@@ -48,7 +48,7 @@ export function Explore() {
       <PageHeader title="Explore" description="Find your next trip" actions={<Button variant="secondary" asChild><Link to="/explore/itineraries">Traveller itineraries</Link></Button>} />
       <div className="space-y-4">
         <SearchField label="Search destinations" placeholder="Where do you want to go?" value={q} onChange={(e) => update({ q: e.target.value })} />
-        <div role="group" aria-label="Categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
+        <div role="group" aria-label="Categories" className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
           {EXPLORE_CATEGORIES.map((c) => (
             <Chip key={c.id} className="shrink-0" selected={category === c.id} onClick={() => update({ category: category === c.id ? null : c.id })}>{c.label}</Chip>
           ))}
