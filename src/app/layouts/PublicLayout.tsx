@@ -22,6 +22,9 @@ export function PublicLayout() {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 pb-12 outline-none"><Outlet /></main>
+      <footer className="mx-auto max-w-5xl px-4 pb-10 text-sm text-fg-muted">
+        Photos from Wikimedia Commons. <Link to="/credits" className="underline">Photo credits</Link>
+      </footer>
     </div>
   )
 }

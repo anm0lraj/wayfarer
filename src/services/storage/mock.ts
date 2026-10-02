@@ -1,5 +1,5 @@
 import { db } from '@/data/db'
-import { placeholderImage } from '@/lib/placeholder'
+import { photoUrl } from '@/lib/stock'
 import type { StorageService } from './types'
 
 const urlCache = new Map<string, string>()
@@ -20,7 +20,7 @@ export const storageService: StorageService = {
   async getUrl(key) {
     if (key.startsWith('seed:')) {
       const [, id = key] = key.split(':')
-      return placeholderImage(id)
+      return photoUrl(id)
     }
     const cached = urlCache.get(key)
     if (cached) return cached

@@ -39,7 +39,8 @@ export default defineConfig({
           {
             urlPattern: ({ request }) => request.destination === 'image',
             handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'images', expiration: { maxEntries: 120 } },
+            // Stock photos are cross-origin (Wikimedia Commons), so their responses are opaque (status 0) — cache those too.
+            options: { cacheName: 'images', expiration: { maxEntries: 250 }, cacheableResponse: { statuses: [0, 200] } },
           },
         ],
       },

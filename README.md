@@ -69,6 +69,8 @@ Wire the new adapter in `src/services/container.ts`. Screens only see the interf
 
 Deployed as a static site. `vercel.json` rewrites every route to `index.html` (client-side routing), sets cache rules and the security headers, including a strict Content-Security-Policy (no inline or remote scripts; fonts from Google Fonts; map tiles from OpenStreetMap). The same headers are applied to `npm run preview` from `scripts/security-headers.mjs`, and a test keeps the two in sync. Build command `npm run build`, output `dist`.
 
+Photos on cards are real stock photographs from Wikimedia Commons (free-licence images), chosen once by `scripts/curate-stock-photos.mjs` and committed in `src/lib/stock/photos.json`, so the app never calls the Commons API. They load from `upload.wikimedia.org` (allowed in the CSP), are cached by the service worker after the first view, and fall back to a generated illustration if one can't load. Credits for every photo are on `/credits`, linked from Settings and the public-page footer. To change a photo, add it under `PINNED` in the script and re-run it.
+
 Map tiles come from OpenStreetMap, so the map needs a network connection for areas you haven't viewed; tiles you've seen are cached. Bulk tile download is deliberately not done (OpenStreetMap's tile policy forbids it).
 
 ## Public pages and link previews

@@ -1,6 +1,7 @@
 import { DEMO_USER_ID } from '@/data/actor'
 import { estimateTravelMinutes, haversineKm } from '@/lib/geo'
 import { placeholderImage } from '@/lib/placeholder'
+import { photoUrl } from '@/lib/stock'
 import { SEED_TS } from './bali'
 import type {
   ChecklistItem, Destination, ItemCategory, ItineraryDay, ItineraryItem, Memory, Money, Notification, Place, PublicTrip, Story, Trip, User,
@@ -8,7 +9,7 @@ import type {
 
 const ts = { createdAt: SEED_TS, updatedAt: SEED_TS }
 const inr = (amount: number) => ({ amount, currency: 'INR' })
-const img = (id: string, _label: string) => placeholderImage(id, '', [16, 9])
+const img = (id: string, label: string) => photoUrl(id, label)
 
 export const demoUser: User = {
   id: DEMO_USER_ID, name: 'Anmol', email: 'demo@wayfarer.test', homeLocation: 'Mumbai, India', bio: 'Slow-travel enthusiast. Food first, photos second.',

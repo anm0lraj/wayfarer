@@ -96,5 +96,10 @@ Full product spec: @docs/PRODUCT_SPEC.md (read the relevant sections before buil
 - Tests: Vitest runs with 6 workers and a 15 s timeout (jsdom + IndexedDB per file starves on many-core machines otherwise). If a test finishes while repository steps are still running, call `settle()` (`src/test/settle.ts`) before the next reset. The seed fixtures load lazily (`data/seedData.ts`); import `buildSeed` from there in tests.
 - Onboarding (`/onboarding/:step`) is real and skippable; Settings → Account links back to it.
 
+## Stock photos
+- Cards show real photos, not the generated SVG scenes. Fixtures call `img(id)` → `photoUrl(id)` (`src/lib/stock`), which maps the seed id to a curated Wikimedia Commons photo in `photos.json` (aliases cover trip/public-trip covers). An id with no photo falls back to `placeholderImage`, so a new fixture never breaks. The SVG generator remains the runtime fallback: `installImageFallback` (`main.tsx`) swaps in the illustration if a stock image errors, using the seed stored in the URL fragment (`#s=`).
+- Licences require credit: every photo in `photos.json` is shown on `/credits` (a test checks licence, author and Commons page are present, and that no two places share a photo). Never add a photo without those fields; regenerate with `node scripts/curate-stock-photos.mjs` (resumable; Commons rate-limits, so it backs off) and pin hand-picked files under `PINNED`. Don't trust search ranking blindly: review a contact sheet (`scripts/commons-candidates.mjs` writes one) — search once returned a Mississippi seafood photo for a Bali restaurant.
+- New image host ⇒ update `scripts/security-headers.mjs`, then run `node scripts/sync-vercel-csp.mjs` to copy the headers into `vercel.json`. Changing any fixture image means bumping `SEED_VERSION`.
+
 ## Demo data
 Primary demo: "5 Days in Bali", 12-17 Oct 2026, 2 travellers, budget ₹60,000, interests Food + Beaches + Photography. At least 3 public itineraries for the Explore feed. Include a demo-mode date simulator to preview Upcoming and Live states.
