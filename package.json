@@ -12,7 +12,9 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "test:rules": "node scripts/free-emulator-ports.mjs && firebase emulators:exec --only firestore --project demo-wayfarer \"vitest run --config vitest.rules.config.ts\"; node scripts/free-emulator-ports.mjs",
+    "test:sync": "node scripts/free-emulator-ports.mjs && firebase emulators:exec --only auth,firestore --project demo-wayfarer \"vitest run --config vitest.sync.config.ts\"; node scripts/free-emulator-ports.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -45,6 +47,7 @@
     "zustand": "^4.5.7"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
     "@playwright/test": "1.49",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
@@ -60,6 +63,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.26",
     "fake-indexeddb": "^6.2.5",
+    "firebase-tools": "^13.35.1",
     "jsdom": "^25.0.1",
     "msw": "^2.15.0",
     "postcss": "^8.5.28",
@@ -73,6 +77,9 @@
   "overrides": {
     "path-scurry": {
       "lru-cache": "10.4.3"
+    },
+    "universal-analytics": {
+      "uuid": "^8.3.2"
     }
   }
 }

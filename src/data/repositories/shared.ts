@@ -35,7 +35,9 @@ export async function put<T extends { id: string }>(entity: string, table: { put
   await enqueue(entity, value.id, 'put', value)
 }
 
-export async function del(entity: string, table: { delete(id: string): Promise<unknown> }, id: string) {
+export async function del(entity: string, table: { get(id: string): Promise<unknown>; delete(id: string): Promise<unknown> }, id: string) {
+  // A delete has no document to read the owner from, so remember which trip it belonged to for the remote path.
+  const tripId = ((await table.get(id)) as { tripId?: string } | undefined)?.tripId
   await table.delete(id)
-  await enqueue(entity, id, 'delete')
+  await enqueue(entity, id, 'delete', tripId ? { tripId } : undefined)
 }

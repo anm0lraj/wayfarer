@@ -1,0 +1,85 @@
+rules_version = '2';
+
+// Wayfarer data access. Layout and meaning: src/data/remote/paths.ts.
+// A trip's `members` map (uid -> owner | editor | viewer) is the single source of truth for who may see or change it.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    // ---- profile and private collections: only the person themselves -------------------------------------------
+    match /users/{userId} {
+      allow read, write: if signedIn() && me() == userId;
+      match /{collection}/{docId} {
+        allow read, write: if signedIn() && me() == userId;
+      }
+    }
+
+    // ---- trips ---------------------------------------------------------------------------------------------------
+    function roleOf(members) { return members.get(me(), null); }
+    function tripRole(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId)).data.members.get(me(), null);
+    }
+
+    function inTrip(collection) {
+      return collection in ['days', 'items', 'bookings', 'checklist', 'memories', 'stories', 'collaborators'];
+    }
+
+    match /trips/{tripId} {
+      // Reading an id that does not exist yet is how the app checks before creating; there is nothing to reveal.
+      allow read: if signedIn() && (resource == null || roleOf(resource.data.members) != null);
+
+      // A new trip is owned by whoever creates it, and by nobody else.
+      allow create: if signedIn()
+        && request.resource.data.ownerId == me()
+        && request.resource.data.members.keys().hasOnly([me()])
+        && request.resource.data.members[me()] == 'owner';
+
+      // Owners can change anything except who owns it. Editors can change the trip but not who has access to it.
+      allow update: if signedIn()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && (
+          (roleOf(resource.data.members) == 'owner' && request.resource.data.members[resource.data.ownerId] == 'owner')
+          || (roleOf(resource.data.members) == 'editor' && request.resource.data.members == resource.data.members)
+        );
+
+      allow delete: if signedIn() && roleOf(resource.data.members) == 'owner';
+
+      // Everything inside a trip. Documents must say which trip they belong to, matching where they are stored.
+      match /{collection}/{docId} {
+        allow read: if signedIn() && inTrip(collection) && tripRole(tripId) != null;
+
+        allow create, update: if signedIn()
+          && inTrip(collection)
+          && request.resource.data.tripId == tripId
+          && (
+            collection == 'collaborators'
+              ? tripRole(tripId) == 'owner'
+              : tripRole(tripId) in ['owner', 'editor']
+          );
+
+        allow delete: if signedIn()
+          && inTrip(collection)
+          && (
+            collection == 'collaborators'
+              ? tripRole(tripId) == 'owner'
+              : tripRole(tripId) in ['owner', 'editor']
+          );
+      }
+    }
+
+    // ---- published trips: anyone can read, only the publisher can change ------------------------------------------
+    match /publicTrips/{id} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.ownerId == me();
+      allow update: if signedIn() && resource.data.ownerId == me() && request.resource.data.ownerId == me();
+      allow delete: if signedIn() && resource.data.ownerId == me();
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
