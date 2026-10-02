@@ -31,7 +31,7 @@ function DayChip({ tripId, day, active, count, dragging }: { tripId: string; day
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex min-h-touch min-w-[4.5rem] flex-col items-center justify-center rounded-lg border px-3 py-1.5 text-center transition-colors',
-        active ? 'border-primary bg-primary text-primary-fg' : 'border-border bg-surface hover:bg-surface-2',
+        active ? 'border-primary bg-primary text-primary-fg' : 'border-border-strong bg-surface hover:bg-surface-2',
         dragging && !active && 'border-dashed border-primary/60',
         isOver && 'bg-primary/20 ring-2 ring-primary',
       )}

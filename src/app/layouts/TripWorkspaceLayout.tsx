@@ -1,7 +1,8 @@
+import { lazy, Suspense } from 'react'
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { ChevronLeft, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { AIPanel } from '@/features/ai/AIPanel'
+
 import { useAIPanel } from '@/features/ai/panelStore'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { ErrorState } from '@/components/feedback/States'
@@ -19,6 +20,9 @@ import { dateInTimezone, formatDateRange } from '@/lib/dates'
 import { clock } from '@/services/clock/clock'
 import { PermissionError } from '@/lib/permissions'
 import type { TripState } from '@/types'
+
+// The assistant panel is only needed once opened on desktop, so it stays out of the main bundle.
+const AIPanel = lazy(() => import('@/features/ai/AIPanel').then((m) => ({ default: m.AIPanel })))
 
 const stateTone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning'> = {
   draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'warning', completed: 'neutral', archived: 'neutral',
@@ -109,7 +113,7 @@ function Workspace({ trip }: { trip: TripWithState }) {
         </TabNav>
         <Outlet context={trip} />
       </div>
-      {docked && <AIPanel trip={trip} />}
+      {docked && <Suspense fallback={<div className="hidden w-[400px] lg:block" aria-hidden />}><AIPanel trip={trip} /></Suspense>}
     </div>
   )
 }

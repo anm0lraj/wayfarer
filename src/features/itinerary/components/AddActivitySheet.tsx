@@ -140,7 +140,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="custom-category" className="text-sm font-medium">Category</label>
-              <select id="custom-category" className="min-h-touch rounded-md border border-border bg-surface px-3" {...form.register('category')}>
+              <select id="custom-category" className="min-h-touch rounded-md border border-border-strong bg-surface px-3" {...form.register('category')}>
                 {itemCategorySchema.options.map((c) => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
               </select>
             </div>
@@ -154,7 +154,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
             <Input label="Estimated cost, ₹ (optional)" inputMode="numeric" error={form.formState.errors.cost?.message} {...form.register('cost')} />
             <div className="flex flex-col gap-1.5">
               <label htmlFor="custom-notes" className="text-sm font-medium">Notes (optional)</label>
-              <textarea id="custom-notes" rows={3} className="rounded-md border border-border bg-surface p-3" {...form.register('notes')} />
+              <textarea id="custom-notes" rows={3} className="rounded-md border border-border-strong bg-surface p-3" {...form.register('notes')} />
             </div>
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>Add activity</Button>
           </form>

@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, Search } from 'lucide-react'
+import { SyncIndicator } from '@/features/sync/SyncIndicator'
+import { useUnreadCount } from '@/data/queries/notifications'
 import { useSession } from '../providers/session'
 import { SearchField } from '@/components/ui/Input'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -11,6 +13,7 @@ const iconButton = 'grid min-h-touch min-w-touch place-items-center rounded-full
 export function AppHeader() {
   const session = useSession()
   const navigate = useNavigate()
+  const unread = useUnreadCount()
   const [query, setQuery] = useState('')
 
   const onSearch = (e: FormEvent) => {
@@ -30,8 +33,12 @@ export function AppHeader() {
         </form>
         <div className="ml-auto flex items-center gap-1">
           <Link to="/explore" aria-label="Search destinations" className={`${iconButton} sm:hidden`}><Search aria-hidden className="size-5" /></Link>
+          <SyncIndicator />
           <ThemeToggle />
-          <Link to="/notifications" aria-label="Notifications" className={iconButton}><Bell aria-hidden className="size-5" /></Link>
+          <Link to="/notifications" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className={`${iconButton} relative`}>
+            <Bell aria-hidden className="size-5" />
+            {unread > 0 && <span aria-hidden className="absolute right-1.5 top-1.5 grid min-w-4 place-items-center rounded-full bg-error px-1 text-[10px] font-bold leading-4 text-error-fg">{unread > 9 ? "9+" : unread}</span>}
+          </Link>
           {/* Profile lives in the primary navigation only; the header just offers Sign in when signed out. */}
           {!session && <Link to="/signin" className="ml-1 min-h-touch content-center rounded-md px-3 font-semibold text-primary hover:bg-surface-2">Sign in</Link>}
         </div>

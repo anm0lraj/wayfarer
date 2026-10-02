@@ -77,7 +77,7 @@ export function AddToTripSheet({ place, onClose }: { place: Place | null; onClos
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="add-day" className="text-sm font-medium">Day</label>
-              <select id="add-day" value={dayId ?? ''} onChange={(e) => setDayId(e.target.value)} className="min-h-touch rounded-md border border-border bg-surface px-3" disabled={!plan.data}>
+              <select id="add-day" value={dayId ?? ''} onChange={(e) => setDayId(e.target.value)} className="min-h-touch rounded-md border border-border-strong bg-surface px-3" disabled={!plan.data}>
                 {plan.data?.days.map((d) => <option key={d.id} value={d.id}>Day {d.dayNumber}{d.title ? ` — ${d.title}` : ''}</option>)}
               </select>
             </div>

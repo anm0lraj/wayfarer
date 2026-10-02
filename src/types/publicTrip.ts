@@ -20,6 +20,8 @@ export const publicTripSchema = z.object({
   tripId: idSchema.optional(), // absent for seeded trips from other travellers
   ownerId: idSchema,
   ownerName: z.string(),
+  /** `link` pages are reachable by URL but kept out of the Explore feed. */
+  visibility: z.enum(['link', 'public']).default('public'),
   title: z.string(),
   description: z.string(),
   coverImage: z.string(),
@@ -39,3 +41,6 @@ export const savedTripSchema = z
   .object({ id: idSchema, userId: idSchema, publicTripId: idSchema.optional(), tripId: idSchema.optional(), savedAt: isoDateTimeSchema })
   .refine((s) => !!s.publicTripId || !!s.tripId, { message: 'Needs publicTripId or tripId' })
 export type SavedTrip = z.infer<typeof savedTripSchema>
+
+export const likedTripSchema = z.object({ id: idSchema, userId: idSchema, publicTripId: idSchema, likedAt: isoDateTimeSchema })
+export type LikedTrip = z.infer<typeof likedTripSchema>

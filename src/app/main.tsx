@@ -3,15 +3,22 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import { App } from './App'
 import { installMockApi } from '@/mocks/install'
+import { initInstallPrompt, usePwa } from '@/lib/pwa'
 import { initTheme } from '@/lib/theme'
 import '@/styles/globals.css'
 
 initTheme()
 installMockApi() // serves /api/* in-page until a real backend proxy exists
 
+initInstallPrompt()
 if (import.meta.env.PROD) {
-  // `prompt` mode: a waiting update is applied on next launch; an in-app "Update available" prompt arrives in Phase 8.
-  registerSW({ immediate: true })
+  // `prompt` mode: a waiting update is only applied when the traveller chooses to reload (see UpdateBanner).
+  const updateSW = registerSW({
+    immediate: true,
+    onNeedRefresh: () => usePwa.setState({ needRefresh: true }),
+    onOfflineReady: () => usePwa.setState({ offlineReady: true }),
+  })
+  usePwa.setState({ applyUpdate: () => updateSW(true) })
 }
 
 createRoot(document.getElementById('root')!).render(

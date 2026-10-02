@@ -4,7 +4,7 @@ import { memorySchema, storySchema } from '@/types'
 import type { Memory, Story } from '@/types'
 
 export type NewMemoryInput = Pick<Memory, 'tripId' | 'kind'> &
-  Partial<Pick<Memory, 'caption' | 'text' | 'mediaKey' | 'capturedAt' | 'point' | 'dayId' | 'itemId' | 'uploadState'>>
+  Partial<Pick<Memory, 'caption' | 'text' | 'mediaKey' | 'capturedAt' | 'point' | 'dayId' | 'itemId' | 'uploadState' | 'stripLocationOnPublic'>>
 
 export const memoryRepo = {
   async list(tripId: string): Promise<Memory[]> {
@@ -30,11 +30,23 @@ export const memoryRepo = {
     await put('memories', db.memories, { ...m, ...patch, updatedAt: nowIso() })
   },
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<Memory | undefined> {
     const m = await db.memories.get(id)
-    if (!m) return
+    if (!m) return undefined
     await requireTripAccess(m.tripId, 'edit')
     await del('memories', db.memories, id)
+    return m
+  },
+
+  /** Puts back a memory returned by `remove` (Undo). */
+  async restore(m: Memory): Promise<void> {
+    await requireTripAccess(m.tripId, 'edit')
+    await put('memories', db.memories, m)
+  },
+
+  /** Memories still waiting to be uploaded, across trips. `failed` ones only when asked (manual retry). */
+  async pending(includeFailed = false): Promise<Memory[]> {
+    return db.memories.where('uploadState').anyOf(includeFailed ? ['queued', 'uploading', 'failed'] : ['queued', 'uploading']).toArray()
   },
 }
 
@@ -53,10 +65,17 @@ export const storyRepo = {
     return story
   },
 
-  async remove(id: string): Promise<void> {
+  async get(id: string): Promise<Story | undefined> {
     const s = await db.stories.get(id)
-    if (!s) return
+    if (s) await requireTripAccess(s.tripId, 'view')
+    return s
+  },
+
+  async remove(id: string): Promise<Story | undefined> {
+    const s = await db.stories.get(id)
+    if (!s) return undefined
     await requireTripAccess(s.tripId, 'edit')
     await del('stories', db.stories, id)
+    return s
   },
 }

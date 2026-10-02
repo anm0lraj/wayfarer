@@ -21,6 +21,14 @@ function eachDate(start: string, end: string): string[] {
 }
 
 export const dataHandlers = [
+  // Stand-in for the sync endpoint. A real backend would compare updatedAt per entity and answer `conflict` with its newer copy.
+  http.post('*/api/sync', async ({ request }) => {
+    await delay(80)
+    const { ops } = (await request.json()) as { ops: Array<{ id: number }> }
+    return HttpResponse.json({ results: ops.map((o) => ({ id: o.id, status: 'ok' })) })
+  }),
+
+
   http.get('*/api/hotels', async ({ request }) => {
     await delay(300)
     const p = new URL(request.url).searchParams
@@ -74,7 +82,7 @@ export const dataHandlers = [
   http.get('*/api/explore/itineraries', async ({ request }) => {
     await delay(350)
     const p = new URL(request.url).searchParams
-    return HttpResponse.json(await publicTripRepo.listPage(p.get('cursor'), Number(p.get('limit') ?? 12)))
+    return HttpResponse.json(await publicTripRepo.listPage(p.get('cursor'), Number(p.get('limit') ?? 12), { q: p.get('q') ?? undefined, destinationId: p.get('destination') ?? undefined }))
   }),
 
   http.get('*/api/public-trips/:slug', async ({ params }) => {

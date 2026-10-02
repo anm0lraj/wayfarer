@@ -4,7 +4,7 @@ import { AuthGuard } from './layouts/AuthGuard'
 import { PublicLayout } from './layouts/PublicLayout'
 import { RouteError } from './layouts/RouteError'
 import { TripWorkspaceLayout } from './layouts/TripWorkspaceLayout'
-import { NotFound, Notifications, SignIn } from './routes/misc'
+import { NotFound, SignIn } from './routes/misc'
 
 /** Lazy route helper: loads the module only when the route is visited (code-splitting per feature). */
 const lazyNamed = <M extends Record<string, unknown>>(load: () => Promise<M>, name: keyof M & string): RouteObject['lazy'] =>
@@ -64,7 +64,8 @@ export const routes: RouteObject[] = [
                   { path: 'memories', lazy: lazyNamed(memories, 'MemoriesTimeline') },
                   { path: 'memories/new', lazy: lazyNamed(memories, 'AddMemory') },
                   { path: 'stories/new', lazy: lazyNamed(memories, 'StoryCreator') },
-                  { path: 'stories/:storyId', lazy: lazyNamed(memories, 'StoryCreator') },
+                  { path: 'stories/:storyId', lazy: lazyNamed(memories, 'StoryView') },
+                  { path: 'stories/:storyId/edit', lazy: lazyNamed(memories, 'StoryCreator') },
                   { path: 'share', lazy: lazyNamed(trips, 'ShareTrip') },
                 ],
               },
@@ -77,7 +78,7 @@ export const routes: RouteObject[] = [
               { path: 'profile/:tab', lazy: lazyDefault(() => import('@/features/profile/routes')) },
               { path: 'settings', lazy: lazyDefault(() => import('@/features/settings/routes')) },
               { path: 'settings/:section', lazy: lazyDefault(() => import('@/features/settings/routes')) },
-              { path: 'notifications', element: <Notifications /> },
+              { path: 'notifications', lazy: lazyDefault(() => import('@/features/notifications/routes')) },
               ...(import.meta.env.DEV ? [{ path: '_design', lazy: lazyDefault(() => import('./routes/DesignGallery')) }] : []),
             ],
           },

@@ -4,7 +4,7 @@ import { configure } from '@testing-library/react'
 import { beforeEach } from 'vitest'
 
 // The first screen in a test file also pays for IndexedDB seeding and lazy chunk loading; give async queries room.
-configure({ asyncUtilTimeout: 4000 })
+configure({ asyncUtilTimeout: 6000 })
 import { useToastStore } from '@/components/feedback/toast'
 
 // Toasts live in a global store; clear it so one test's toasts (and their Undo buttons) don't leak into the next.
@@ -26,3 +26,7 @@ Element.prototype.scrollIntoView ??= () => {}
 Element.prototype.hasPointerCapture ??= () => false
 Element.prototype.setPointerCapture ??= () => {}
 Element.prototype.releasePointerCapture ??= () => {}
+
+// jsdom has no object URLs (used for photo previews and stored media).
+URL.createObjectURL ??= () => `blob:test/${Math.random().toString(36).slice(2)}`
+URL.revokeObjectURL ??= () => {}

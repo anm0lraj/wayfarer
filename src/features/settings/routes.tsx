@@ -1,11 +1,15 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { toast } from '@/components/feedback/toast'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
+import { NotificationSettings } from '@/features/notifications/NotificationSettings'
+import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
 import { resetDemoData } from '@/data/seed'
+import { promptInstall, usePwa } from '@/lib/pwa'
 import { useTheme, type ThemePreference } from '@/lib/theme'
 import { useServices } from '@/services'
 import { useClockStore } from '@/services/clock/clock'
@@ -38,6 +42,8 @@ export default function SettingsRoute() {
   const { simulatedNow, setSimulatedNow } = useClockStore()
   const { auth } = useServices()
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const { installed, installEvent } = usePwa()
   const [aiDown, setAiDown] = useState(() => {
     try { return localStorage.getItem('mock-ai-unavailable') === '1' } catch { return false }
   })
@@ -46,6 +52,13 @@ export default function SettingsRoute() {
     const next = !aiDown
     try { next ? localStorage.setItem('mock-ai-unavailable', '1') : localStorage.removeItem('mock-ai-unavailable') } catch { /* ignore */ }
     setAiDown(next)
+  }
+
+  const deleteAccount = async () => {
+    if (!window.confirm('Delete your account and everything on this device — trips, memories and settings? This can’t be undone.')) return
+    await auth.deleteAccount()
+    await qc.invalidateQueries()
+    navigate('/signin', { replace: true })
   }
 
   const reset = async () => {
@@ -63,6 +76,14 @@ export default function SettingsRoute() {
           {themes.map((t) => <Chip key={t.value} selected={preference === t.value} onClick={() => setPreference(t.value)}>{t.label}</Chip>)}
         </Section>
 
+        <div id="notifications" className="scroll-mt-20 lg:col-span-2">
+          <Card className="space-y-4 p-5">
+            <div><h2 className="text-lg font-semibold">Notifications</h2><p className="mt-1 text-fg-muted">Choose which reminders you get. They always appear in the app; system notifications need your permission.</p></div>
+            <PushPermissionCard />
+            <NotificationSettings />
+          </Card>
+        </div>
+
         <Section title="Demo date simulator" description={simulatedNow ? `Simulating ${format(new Date(simulatedNow), 'd MMM yyyy, HH:mm')}.` : 'Preview Upcoming, Live and Completed states without waiting for real dates.'}>
           {presets.map((p) => <Chip key={p.iso} selected={simulatedNow === p.iso} onClick={() => setSimulatedNow(p.iso)}>{p.label}</Chip>)}
           <Button variant="secondary" disabled={!simulatedNow} onClick={() => setSimulatedNow(null)}>Use real time</Button>
@@ -73,8 +94,15 @@ export default function SettingsRoute() {
           <Button variant="danger" onClick={() => void reset()}>Reset demo data</Button>
         </Section>
 
+        <Section title="Install the app" description={installed ? 'Wayfarer is installed on this device.' : 'Add Wayfarer to your home screen or desktop. It opens full-screen and works offline.'}>
+          {!installed && installEvent && <Button onClick={() => void promptInstall()}>Install Wayfarer</Button>}
+          {!installed && !installEvent && <p className="text-sm text-fg-muted">Your browser didn’t offer an install button. In Chrome or Edge, use the install icon in the address bar. On iPhone or iPad, tap Share, then Add to Home Screen.</p>}
+        </Section>
+
         <Section title="Account" description="You’re signed in as the demo traveller.">
+          <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
           <Button variant="secondary" onClick={() => void auth.signOut()}>Sign out</Button>
+          <Button variant="danger" onClick={() => void deleteAccount()}>Delete account and data</Button>
         </Section>
       </div>
     </>

@@ -18,7 +18,7 @@ export function OptionCard({ selected, onSelect, title, description, icon }: {
       onClick={onSelect}
       className={cn(
         'flex min-h-touch w-full items-start gap-3 rounded-lg border p-3.5 text-left transition-colors',
-        selected ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-border bg-surface hover:bg-surface-2',
+        selected ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-border-strong bg-surface hover:bg-surface-2',
       )}
     >
       {icon && <span aria-hidden className="mt-0.5 text-primary">{icon}</span>}

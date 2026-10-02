@@ -14,6 +14,8 @@ export const notificationSchema = z.object({
   title: z.string(),
   body: z.string(),
   deepLink: z.string(),
+  /** Identifies the event that produced it, so reminders are delivered once. */
+  key: z.string().optional(),
   scheduledFor: isoDateTimeSchema,
   readAt: isoDateTimeSchema.optional(),
 })

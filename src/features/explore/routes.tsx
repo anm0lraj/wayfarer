@@ -7,7 +7,6 @@ import { PublicTripCard } from '@/components/domain/PublicTripCard'
 import { EmptyState, ErrorState } from '@/components/feedback/States'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { CardRow, Section } from '@/components/layout/Section'
-import { ScreenStub } from '@/components/layout/ScreenStub'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { SearchField } from '@/components/ui/Input'
@@ -206,6 +205,4 @@ export function DestinationDetails() {
   )
 }
 
-export function PublicFeed() {
-  return <ScreenStub title="Public itineraries" phase={7} spec="spec §25" />
-}
+export { PublicFeed } from '@/features/public-trips/PublicFeed'

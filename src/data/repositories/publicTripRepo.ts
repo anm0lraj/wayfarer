@@ -2,22 +2,39 @@ import { db } from '../db'
 import { newId, nowIso, put, requireActor, requireTripAccess } from './shared'
 import { itineraryRepo } from './itineraryRepo'
 import { tripRepo } from './tripRepo'
-import { publicTripSchema, savedPlaceSchema, savedTripSchema } from '@/types'
-import type { PublicTrip, SavedPlace, SavedTrip, Trip } from '@/types'
+import { likedTripSchema, publicTripSchema, savedPlaceSchema, savedTripSchema } from '@/types'
+import type { LikedTrip, PublicTrip, SavedPlace, SavedTrip, Trip } from '@/types'
 import { tripLengthDays } from '@/lib/dates'
+
+/** Four lowercase letters/digits for the end of a slug (the random id alphabet includes - and _, which look wrong in a URL). */
+function slugSuffix(): string {
+  let out = ''
+  while (out.length < 4) out += newId('').replace(/[^a-z0-9]/gi, '').toLowerCase()
+  return out.slice(0, 4)
+}
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
 export const publicTripRepo = {
-  /** Cursor pagination, newest first. Feed screens (Phase 7) use this with infinite scroll. */
-  async listPage(cursor: string | null, limit = 12): Promise<{ items: PublicTrip[]; nextCursor: string | null }> {
-    const all = (await db.publicTrips.toArray()).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+  /**
+   * Cursor pagination, newest first, public itineraries only (link-only ones are reachable by URL but not listed).
+   * `q` matches title, description and creator; `destinationId` narrows to one destination.
+   */
+  async listPage(cursor: string | null, limit = 12, filter: { q?: string; destinationId?: string } = {}): Promise<{ items: PublicTrip[]; nextCursor: string | null }> {
+    const q = filter.q?.trim().toLowerCase()
+    const all = (await db.publicTrips.toArray())
+      .filter((t) => (t.visibility ?? 'public') === 'public')
+      .filter((t) => !filter.destinationId || t.destinationIds.includes(filter.destinationId))
+      .filter((t) => !q || [t.title, t.description, t.ownerName].some((x) => x.toLowerCase().includes(q)))
+      .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
     const start = cursor ? all.findIndex((t) => t.id === cursor) + 1 : 0
     const items = all.slice(start, start + limit)
     return { items, nextCursor: start + limit < all.length ? items[items.length - 1]!.id : null }
   },
+
+  get: (id: string): Promise<PublicTrip | undefined> => db.publicTrips.get(id),
 
   getBySlug: (slug: string): Promise<PublicTrip | undefined> => db.publicTrips.where('slug').equals(slug).first(),
 
@@ -25,7 +42,7 @@ export const publicTripRepo = {
    * Publishes a sanitised snapshot of the trip. Private notes, booking links and exact memory
    * locations never enter the snapshot. Visibility 'private' removes the public record.
    */
-  async publish(tripId: string, opts: { description: string; visibility: 'link' | 'public'; tips?: string[] }): Promise<PublicTrip> {
+  async publish(tripId: string, opts: { description: string; visibility: 'link' | 'public'; tips?: string[]; includeMemories?: boolean }): Promise<PublicTrip> {
     await requireTripAccess(tripId, 'publish')
     const trip = (await db.trips.get(tripId))!
     const [days, items, memories] = await Promise.all([
@@ -39,9 +56,9 @@ export const publicTripRepo = {
     const total = trip.budget.total?.amount ?? 0
     const publicTrip = publicTripSchema.parse({
       id: existing?.id ?? newId('pub'),
-      slug: existing?.slug ?? `${slugify(trip.title)}-${newId('').slice(1, 5).toLowerCase()}`,
+      slug: existing?.slug ?? `${slugify(trip.title)}-${slugSuffix()}`,
       tripId, ownerId: trip.ownerId, ownerName: user?.name ?? 'Traveller',
-      title: trip.title, description: opts.description, coverImage: trip.coverImage ?? '',
+      visibility: opts.visibility, title: trip.title, description: opts.description, coverImage: trip.coverImage ?? '',
       destinationIds: trip.destinationIds, durationDays: tripLengthDays(trip.startDate, trip.endDate),
       budgetRange: [{ amount: Math.round(total * 0.85), currency: trip.budget.total?.currency ?? 'INR' }, { amount: Math.round(total * 1.15), currency: trip.budget.total?.currency ?? 'INR' }],
       travelStyle: trip.budget.tier, tips: opts.tips ?? [],
@@ -49,7 +66,7 @@ export const publicTripRepo = {
         days,
         items: items.map(({ notes: _n, bookingId: _b, ...rest }) => rest),
         places,
-        memories: memories
+        memories: (opts.includeMemories === false ? [] : memories)
           .filter((m) => m.kind === 'photo' && m.mediaKey && m.uploadState === 'done')
           .map((m) => ({ id: m.id, caption: m.caption, mediaUrl: m.mediaKey!, dayNumber: m.dayId ? dayNumberById.get(m.dayId) : undefined })),
       },
@@ -131,5 +148,25 @@ export const savedRepo = {
     await db.savedTrips.delete(existing.id)
     const pub = await db.publicTrips.get(publicTripId)
     if (pub) await db.publicTrips.update(pub.id, { saveCount: Math.max(0, pub.saveCount - 1) })
+  },
+}
+
+export const likeRepo = {
+  async list(): Promise<LikedTrip[]> {
+    return db.likedTrips.where('userId').equals(requireActor()).toArray()
+  },
+  /** Toggles the like; returns whether the itinerary is liked afterwards. */
+  async toggle(publicTripId: string): Promise<boolean> {
+    const userId = requireActor()
+    const id = `lk_${userId}_${publicTripId}`
+    const pub = await db.publicTrips.get(publicTripId)
+    if (await db.likedTrips.get(id)) {
+      await db.likedTrips.delete(id)
+      if (pub) await db.publicTrips.update(pub.id, { likeCount: Math.max(0, pub.likeCount - 1) })
+      return false
+    }
+    await put('likedTrips', db.likedTrips, likedTripSchema.parse({ id, userId, publicTripId, likedAt: nowIso() }))
+    if (pub) await db.publicTrips.update(pub.id, { likeCount: pub.likeCount + 1 })
+    return true
   },
 }

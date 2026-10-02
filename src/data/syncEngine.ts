@@ -1,0 +1,65 @@
+import { db, type SyncOp } from './db'
+
+export interface SyncResult { id: number; status: 'ok' | 'conflict'; /** The server's copy, when it is newer than ours. */ current?: { id: string; updatedAt?: string } & Record<string, unknown> }
+export type SendBatch = (ops: SyncOp[]) => Promise<SyncResult[]>
+
+export interface SyncSummary { sent: number; conflicts: number; failed: boolean }
+
+const BATCH = 50
+let running = false
+
+/** POSTs a batch to the (mocked) backend proxy. Anything other than a clean answer is a failure and is retried later. */
+export const sendBatchToApi: SendBatch = async (ops) => {
+  const res = await fetch(new URL('/api/sync', globalThis.location?.origin ?? 'http://localhost'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ops: ops.map(({ id, entity, entityId, op, payload, createdAt }) => ({ id, entity, entityId, op, payload, createdAt })) }),
+  })
+  if (!res.ok) throw new Error(`Sync failed (${res.status})`)
+  return ((await res.json()) as { results: SyncResult[] }).results
+}
+
+/** Tables a sync entity can name. Anything else is dropped rather than written blindly. */
+const table = (name: string) => (db.tables.find((t) => t.name === name) as { put(v: unknown): Promise<unknown> } | undefined)
+
+/**
+ * Conflict policy: **the newer write wins**, judged by `updatedAt`. If the server says it holds a newer copy
+ * (another device edited the same thing while this one was offline), that copy replaces the local one and the
+ * queued change is dropped. Anything else the queue says is applied as-is. The traveller is told how many of their
+ * edits were replaced, so nothing changes silently.
+ */
+async function applyConflict(op: SyncOp, current: NonNullable<SyncResult['current']>) {
+  const local = (await db.table(op.entity).get(op.entityId)) as { updatedAt?: string } | undefined
+  if (!local?.updatedAt || !current.updatedAt || current.updatedAt >= local.updatedAt) await table(op.entity)?.put(current)
+}
+
+/** Sends the queue in order, in batches. Safe to call repeatedly; does nothing while offline or already running. */
+export async function syncNow(send: SendBatch = sendBatchToApi): Promise<SyncSummary> {
+  const summary: SyncSummary = { sent: 0, conflicts: 0, failed: false }
+  if (running || (typeof navigator !== 'undefined' && !navigator.onLine)) return summary
+  running = true
+  try {
+    for (;;) {
+      const ops = await db.syncQueue.orderBy('id').limit(BATCH).toArray()
+      if (ops.length === 0) break
+      let results: SyncResult[]
+      try {
+        results = await send(ops)
+      } catch {
+        await Promise.all(ops.map((o) => db.syncQueue.update(o.id!, { attempts: o.attempts + 1 })))
+        summary.failed = true
+        break
+      }
+      const byId = new Map(results.map((r) => [r.id, r]))
+      for (const op of ops) {
+        const r = byId.get(op.id!)
+        if (!r) { summary.failed = true; return summary } // not acknowledged: keep it, and everything after it, for next time
+        if (r.status === 'conflict' && r.current) { await applyConflict(op, r.current); summary.conflicts++ }
+        await db.syncQueue.delete(op.id!)
+        summary.sent++
+      }
+    }
+  } finally {
+    running = false
+  }
+  return summary
+}

@@ -29,7 +29,7 @@ export const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButto
       aria-pressed={selected}
       className={cn(
         'inline-flex min-h-touch items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors',
-        selected ? 'border-primary bg-primary text-primary-fg' : 'border-border bg-surface text-fg hover:bg-surface-2',
+        selected ? 'border-primary bg-primary text-primary-fg' : 'border-border-strong bg-surface text-fg hover:bg-surface-2',
         className,
       )}
       {...props}

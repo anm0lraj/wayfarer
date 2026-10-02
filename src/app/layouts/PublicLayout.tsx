@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
+import { RouteEffects } from './RouteEffects'
 import { OfflineBanner } from '@/components/feedback/States'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
@@ -9,6 +10,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 export function PublicLayout() {
   return (
     <div className="min-h-dvh">
+      <RouteEffects />
       <OfflineBanner />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 pt-[calc(var(--safe-top)+0.75rem)]">
         <Link to="/" className="flex min-h-touch items-center gap-2 font-bold text-primary">

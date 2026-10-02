@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSeed } from '@/data/seed'
+import { buildSeed } from '@/data/seedData'
 import { dayLoad, endTime, fromMinutes, retime, scheduleWarnings, suggestNextStart, toMinutes } from './schedule'
 import type { ItineraryItem } from '@/types'
 

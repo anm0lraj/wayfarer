@@ -10,7 +10,10 @@ export interface NotificationService {
    * (e.g. right after creating a trip) — never call this on first load.
    */
   requestPermission(): Promise<PushPermission>
-  /** Adds to the in-app notification centre (always works) and shows a system notification only if permitted. */
+  /**
+   * Adds to the in-app notification centre (always works) and shows a system notification only if permitted.
+   * Returns null when the type is switched off or a notification with the same `key` was already delivered.
+   */
   deliver(n: Omit<Notification, 'id' | 'userId'>): Promise<Notification | null>
   list(): Promise<Notification[]>
   markRead(id: string): Promise<void>

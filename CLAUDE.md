@@ -66,5 +66,35 @@ Full product spec: @docs/PRODUCT_SPEC.md (read the relevant sections before buil
 - Activities and transport are "saved" from itinerary items (`bookable.ts`), keyed by `refId = item.id`. Flight times are read as wall-clock straight from the ISO string (it carries the airport's offset); other times use the trip timezone (`zonedIso`, `bookingWhen(b, tz)`).
 - Checklist: the three booking items are derived from saved bookings (`resolveChecklist`), the rest are plain custom items the user can tick or delete.
 
+## Phase 5 notes
+- Live Trip (`/trips/:id/live`, `features/live-trip`) is only for `effectiveState === 'active'`; otherwise it shows a friendly "not live" state. Status logic is pure in `liveStatus.ts`: a stored status always wins, an untouched item is *inferred* `in_progress` inside its window, and a missed item is flagged `overdue` for the traveller to confirm. **Never infer `completed`.**
+- Location is opt-in (`useLiveLocation`): nothing is requested until the traveller presses "Use my location" after reading why. `point` is always a real fix. Arrival is only a *suggestion* ("Start it"), never an automatic status change.
+- Notifications: `features/notifications/rules.ts` is a pure function (trip + plan + clock → candidates with stable `key`s). `NotificationEngine` (mounted in `AppShell`) delivers them through `NotificationService.deliver`, which drops duplicates by `key` and respects per-type prefs. The browser push prompt is only shown via `PushPermissionCard` (after creating a trip, in the notification centre, in Settings) — never on load.
+- Emergency numbers are static data in `src/data/emergency.ts` (bundled, so they work offline); add a country there to support another destination.
+
+## Phase 6 notes
+- Capture (`features/memories/AddMemory.tsx`): photos are read for EXIF (`lib/media/exif.ts`: capture time + GPS), then resized/re-encoded by `compressImage` (which also strips EXIF from the stored file). Day and activity are attached by time via `attachToPlan` in the *trip's* timezone; the traveller can override. Location is never fetched until its button is pressed; `stripLocationOnPublic` defaults to on.
+- Offline upload queue: media is saved to the local `blobs` table first (`storage.upload`), the memory is `uploadState: 'queued'`, and `processMemoryUploads` (`data/uploadQueue.ts`) calls `storage.publish`. `UploadRunner` (in `AppShell`) runs it on load, on reconnect and every 30 s; failures become `failed` and are retried only by the Retry button. Swapping in Firebase Storage means implementing `publish` and `upload` on the storage adapter.
+- Stories: `StoryViewer` is one component, full-screen on phones and a centred 9:16 stage on desktop; it does not auto-advance with reduced motion or over video/audio. `stories/:storyId` plays, `stories/:storyId/edit` and `stories/new` use `StoryCreator`. Slides reorder with buttons (no drag-only interaction).
+- jsdom has no `URL.createObjectURL`; `src/test/setup.ts` stubs it. Seed version is 7 (adds a Goa story).
+
+## Phase 7 notes
+- Publishing (`publicTripRepo.publish`, UI in `features/public-trips/ShareTrip.tsx`) writes a **sanitised snapshot**: no notes, `bookingId`s, confirmation numbers or memory coordinates. Keep it that way when adding fields to items/memories. `visibility: 'link'` pages are reachable at `/t/:slug` but excluded from `listPage` (the feed); `public` ones are listed. Unpublishing deletes the record, so republishing gets a new slug.
+- `/t/:publicSlug` lives under `PublicLayout` (no sign-in, no app state). Save / Like / Use This Itinerary go through `useSignInGate` (`data/queries/publicTrips.ts`), which sends signed-out visitors to `/signin` with a return path. "Use This Itinerary" always copies; the original snapshot is never mutated (tested).
+- `useDocumentMeta` sets Open Graph tags client-side only. Real link previews need the server/prerender step from the spec (§2): emit the same tags into the HTML for `/t/*`.
+- The feed (`PublicFeed.tsx`) is server-paginated (`FEED_PAGE_SIZE` = 6, cursor), filtered by `q`/`destination` in the URL, and row-virtualised with `useWindowVirtualizer` (columns: 1/2/3/4 at <640/640/1024/1536). A "Load more" button is the keyboard/no-scroll fallback.
+- Likes are `likedTrips` (Dexie v3). Seed version is 8 (adds 5 public trips, so there are 8).
+- Profile tabs are routes: `/profile/{trips,published,saved,memories}`; `/saved` also exists.
+
+## Phase 8 notes
+- Sync: every repository write goes through `put`/`del` (`repositories/shared.ts`) into `syncQueue`. `SyncRunner` (in `AppShell`) calls `syncNow` (`data/syncEngine.ts`) when online: batches of 50 to `/api/sync` (mock acks everything), a `conflict` answer means the newer `updatedAt` wins and the user is told. `SyncIndicator` in the header shows pending changes. Don't write tables outside `put`/`del` or the change never syncs.
+- `RouteEffects` (shell + public layout) sets the document title, moves focus to `#main` and announces the page after a *page* change (`routeKey`: itinerary day/sheets don't count). It never steals focus from a field being typed in or an open dialog. Public trip pages set their own title via `useDocumentMeta`.
+- `PageTransition` (Framer Motion, lazy-loaded, off for reduced motion) wraps the shell's `<Outlet>`. Keep animation to this; no other page-level motion.
+- Security: the CSP and headers live in `scripts/security-headers.mjs`, used by `vite preview` and repeated in `vercel.json` (a test keeps them equal). No inline scripts: the theme bootstrap is `public/theme-init.js`. A new third-party origin (fonts, tiles, images, API) needs adding to the CSP, then check `npm run preview` for violations.
+- Contrast: `src/styles/contrast.test.ts` checks the tokens for WCAG AA in both themes. Use `border-border-strong` (3:1) for the edge of inputs/buttons/chips and `border-border` only for quiet dividers.
+- PWA: `usePwa` (`lib/pwa.ts`) holds the update-ready flag and the install event; `UpdateBanner` and Settings read it. Updates apply only when the user chooses to reload.
+- Tests: Vitest runs with 6 workers and a 15 s timeout (jsdom + IndexedDB per file starves on many-core machines otherwise). If a test finishes while repository steps are still running, call `settle()` (`src/test/settle.ts`) before the next reset. The seed fixtures load lazily (`data/seedData.ts`); import `buildSeed` from there in tests.
+- Onboarding (`/onboarding/:step`) is real and skippable; Settings → Account links back to it.
+
 ## Demo data
 Primary demo: "5 Days in Bali", 12-17 Oct 2026, 2 travellers, budget ₹60,000, interests Food + Beaches + Photography. At least 3 public itineraries for the Explore feed. Include a demo-mode date simulator to preview Upcoming and Live states.

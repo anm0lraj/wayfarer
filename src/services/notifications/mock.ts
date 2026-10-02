@@ -24,6 +24,7 @@ export const notificationService: NotificationService = {
 
   async deliver(n) {
     if (!(await notificationService.isEnabled(n.type))) return null // per-type preference
+    if (n.key && (await notificationRepo.list()).some((x) => x.key === n.key)) return null // already delivered
     const saved = await notificationRepo.add(n)
     if (notificationService.getPermission() === 'granted') new Notification(n.title, { body: n.body, tag: saved.id })
     return saved

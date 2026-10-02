@@ -1,6 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { EmptyState } from '@/components/feedback/States'
-import { ScreenStub } from '@/components/layout/ScreenStub'
 import { Button } from '@/components/ui/Button'
 import { useServices } from '@/services'
 
@@ -12,10 +11,6 @@ export function NotFound() {
       action={<Button asChild><Link to="/">Go home</Link></Button>}
     />
   )
-}
-
-export function Notifications() {
-  return <ScreenStub title="Notifications" phase={5} spec="spec §28" />
 }
 
 export function SignIn() {

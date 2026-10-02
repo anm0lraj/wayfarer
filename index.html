@@ -10,14 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>Wayfarer</title>
-    <script>
-      // Apply stored theme before first paint to avoid a flash.
-      try {
-        var t = localStorage.getItem('theme');
-        var dark = t === 'dark' || ((!t || t === 'system') && matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      } catch (e) {}
-    </script>
+    <script src="/theme-init.js"></script>
     <style>
       #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #f6f7f9; color: #0e7490; font: 600 1.25rem system-ui; }
       :root[data-theme='dark'] #splash { background: #0b0f14; color: #38bdf8; }

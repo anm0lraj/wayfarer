@@ -79,7 +79,7 @@ export default function AIRoute() {
             {!routeTripId && (
               <div className="flex items-center gap-2">
                 <label htmlFor="ai-trip" className="sr-only">Trip for context</label>
-                <select id="ai-trip" value={tripId ?? 'none'} onChange={(e) => pickTrip(e.target.value)} className="min-h-touch max-w-48 rounded-md border border-border bg-surface px-2 text-sm">
+                <select id="ai-trip" value={tripId ?? 'none'} onChange={(e) => pickTrip(e.target.value)} className="min-h-touch max-w-48 rounded-md border border-border-strong bg-surface px-2 text-sm">
                   <option value="none">General questions</option>
                   {trips.data?.filter((t) => t.effectiveState !== 'archived').map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
                 </select>

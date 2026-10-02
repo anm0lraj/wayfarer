@@ -210,7 +210,7 @@ function PlaceSuggestions({ placeIds, kind, trip, plan, hintDay }: { placeIds: s
         {trip && days.length > 0 && (
           <label className="flex items-center gap-2 text-sm">
             <span className="text-fg-muted">Add to</span>
-            <select value={targetDay?.id ?? ''} onChange={(e) => setDayId(e.target.value)} className="min-h-touch rounded-md border border-border bg-surface px-2">
+            <select value={targetDay?.id ?? ''} onChange={(e) => setDayId(e.target.value)} className="min-h-touch rounded-md border border-border-strong bg-surface px-2">
               {days.map((d) => <option key={d.id} value={d.id}>Day {d.dayNumber}</option>)}
             </select>
           </label>

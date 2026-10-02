@@ -104,7 +104,7 @@ export function FlightSearch() {
         {(['from', 'to'] as const).map((field) => (
           <div key={field} className="flex flex-col gap-1.5">
             <label htmlFor={`fl-${field}`} className="text-sm font-medium">{field === 'from' ? 'From' : 'To'}</label>
-            <select id={`fl-${field}`} value={field === 'from' ? from : to} onChange={(e) => set({ [field]: e.target.value })} className="min-h-touch rounded-md border border-border bg-surface px-3">
+            <select id={`fl-${field}`} value={field === 'from' ? from : to} onChange={(e) => set({ [field]: e.target.value })} className="min-h-touch rounded-md border border-border-strong bg-surface px-3">
               {AIRPORTS.map((a) => <option key={a.code} value={a.code}>{a.label}</option>)}
             </select>
           </div>

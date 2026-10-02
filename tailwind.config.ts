@@ -8,7 +8,7 @@ export default {
     screens: { sm: '640px', lg: '1024px', xl: '1280px' }, // phone <640 · tablet 640–1023 · desktop ≥1024
     extend: {
       colors: {
-        bg: c('bg'), surface: c('surface'), 'surface-2': c('surface-2'), border: c('border'),
+        bg: c('bg'), surface: c('surface'), 'surface-2': c('surface-2'), border: c('border'), 'border-strong': c('border-strong'),
         fg: c('fg'), 'fg-muted': c('fg-muted'),
         primary: { DEFAULT: c('primary'), fg: c('on-primary') },
         secondary: { DEFAULT: c('secondary'), fg: c('on-secondary') },

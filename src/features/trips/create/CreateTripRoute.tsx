@@ -85,7 +85,7 @@ export function CreateTrip() {
         : outcome === 'no-suggestions' ? { title: 'Trip created', description: `We don’t have place suggestions for ${chosen.map((d) => d.name).join(', ')} yet. Add your own stops.` }
         : { title: 'Trip created' },
       )
-      navigate(`/trips/${trip.id}`, { replace: true })
+      navigate(`/trips/${trip.id}`, { replace: true, state: { justCreated: true } })
     } catch (e) {
       toast({ title: 'Couldn’t create the trip', description: e instanceof Error ? e.message : undefined })
     } finally {

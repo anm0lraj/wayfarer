@@ -3,7 +3,7 @@ import { estimateTravelMinutes, haversineKm } from '@/lib/geo'
 import { placeholderImage } from '@/lib/placeholder'
 import { SEED_TS } from './bali'
 import type {
-  ChecklistItem, Destination, ItemCategory, ItineraryDay, ItineraryItem, Memory, Notification, Place, PublicTrip, Trip, User,
+  ChecklistItem, Destination, ItemCategory, ItineraryDay, ItineraryItem, Memory, Money, Notification, Place, PublicTrip, Story, Trip, User,
 } from '@/types'
 
 const ts = { createdAt: SEED_TS, updatedAt: SEED_TS }
@@ -124,7 +124,7 @@ export function buildPublicTrips(allPlaces: Place[]): PublicTrip[] {
     { title: 'Old Goa & Panjim', places: ['g-fontainhas'] },
     { title: 'South Goa', places: ['g-palolem'] },
   ], allPlaces)
-  const base = { likeCount: 0, publishedAt: '2026-08-01T08:00:00.000Z' }
+  const base = { visibility: 'public' as const, likeCount: 0, publishedAt: '2026-08-01T08:00:00.000Z' }
   return [
     { id: 'pub-japan', slug: '7-days-in-japan-food-culture-k7p2', ownerId: 'user-aiko', ownerName: 'Aiko Tanaka', title: '7 Days in Japan — Food & Culture',
       description: 'Four days in Tokyo and three in Kyoto, built around markets, small restaurants and temples with fewer crowds.', coverImage: img('pub-japan', '7 Days in Japan'),
@@ -138,6 +138,16 @@ export function buildPublicTrips(allPlaces: Place[]): PublicTrip[] {
       description: 'Hostels, beach shacks and a scooter: Goa under ₹12,000.', coverImage: img('pub-goa', '3-Day Goa'),
       destinationIds: ['goa'], durationDays: 3, budgetRange: [inr(9000), inr(12000)], travelStyle: 'Budget', tips: ['Travel off-season (Sept–Oct) for lower prices.', 'Wear a helmet on scooters.'],
       snapshot: goa, saveCount: 502, ...base, likeCount: 377 },
+    ...([
+      ['pub-bali-budget', '5-days-in-bali-on-a-budget-t4w6', 'user-meera', 'Meera K.', '5 Days in Bali on a Budget', 'Homestays, warung lunches and a scooter: all of Bali under ₹40,000.', 'bali', bali4, 5, [34000, 42000], 'Budget', ['Eat at warungs — meals from ₹200.', 'Rent a scooter only if you have a licence.'], 731, 498, '2026-07-20T08:00:00.000Z'],
+      ['pub-tokyo-4', '4-days-in-tokyo-first-timers-p2n8', 'user-dev', 'Dev Malhotra', '4 Days in Tokyo — First Timers', 'The big hits without the burnout: shrines, ramen, Shibuya at night.', 'japan', japan, 4, [70000, 90000], 'First time', ['Get a Suica card and add it to your phone wallet.'], 655, 431, '2026-07-02T08:00:00.000Z'],
+      ['pub-goa-food', 'goa-food-weekend-r6c1', 'user-neha', 'Neha & Karan', 'Goa Food Weekend', 'Fish thali, bebinca and the best sundowner shacks across two days.', 'goa', goa, 2, [14000, 19000], 'Foodie', ['Lunch is early at shacks — go by 1pm.'], 318, 244, '2026-06-18T08:00:00.000Z'],
+      ['pub-ubud-slow', 'slow-days-in-ubud-h9j3', 'user-ana', 'Ana Ferreira', 'Slow Days in Ubud', 'Rice terraces at sunrise, yoga, and no alarms.', 'bali', bali4, 3, [38000, 52000], 'Slow travel', ['Go to Tegallalang before 8am to beat the crowds.'], 292, 201, '2026-06-01T08:00:00.000Z'],
+      ['pub-kyoto-3', '3-days-in-kyoto-temples-v5b7', 'user-hiro', 'Hiro Sato', '3 Days in Kyoto — Temples & Tea', 'Fushimi at dawn, Arashiyama in the afternoon, kaiseki to finish.', 'japan', japan, 3, [60000, 78000], 'Culture', ['Reserve kaiseki dinners well in advance.'], 244, 187, '2026-05-14T08:00:00.000Z'],
+    ] as const).map(([id, slug, ownerId, ownerName, title, description, dest, snap, durationDays, range, travelStyle, tips, saveCount, likeCount, publishedAt]) => ({
+      id, slug, ownerId, ownerName, title, description, coverImage: img(id, title), destinationIds: [dest], durationDays, budgetRange: [inr(range[0]), inr(range[1])] as [Money, Money],
+      travelStyle, tips: [...tips], snapshot: snap, ...base, saveCount, likeCount, publishedAt,
+    })),
   ]
 }
 
@@ -167,6 +177,16 @@ export const goaMemories: Memory[] = [
   id: `mem-goa-${i + 1}`, tripId: GOA_TRIP_ID, authorId: DEMO_USER_ID, kind: 'photo', caption, mediaKey: `seed:goa-${i + 1}:${caption}`, capturedAt: new Date(at!).toISOString(),
   dayId, itemId, uploadState: 'done', stripLocationOnPublic: true, ...ts,
 }))
+
+export const goaStories: Story[] = [
+  {
+    id: 'story-goa-1', tripId: GOA_TRIP_ID, authorId: DEMO_USER_ID, title: 'Day 1 — Goa', dayId: 'goa-day-1', visibility: 'private', ...ts,
+    slides: [
+      { id: 'sl-1', memoryId: 'mem-goa-1', text: 'We made it.', sticker: '🌅', location: 'Baga Beach' },
+      { id: 'sl-2', memoryId: 'mem-goa-2', text: 'Best fish thali. Ever.', sticker: '🍛', itemId: 'goa-item-2' },
+    ],
+  },
+]
 
 export const demoNotifications: Notification[] = [
   { id: 'ntf-1', userId: DEMO_USER_ID, type: 'trip_countdown', tripId: 'trip-bali', title: 'Your Bali trip starts soon', body: 'Finish your plan: add a hotel and flights.', deepLink: '/trips/trip-bali', scheduledFor: '2026-10-01T09:00:00.000Z' },

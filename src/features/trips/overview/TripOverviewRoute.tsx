@@ -1,4 +1,4 @@
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useLocation, useOutletContext } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, ChevronRight, Radio } from 'lucide-react'
 import { ErrorState } from '@/components/feedback/States'
 import { Section } from '@/components/layout/Section'
@@ -14,6 +14,8 @@ import { currentDayNumber } from '../tripState'
 import { countdownLabel, dateInTimezone, formatDateRange } from '@/lib/dates'
 import { useNow } from '@/lib/hooks/useNow'
 import { formatMoney } from '@/lib/money'
+import { OfflineCard } from '@/features/offline/OfflineCard'
+import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
 import { TripActions } from './TripActions'
 
 function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
@@ -127,6 +129,7 @@ function Costs({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
 export function TripOverview() {
   const trip = useOutletContext<TripWithState>()
   const plan = useTripPlan(trip.id)
+  const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
   const base = `/trips/${trip.id}`
 
   if (plan.isPending) return <SkeletonGroup label="Loading overview" className="space-y-4"><Skeleton className="h-40" /><Skeleton className="h-64" /></SkeletonGroup>
@@ -138,6 +141,7 @@ export function TripOverview() {
   return (
     <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
       <div className="min-w-0 space-y-8 lg:col-span-8">
+        {justCreated && <PushPermissionCard />}
         <StatePanel trip={trip} plan={plan.data} />
 
         <Section title="Day by day" to={`${base}/itinerary`} linkLabel="Open itinerary">
@@ -169,6 +173,7 @@ export function TripOverview() {
 
       <aside className="min-w-0 space-y-6 lg:col-span-4">
         <Costs trip={trip} plan={plan.data} />
+        <OfflineCard trip={trip} />
 
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold">Bookings</h3>

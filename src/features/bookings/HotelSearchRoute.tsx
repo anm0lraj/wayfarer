@@ -68,7 +68,7 @@ export function HotelSearch() {
               {!desktop && <Button variant="secondary" size="sm" onClick={() => setFiltersOpen(true)}><SlidersHorizontal aria-hidden className="size-4" /> Filters{count ? ` (${count})` : ''}</Button>}
               <label className="flex items-center gap-2 text-sm">
                 <span className="text-fg-muted">Sort</span>
-                <select value={search.sort} onChange={(e) => update({ ...search, sort: e.target.value as HotelSort })} className="min-h-touch rounded-md border border-border bg-surface px-2">
+                <select value={search.sort} onChange={(e) => update({ ...search, sort: e.target.value as HotelSort })} className="min-h-touch rounded-md border border-border-strong bg-surface px-2">
                   {Object.entries(SORT_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </label>

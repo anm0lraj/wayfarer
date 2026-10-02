@@ -5,19 +5,21 @@
   --surface: 255 255 255;
   --surface-2: 238 240 244;
   --border: 224 227 233;
+  /* Edges of inputs and buttons: 3:1 against the surface (WCAG 1.4.11). `--border` stays for quiet dividers. */
+  --border-strong: 118 127 142;
   --fg: 16 24 40;
   --fg-muted: 84 94 110;
-  --primary: 14 116 144;
+  --primary: 14 110 136;
   --on-primary: 255 255 255;
-  --secondary: 219 39 64;
+  --secondary: 194 35 56;
   --on-secondary: 255 255 255;
-  --success: 22 128 74;
+  --success: 19 116 68;
   --on-success: 255 255 255;
-  --warning: 161 85 8;
+  --warning: 156 82 8;
   --on-warning: 255 255 255;
-  --error: 200 30 30;
+  --error: 194 29 29;
   --on-error: 255 255 255;
-  --focus: 14 116 144;
+  --focus: 14 110 136;
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -55,6 +57,7 @@
   --surface: 19 25 33;
   --surface-2: 29 37 48;
   --border: 45 55 69;
+  --border-strong: 112 124 142;
   --fg: 236 240 245;
   --fg-muted: 148 160 176;
   --primary: 56 189 248;

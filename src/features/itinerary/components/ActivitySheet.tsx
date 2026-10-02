@@ -111,7 +111,7 @@ export function ActivitySheet({ trip, item, day, open, onClose, actions, booking
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="act-category" className="text-sm font-medium">Category</label>
-            <select id="act-category" className="min-h-touch rounded-md border border-border bg-surface px-3" {...form.register('category')}>
+            <select id="act-category" className="min-h-touch rounded-md border border-border-strong bg-surface px-3" {...form.register('category')}>
               {itemCategorySchema.options.map((c) => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
             </select>
           </div>
@@ -119,7 +119,7 @@ export function ActivitySheet({ trip, item, day, open, onClose, actions, booking
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="act-notes" className="text-sm font-medium">Notes</label>
-          <textarea id="act-notes" rows={3} placeholder="Pickup time, what to bring…" className="rounded-md border border-border bg-surface p-3" {...form.register('notes')} />
+          <textarea id="act-notes" rows={3} placeholder="Pickup time, what to bring…" className="rounded-md border border-border-strong bg-surface p-3" {...form.register('notes')} />
         </div>
 
         <fieldset className="space-y-3 rounded-lg border border-border p-3">

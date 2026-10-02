@@ -7,6 +7,7 @@ import { resetDemoData } from '@/data/seed'
 import { installMockApi } from '@/mocks/install'
 import { useClockStore } from '@/services/clock/clock'
 import { createFakeMap } from '@/test/fakeMap'
+import { settle } from '@/test/settle'
 import { renderApp } from '@/test/renderApp'
 import { useAIPanel } from './ai/panelStore'
 import { useTripDraft } from './trips/create/draftStore'
@@ -25,9 +26,10 @@ beforeEach(async () => {
   useAIPanel.setState({ open: false, width: 400 })
   await resetDemoData()
 })
-afterEach(() => {
+afterEach(async () => {
   window.matchMedia = realMatchMedia
   vi.restoreAllMocks()
+  await settle() // let the last repository steps finish before the next test resets the database
 })
 
 const dayItems = async (dayId: string) => (await db.items.where('dayId').equals(dayId).toArray()).sort((a, b) => a.position - b.position)
@@ -124,6 +126,7 @@ describe('Itinerary: editing', () => {
   it('opens details from a card, edits and saves', async () => {
     const r = renderApp('/trips/trip-bali/itinerary/day/1')
     const list = await screen.findByRole('list', { name: 'Day 1 activities' })
+    console.log('DBTITLES', JSON.stringify((await db.items.where('dayId').equals('day-1').toArray()).map((i) => i.id + ':' + i.title)))
     await userEvent.click(await within(list).findByRole('button', { name: /^Lunch at Warung Sari Rasa/ })) // the card, not its Reorder/Actions buttons
     const dialog = await screen.findByRole('dialog', { name: 'Lunch at Warung Sari Rasa' })
     expect(r.state.location.pathname).toBe('/trips/trip-bali/itinerary/items/item-d1-3')

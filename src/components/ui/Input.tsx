@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, hint, er
         aria-describedby={describedBy}
         className={cn(
           'min-h-touch w-full rounded-md border bg-surface px-3 text-base text-fg placeholder:text-fg-muted',
-          error ? 'border-error' : 'border-border',
+          error ? 'border-error' : 'border-border-strong',
           className,
         )}
         {...props}

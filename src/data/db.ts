@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type {
   AIConversation, AIMessage, Booking, ChecklistItem, Destination, Flight, Hotel, ItineraryDay, ItineraryItem, Memory,
-  Notification, Place, PublicTrip, SavedPlace, SavedTrip, Story, Trip, TripCollaborator, User,
+  LikedTrip, Notification, Place, PublicTrip, SavedPlace, SavedTrip, Story, Trip, TripCollaborator, User,
 } from '@/types'
 
 export interface SyncOp {
@@ -40,6 +40,7 @@ export class TravelDB extends Dexie {
   publicTrips!: Table<PublicTrip, string>
   savedTrips!: Table<SavedTrip, string>
   savedPlaces!: Table<SavedPlace, string>
+  likedTrips!: Table<LikedTrip, string>
   checklist!: Table<ChecklistItem, string>
   notifications!: Table<Notification, string>
   aiConversations!: Table<AIConversation, string>
@@ -76,6 +77,8 @@ export class TravelDB extends Dexie {
     })
     // v2: bookmarked places from destination pages.
     this.version(2).stores({ savedPlaces: 'id, userId, placeId' })
+    // v3: likes on public itineraries.
+    this.version(3).stores({ likedTrips: 'id, userId, publicTripId' })
   }
 }
 

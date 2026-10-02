@@ -31,6 +31,13 @@ export const storageService: StorageService = {
     return url
   },
 
+  async publish(key, signal) {
+    if (key.startsWith('seed:')) return
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    if (!(await db.blobs.get(key))) throw new Error('The file is no longer on this device')
+    await new Promise((r) => setTimeout(r, 120)) // stands in for the network round trip
+  },
+
   async remove(key) {
     await db.blobs.delete(key)
     const url = urlCache.get(key)
