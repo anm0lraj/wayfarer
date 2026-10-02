@@ -11,7 +11,7 @@ describe('security headers', () => {
   })
 
   it('forbids inline and remote scripts, framing, plugins and base-tag tricks', () => {
-    expect(csp).toMatch(/script-src 'self'(;|$)/)
+    expect(csp).toMatch(/script-src 'self'( https:\/\/apis\.google\.com)?(;|$)/) // only Google's sign-in script, for Firebase popup auth
     expect(csp).not.toMatch(/script-src[^;]*unsafe-(inline|eval)/)
     for (const d of ["object-src 'none'", "frame-ancestors 'none'", "base-uri 'self'"]) expect(csp).toContain(d)
   })

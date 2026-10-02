@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge, Chip } from '@/components/ui/Chip'
 import { NotificationSettings } from '@/features/notifications/NotificationSettings'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
+import { useSession } from '@/app/providers/session'
 import { env } from '@/config/env'
 import { resetDemoData } from '@/data/seed'
 import { promptInstall, usePwa } from '@/lib/pwa'
@@ -39,6 +40,7 @@ function Section({ title, description, children }: { title: string; description?
 }
 
 export default function SettingsRoute() {
+  const session = useSession()
   const { preference, setPreference } = useTheme()
   const { simulatedNow, setSimulatedNow } = useClockStore()
   const { auth } = useServices()
@@ -97,7 +99,7 @@ export default function SettingsRoute() {
 
         <Section title="Demo tools" description="Developer switches for trying error and offline states.">
           <Chip selected={aiDown} onClick={toggleAi}>Simulate AI unavailable</Chip>
-          <Button variant="danger" onClick={() => void reset()}>Reset demo data</Button>
+          {env.backend === 'mock' && <Button variant="danger" onClick={() => void reset()}>Reset demo data</Button>}
         </Section>
 
         <Section title="Install the app" description={installed ? 'Wayfarer is installed on this device.' : 'Add Wayfarer to your home screen or desktop. It opens full-screen and works offline.'}>
@@ -105,7 +107,7 @@ export default function SettingsRoute() {
           {!installed && !installEvent && <p className="text-sm text-fg-muted">Your browser didn’t offer an install button. In Chrome or Edge, use the install icon in the address bar. On iPhone or iPad, tap Share, then Add to Home Screen.</p>}
         </Section>
 
-        <Section title="Account" description="You’re signed in as the demo traveller.">
+        <Section title="Account" description={env.backend === 'firebase' ? `You’re signed in as ${session?.user.email ?? session?.user.name ?? 'a traveller'}.` : 'You’re signed in as the demo traveller.'}>
           <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
           <Button variant="secondary" onClick={() => void auth.signOut()}>Sign out</Button>
           <Button variant="danger" onClick={() => void deleteAccount()}>Delete account and data</Button>

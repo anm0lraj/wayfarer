@@ -35,3 +35,19 @@ export async function resetDemoData(db: TravelDB = defaultDb): Promise<void> {
   })
   await write(db)
 }
+
+/**
+ * Real-account environments: only the shared catalogue (destinations, places, hotels, flights) is seeded. Nobody gets the
+ * demo traveller's trips, memories or sign-in. Public trips will come from the server once it serves them.
+ */
+export async function seedReferenceData(db: TravelDB = defaultDb): Promise<boolean> {
+  const current = await db.meta.get('referenceSeedVersion')
+  if (current?.value === SEED_VERSION) return false
+  const { buildSeed } = await import('./seedData')
+  const s = buildSeed()
+  await db.transaction('rw', db.tables, async () => {
+    await Promise.all([db.destinations.bulkPut(s.destinations), db.places.bulkPut(s.places), db.hotels.bulkPut(s.hotels), db.flights.bulkPut(s.flights)])
+    await db.meta.put({ key: 'referenceSeedVersion', value: SEED_VERSION })
+  })
+  return true
+}

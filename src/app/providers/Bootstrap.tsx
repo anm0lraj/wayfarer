@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ErrorState } from '@/components/feedback/States'
-import { seedIfNeeded } from '@/data/seed'
+import { env } from '@/config/env'
+import { seedIfNeeded, seedReferenceData } from '@/data/seed'
 import { useServices } from '@/services'
 import type { Session } from '@/services/auth/types'
 import { SessionProvider } from './session'
@@ -20,7 +21,7 @@ export function Bootstrap({ children }: { children: ReactNode }) {
     let cancelled = false
     ;(async () => {
       try {
-        await seedIfNeeded()
+        await (env.backend === 'firebase' ? seedReferenceData() : seedIfNeeded())
         const session = await auth.getSession()
         if (!cancelled) setBoot({ status: 'ready', session })
       } catch (e) {
