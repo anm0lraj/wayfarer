@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0e7490" />
+    <meta name="description" content="Plan your journey. Experience it. Capture it. Share it." />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Wayfarer</title>
+    <script>
+      // Apply stored theme before first paint to avoid a flash.
+      try {
+        var t = localStorage.getItem('theme');
+        var dark = t === 'dark' || ((!t || t === 'system') && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
+    <style>
+      #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #f6f7f9; color: #0e7490; font: 600 1.25rem system-ui; }
+      :root[data-theme='dark'] #splash { background: #0b0f14; color: #38bdf8; }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="splash" role="status" aria-label="Loading">Wayfarer</div></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>

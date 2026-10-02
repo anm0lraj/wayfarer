@@ -1,0 +1,39 @@
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  @media (pointer: fine) and (min-width: 1024px) {
+    :root { --touch: 2.25rem; }
+  }
+  body {
+    @apply bg-bg text-fg antialiased;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    margin: 0;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
+  :focus-visible { outline: 3px solid rgb(var(--focus)); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: rgb(var(--primary) / 0.25); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .pb-safe { padding-bottom: var(--safe-bottom); }
+  .pt-safe { padding-top: var(--safe-top); }
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}

@@ -1,0 +1,75 @@
+/* Design tokens. Colors are space-separated RGB channels so Tailwind can apply alpha. */
+:root {
+  /* Cool, crisp neutrals + an ocean-blue brand with a coral accent (live / highlights). */
+  --bg: 246 247 249;
+  --surface: 255 255 255;
+  --surface-2: 238 240 244;
+  --border: 224 227 233;
+  --fg: 16 24 40;
+  --fg-muted: 84 94 110;
+  --primary: 14 116 144;
+  --on-primary: 255 255 255;
+  --secondary: 219 39 64;
+  --on-secondary: 255 255 255;
+  --success: 22 128 74;
+  --on-success: 255 255 255;
+  --warning: 161 85 8;
+  --on-warning: 255 255 255;
+  --error: 200 30 30;
+  --on-error: 255 255 255;
+  --focus: 14 116 144;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-xs: clamp(0.6875rem, 0.67rem + 0.08vw, 0.75rem);
+  --text-sm: clamp(0.78125rem, 0.76rem + 0.1vw, 0.84375rem);
+  --text-base: clamp(0.875rem, 0.85rem + 0.15vw, 0.9375rem);
+  --text-lg: clamp(1rem, 0.95rem + 0.2vw, 1.0625rem);
+  --text-xl: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+  --text-2xl: clamp(1.25rem, 1.15rem + 0.6vw, 1.5rem);
+  --text-3xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  /* Minimum interactive size: 44px for touch, tightened on desktop pointers. */
+  --touch: 2.75rem;
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
+  --shadow-md: 0 2px 4px rgb(16 24 40 / 0.05), 0 8px 20px rgb(16 24 40 / 0.08);
+  --shadow-lg: 0 8px 16px rgb(16 24 40 / 0.08), 0 24px 48px rgb(16 24 40 / 0.14);
+
+  --nav-h: 3.5rem;
+  --rail-w: 4.5rem;
+  --sidebar-w: 13.5rem;
+  --sidebar-w-collapsed: 4rem;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: 11 15 20;
+  --surface: 19 25 33;
+  --surface-2: 29 37 48;
+  --border: 45 55 69;
+  --fg: 236 240 245;
+  --fg-muted: 148 160 176;
+  --primary: 56 189 248;
+  --on-primary: 4 30 45;
+  --secondary: 251 113 133;
+  --on-secondary: 50 6 14;
+  --success: 74 222 128;
+  --on-success: 5 40 20;
+  --warning: 251 191 36;
+  --on-warning: 40 25 4;
+  --error: 248 113 113;
+  --on-error: 50 8 8;
+  --focus: 56 189 248;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 12px 40px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
