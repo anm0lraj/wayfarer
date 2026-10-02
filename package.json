@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && node scripts/vite-build.mjs",
+    "build:dev": "tsc -b && node scripts/vite-build.mjs --mode development",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint . --max-warnings 0",

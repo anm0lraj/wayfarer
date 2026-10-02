@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "wayfarer-dev",
+    "dev": "wayfarer-dev",
+    "prod": "wayfarer-prod"
+  }
+}

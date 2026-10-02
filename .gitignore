@@ -7,3 +7,8 @@ test-results
 
 .vercel
 .env*
+
+# Public per-environment config is committed; local overrides and secrets are not.
+!.env.development
+!.env.production
+!.env.example

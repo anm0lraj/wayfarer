@@ -5,9 +5,10 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { toast } from '@/components/feedback/toast'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { Chip } from '@/components/ui/Chip'
+import { Badge, Chip } from '@/components/ui/Chip'
 import { NotificationSettings } from '@/features/notifications/NotificationSettings'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
+import { env } from '@/config/env'
 import { resetDemoData } from '@/data/seed'
 import { promptInstall, usePwa } from '@/lib/pwa'
 import { useTheme, type ThemePreference } from '@/lib/theme'
@@ -87,6 +88,11 @@ export default function SettingsRoute() {
         <Section title="Demo date simulator" description={simulatedNow ? `Simulating ${format(new Date(simulatedNow), 'd MMM yyyy, HH:mm')}.` : 'Preview Upcoming, Live and Completed states without waiting for real dates.'}>
           {presets.map((p) => <Chip key={p.iso} selected={simulatedNow === p.iso} onClick={() => setSimulatedNow(p.iso)}>{p.label}</Chip>)}
           <Button variant="secondary" disabled={!simulatedNow} onClick={() => setSimulatedNow(null)}>Use real time</Button>
+        </Section>
+
+        <Section title="Environment" description={env.isProduction ? 'Production build.' : 'Development build. Data here never touches production.'}>
+          <Badge>{env.appEnv}</Badge>
+          <Badge>{env.backend === 'firebase' ? `Backend: ${env.firebase?.projectId}` : 'Backend: demo (in this browser)'}</Badge>
         </Section>
 
         <Section title="Demo tools" description="Developer switches for trying error and offline states.">
