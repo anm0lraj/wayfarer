@@ -11,6 +11,7 @@ import { docPathFor, TRIP_CHILDREN, USER_COLLECTIONS } from './paths'
 
 /** How many times a write the rules refuse is retried before it is dropped. */
 const REFUSED_RETRIES = 3
+const REFUSED_GIVE_UP = 20
 
 type Row = { id: string; updatedAt?: string } & Record<string, unknown>
 
@@ -90,15 +91,21 @@ export async function sendBatchToFirestore(ops: SyncOp[]): Promise<SyncResult[]>
   const uid = getActorId()
   if (!uid) throw new Error('Not signed in')
   const results: SyncResult[] = []
+  let wrote = 0 // real writes that went through in this batch: proof the person can write at all
   for (const op of ops) {
     try {
-      results.push(await sendOne(op, uid))
+      const result = await sendOne(op, uid)
+      results.push(result)
+      if (docPathFor(op, uid)) wrote++
     } catch (e) {
       // The rules said no. That may be permanent (a viewer editing) or a setup problem (rules not deployed yet), so retry a
       // few times before giving up on the change; dropping it at once could lose work to a misconfiguration.
       if ((e as { code?: string }).code === 'permission-denied') {
         const refusals = op.refusals ?? 0
-        if (refusals >= REFUSED_RETRIES) {
+        // Give up on a change only when the rules clearly object to *it*: others in this batch went through, or it has
+        // been refused many times. If everything is refused, the likelier cause is setup (rules not deployed), so keep the
+        // work and keep trying.
+        if ((refusals >= REFUSED_RETRIES && wrote > 0) || refusals >= REFUSED_GIVE_UP) {
           results.push({ id: op.id!, status: 'ok' })
           console.warn(`Not allowed to sync ${op.entity}/${op.entityId}; dropped.`)
           continue
