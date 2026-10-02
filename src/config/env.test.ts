@@ -21,6 +21,11 @@ describe('environment configuration', () => {
     expect(prod).toMatchObject({ isProduction: true, firebase: { projectId: 'wayfarer-prod' } })
   })
 
+  it('recognises Firebase ids with a generated suffix', () => {
+    expect(() => parseEnv({ ...firebase, VITE_APP_ENV: 'production', VITE_FIREBASE_PROJECT_ID: 'wayfarer-dev-c2efe' })).toThrow('must not use the dev project')
+    expect(parseEnv({ ...firebase, VITE_APP_ENV: 'development', VITE_FIREBASE_PROJECT_ID: 'wayfarer-dev-c2efe' }).firebase?.projectId).toBe('wayfarer-dev-c2efe')
+  })
+
   it('refuses a production build pointed at the dev project, and the reverse', () => {
     expect(() => parseEnv({ ...firebase, VITE_APP_ENV: 'production', VITE_FIREBASE_PROJECT_ID: 'wayfarer-dev' })).toThrow('must not use the dev project')
     expect(() => parseEnv({ ...firebase, VITE_APP_ENV: 'development', VITE_FIREBASE_PROJECT_ID: 'wayfarer-prod' })).toThrow('must not use the production project')

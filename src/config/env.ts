@@ -23,10 +23,11 @@ const schema = z
     if (v.VITE_BACKEND !== 'firebase') return
     const required = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_STORAGE_BUCKET', 'VITE_FIREBASE_APP_ID'] as const
     for (const key of required) if (!v[key]) ctx.addIssue({ code: 'custom', path: [key], message: `${key} is required when VITE_BACKEND=firebase` })
+    // Firebase may append a suffix to the id (wayfarer-dev-c2efe), so match the -dev / -prod word, not the end.
     // Guard against the classic mistake: a dev build wired to the production project (or the reverse).
     const project = v.VITE_FIREBASE_PROJECT_ID ?? ''
-    if (v.VITE_APP_ENV === 'production' && project.endsWith('-dev')) ctx.addIssue({ code: 'custom', path: ['VITE_FIREBASE_PROJECT_ID'], message: `A production build must not use the dev project (${project})` })
-    if (v.VITE_APP_ENV === 'development' && project.endsWith('-prod')) ctx.addIssue({ code: 'custom', path: ['VITE_FIREBASE_PROJECT_ID'], message: `A development build must not use the production project (${project})` })
+    if (v.VITE_APP_ENV === 'production' && /-dev(-|$)/.test(project)) ctx.addIssue({ code: 'custom', path: ['VITE_FIREBASE_PROJECT_ID'], message: `A production build must not use the dev project (${project})` })
+    if (v.VITE_APP_ENV === 'development' && /-prod(-|$)/.test(project)) ctx.addIssue({ code: 'custom', path: ['VITE_FIREBASE_PROJECT_ID'], message: `A development build must not use the production project (${project})` })
   })
 
 export interface AppEnv {
