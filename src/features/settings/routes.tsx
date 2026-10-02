@@ -9,6 +9,7 @@ import { Badge, Chip } from '@/components/ui/Chip'
 import { NotificationSettings } from '@/features/notifications/NotificationSettings'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
 import { useSession } from '@/app/providers/session'
+import { usePendingChanges, useSyncState } from '@/features/sync/useSyncStatus'
 import { env } from '@/config/env'
 import { resetDemoData } from '@/data/seed'
 import { promptInstall, usePwa } from '@/lib/pwa'
@@ -28,6 +29,19 @@ const presets = [
   { label: 'Day 2, 10:00', iso: '2026-10-13T10:00:00+08:00' },
   { label: 'Day after trip', iso: '2026-10-17T09:00:00+08:00' },
 ]
+
+/** Whether changes are reaching the server, and if not why: the one place to look when something does not appear online. */
+function SyncStatusSection() {
+  const pending = usePendingChanges()
+  const { syncing, lastError, lastSyncedAt } = useSyncState()
+  const description = pending === 0 ? 'Everything is saved to your account.' : `${pending} ${pending === 1 ? 'change is' : 'changes are'} saved on this device and waiting to be sent.`
+  return (
+    <Section title="Sync" description={description}>
+      <Badge>{syncing ? 'Syncing…' : lastError ? 'Not syncing' : lastSyncedAt ? `Last synced ${format(new Date(lastSyncedAt), 'HH:mm:ss')}` : 'Waiting for the first sync'}</Badge>
+      {lastError && <p className="w-full break-words text-sm text-error">{lastError}</p>}
+    </Section>
+  )
+}
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -96,6 +110,8 @@ export default function SettingsRoute() {
           <Badge>{env.appEnv}</Badge>
           <Badge>{env.backend === 'firebase' ? `Backend: ${env.firebase?.projectId}` : 'Backend: demo (in this browser)'}</Badge>
         </Section>
+
+        {env.backend === 'firebase' && <SyncStatusSection />}
 
         <Section title="Demo tools" description="Developer switches for trying error and offline states.">
           <Chip selected={aiDown} onClick={toggleAi}>Simulate AI unavailable</Chip>

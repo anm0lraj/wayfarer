@@ -31,15 +31,17 @@ export function SyncRunner() {
       const result = await syncNow(sendBatch)
       const { conflicts } = result
       let { failed } = result
+      let error = result.error
       if (uid && !failed && (lastPull.current.uid !== uid || Date.now() - lastPull.current.at > PULL_EVERY_MS)) {
         lastPull.current = { uid, at: Date.now() }
         try {
           if ((await pullRemote(uid)) > 0 && !cancelled) void qc.invalidateQueries()
-        } catch {
+        } catch (err) {
           failed = true
+          error = err instanceof Error ? ((err as { code?: string }).code ? `${(err as { code?: string }).code}: ${err.message}` : err.message) : String(err)
         }
       }
-      useSyncState.setState({ syncing: false, lastFailed: failed })
+      useSyncState.setState({ syncing: false, lastFailed: failed, lastError: failed ? error : undefined, lastSyncedAt: failed ? useSyncState.getState().lastSyncedAt : Date.now() })
       if (conflicts > 0 && !cancelled) {
         void qc.invalidateQueries()
         toast({ title: `${conflicts} ${conflicts === 1 ? 'change was' : 'changes were'} replaced by a newer version`, description: 'Another device edited the same thing more recently, so we kept that one.' })

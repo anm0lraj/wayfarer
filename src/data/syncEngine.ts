@@ -3,7 +3,7 @@ import { db, type SyncOp } from './db'
 export interface SyncResult { id: number; status: 'ok' | 'conflict'; /** The server's copy, when it is newer than ours. */ current?: { id: string; updatedAt?: string } & Record<string, unknown> }
 export type SendBatch = (ops: SyncOp[]) => Promise<SyncResult[]>
 
-export interface SyncSummary { sent: number; conflicts: number; failed: boolean }
+export interface SyncSummary { sent: number; conflicts: number; failed: boolean; /** Why the last attempt failed, in words a person can pass on. */ error?: string }
 
 const BATCH = 50
 let running = false
@@ -44,7 +44,9 @@ export async function syncNow(send: SendBatch = sendBatchToApi): Promise<SyncSum
       let results: SyncResult[]
       try {
         results = await send(ops)
-      } catch {
+      } catch (err) {
+        const code = (err as { code?: string }).code
+        summary.error = err instanceof Error ? (code ? `${code}: ${err.message}` : err.message) : String(err)
         await Promise.all(ops.map((o) => db.syncQueue.update(o.id!, { attempts: o.attempts + 1 })))
         summary.failed = true
         break
