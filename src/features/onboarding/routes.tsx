@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { RouteEffects } from '@/app/layouts/RouteEffects'
 import { useSession } from '@/app/providers/session'
 import { toast } from '@/components/feedback/toast'
 import { Button } from '@/components/ui/Button'
@@ -75,7 +76,7 @@ function Form({ user }: { user: User }) {
   }
 
   return (
-    <div className="mx-auto grid min-h-dvh max-w-xl place-items-center p-4">
+    <main id="main" tabIndex={-1} className="mx-auto grid min-h-dvh max-w-xl place-items-center p-4 outline-none">
       <section aria-labelledby="ob-h" className="w-full space-y-6 rounded-xl border border-border bg-surface p-6 shadow-md sm:p-8">
         <Stepper steps={STEPS.map((s) => s.label)} current={index} />
         <div>
@@ -133,7 +134,7 @@ function Form({ user }: { user: User }) {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   )
 }
 
@@ -143,5 +144,11 @@ export function Onboarding() {
   const session = useSession()
   if (!session) return <Navigate to="/signin" replace />
   if (!step) return <Navigate to={`/onboarding/${STEPS[0].slug}`} replace />
-  return <Form user={session.user} />
+  return (
+    <>
+      {/* Onboarding sits outside the app shell, so it sets its own page title and focus. */}
+      <RouteEffects />
+      <Form user={session.user} />
+    </>
+  )
 }

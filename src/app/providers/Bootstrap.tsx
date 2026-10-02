@@ -33,7 +33,7 @@ export function Bootstrap({ children }: { children: ReactNode }) {
   if (boot.status === 'loading') return <div id="splash" role="status" aria-label="Loading">Wayfarer</div>
   if (boot.status === 'error') {
     return (
-      <ErrorState
+      <ErrorState as="h1"
         title="Couldn’t open local storage"
         description={`Wayfarer keeps your trips on this device. Private browsing or blocked site data can prevent that. (${boot.message})`}
         onRetry={() => { setBoot({ status: 'loading' }); setAttempt((n) => n + 1) }}

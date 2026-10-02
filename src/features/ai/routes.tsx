@@ -48,7 +48,7 @@ export default function AIRoute() {
     navigate(`/ai?${p}`) // switching trip starts a fresh conversation
   }
 
-  if (routeTripId && routeTrip.isError) return <ErrorState title="Couldn’t open this trip’s assistant" onRetry={() => void routeTrip.refetch()} />
+  if (routeTripId && routeTrip.isError) return <ErrorState as="h1" title="Couldn’t open this trip’s assistant" onRetry={() => void routeTrip.refetch()} />
   if (routeTripId && routeTrip.isPending) return <Skeleton className="h-96" />
 
   const history = (

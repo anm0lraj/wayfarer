@@ -101,9 +101,9 @@ export function DestinationDetails() {
   if (destination.isPending) {
     return <SkeletonGroup label="Loading destination" className="space-y-4"><Skeleton className="aspect-[21/9] w-full" /><Skeleton className="h-8 w-1/2" /><Skeleton className="h-24 w-full" /></SkeletonGroup>
   }
-  if (destination.isError) return <ErrorState title="Couldn’t load this destination" onRetry={() => void destination.refetch()} />
+  if (destination.isError) return <ErrorState as="h1" title="Couldn’t load this destination" onRetry={() => void destination.refetch()} />
   if (!d) {
-    return <EmptyState title="Destination not found" description="It may have been removed." action={<Button asChild><Link to="/explore">Back to Explore</Link></Button>} />
+    return <EmptyState as="h1" title="Destination not found" description="It may have been removed." action={<Button asChild><Link to="/explore">Back to Explore</Link></Button>} />
   }
 
   const cityItineraries = (publicTrips.data ?? []).filter((t) => t.destinationIds.includes(d.id))

@@ -69,10 +69,10 @@ export function TripWorkspaceLayout() {
   }
   if (isError) {
     const denied = error instanceof PermissionError
-    return <ErrorState title={denied ? 'You don’t have access to this trip' : 'Couldn’t load this trip'} description={denied ? 'Ask the owner to invite you.' : undefined} onRetry={denied ? undefined : () => void refetch()} />
+    return <ErrorState as="h1" title={denied ? 'You don’t have access to this trip' : 'Couldn’t load this trip'} description={denied ? 'Ask the owner to invite you.' : undefined} onRetry={denied ? undefined : () => void refetch()} />
   }
   if (!trip) {
-    return <ErrorState title="Trip not found" description="It may have been deleted." action={<Link className="font-semibold text-primary underline" to="/trips">Back to your trips</Link>} />
+    return <ErrorState as="h1" title="Trip not found" description="It may have been deleted." action={<Link className="font-semibold text-primary underline" to="/trips">Back to your trips</Link>} />
   }
 
   return <Workspace trip={trip} />

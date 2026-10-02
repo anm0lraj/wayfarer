@@ -82,6 +82,12 @@ describe('Navigation accessibility', () => {
     await waitFor(() => expect(document.title).toBe('Itinerary · 5 Days in Bali · Wayfarer'), { timeout: 4000 })
   })
 
+  it('titles onboarding, which sits outside the app shell', async () => {
+    renderApp('/onboarding/you')
+    await screen.findByLabelText('What should we call you?')
+    await waitFor(() => expect(document.title).toBe('Welcome to Wayfarer · Wayfarer'), { timeout: 3000 })
+  })
+
   it('does not steal focus from an open sheet (itinerary details are a sheet on the same page)', async () => {
     renderApp('/trips/trip-bali/itinerary/items/item-d1-3')
     const dialog = await screen.findByRole('dialog')

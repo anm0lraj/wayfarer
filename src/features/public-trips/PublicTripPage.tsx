@@ -181,10 +181,10 @@ export function PublicTripPage() {
       </SkeletonGroup>
     )
   }
-  if (q.isError) return <ErrorState title="Couldn’t load this trip" onRetry={() => void q.refetch()} />
+  if (q.isError) return <ErrorState as="h1" title="Couldn’t load this trip" onRetry={() => void q.refetch()} />
   if (!q.data) {
     return (
-      <EmptyState
+      <EmptyState as="h1"
         title="This itinerary isn’t available"
         description="It may have been unpublished, or the link is wrong."
         action={<Button asChild><Link to="/explore/itineraries">Browse itineraries</Link></Button>}

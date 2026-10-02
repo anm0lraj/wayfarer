@@ -9,13 +9,15 @@ interface StateProps {
   description?: string
   action?: ReactNode
   className?: string
+  /** Heading level. Use 'h1' when the state is the whole page (nothing else on it names the page). */
+  as?: 'h1' | 'h2'
 }
 
-function StateShell({ icon, title, description, action, className, role }: StateProps & { icon: ReactNode; role?: 'alert' | 'status' }) {
+function StateShell({ icon, title, description, action, className, role, as: Heading = 'h2' }: StateProps & { icon: ReactNode; role?: 'alert' | 'status' }) {
   return (
     <div role={role} className={cn('mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-12 text-center', className)}>
       <div aria-hidden className="grid size-14 place-items-center rounded-full bg-surface-2 text-fg-muted">{icon}</div>
-      <h2 className="text-xl font-semibold">{title}</h2>
+      <Heading className="text-xl font-semibold">{title}</Heading>
       {description && <p className="text-fg-muted">{description}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>

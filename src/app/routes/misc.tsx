@@ -5,7 +5,7 @@ import { useServices } from '@/services'
 
 export function NotFound() {
   return (
-    <EmptyState
+    <EmptyState as="h1"
       title="We can’t find that page"
       description="The link may be old, or the trip may have been deleted."
       action={<Button asChild><Link to="/">Go home</Link></Button>}

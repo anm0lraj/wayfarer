@@ -15,7 +15,7 @@ function NotLive({ trip }: { trip: TripWithState }) {
   const away = daysBetween(dateInTimezone(now, trip.timezone), trip.startDate)
   const finished = trip.effectiveState === 'completed'
   return (
-    <EmptyState
+    <EmptyState as="h1"
       title={finished ? `${trip.title} is over` : away > 0 ? `Live Trip starts on ${format(parseISO(trip.startDate), 'd MMM')}` : 'This trip isn’t live'}
       description={
         finished
@@ -49,9 +49,9 @@ export default function LiveTrip() {
   }
   if (trip.isError || plan.isError) {
     const denied = trip.error instanceof PermissionError
-    return <ErrorState title={denied ? 'You don’t have access to this trip' : 'Couldn’t load your day'} onRetry={denied ? undefined : () => { void trip.refetch(); void plan.refetch() }} />
+    return <ErrorState as="h1" title={denied ? 'You don’t have access to this trip' : 'Couldn’t load your day'} onRetry={denied ? undefined : () => { void trip.refetch(); void plan.refetch() }} />
   }
-  if (!trip.data) return <ErrorState title="Trip not found" description="It may have been deleted." />
+  if (!trip.data) return <ErrorState as="h1" title="Trip not found" description="It may have been deleted." />
   if (trip.data.effectiveState !== 'active' || !plan.data) return <NotLive trip={trip.data} />
   return <LiveDashboard trip={trip.data} plan={plan.data} />
 }

@@ -20,4 +20,8 @@ describe('titleFor', () => {
     expect(titleFor('/explore', 'Explore')).toBe('Explore')
     expect(titleFor('/x', null)).toBe('Wayfarer')
   })
+
+  it('does not repeat the app name when a trip tab has no heading yet', () => {
+    expect(titleFor('/trips/t1/live', null)).toBe('Live trip')
+  })
 })

@@ -16,6 +16,7 @@ const TAB_LABEL: Record<string, string> = {
 export function titleFor(pathname: string, heading: string | null): string {
   const seg = pathname.split('/').filter(Boolean)
   const tab = seg[0] === 'trips' && seg[1] && seg[1] !== 'new' ? TAB_LABEL[seg[2] ?? ''] : undefined
-  const base = heading?.trim() || 'Wayfarer'
+  const base = heading?.trim()
+  if (!base) return tab ?? 'Wayfarer'
   return tab && tab !== base ? `${tab} · ${base}` : base
 }

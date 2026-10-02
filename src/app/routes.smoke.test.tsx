@@ -54,6 +54,18 @@ describe('routes render real screens', () => {
     await expectRealScreen()
   })
 
+  // A page that is nothing but a state (not found, not live, error) still needs a level-1 heading that names it.
+  it.each(['/trips/nope', '/trips/trip-bali/live', '/explore/atlantis', '/definitely/not/here', '/trips/nope/live'])('state-only page %s has an h1', async (path) => {
+    renderApp(path)
+    await waitFor(() => expect(document.querySelectorAll('h1').length).toBe(1), { timeout: 4000 })
+  })
+
+  it('signed-out: an unpublished public trip has an h1', async () => {
+    localStorage.setItem('demo-signed-out', '1')
+    renderApp('/t/nope-0000')
+    await waitFor(() => expect(document.querySelectorAll('h1').length).toBe(1), { timeout: 4000 })
+  })
+
   it('unknown URLs get a helpful 404', async () => {
     renderApp('/definitely/not/here')
     expect(await screen.findByText('We can’t find that page')).toBeInTheDocument()
