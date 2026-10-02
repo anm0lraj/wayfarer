@@ -93,6 +93,7 @@ describe('sending local changes', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     await put('items', db.items, item('Vandalised', '2026-10-03T08:00:00.000Z') as never)
     await put('items', db.items, { ...item('Second', '2026-10-03T08:00:00.000Z'), id: 'i2' } as never)
+    await db.syncQueue.toCollection().modify({ refusals: 3 }) // refused often enough to give up on
     const results = await flush()
     expect(results).toHaveLength(2) // both acknowledged: the refused one was dropped, not retried forever
     expect((await remote('trips/t1/items/i1'))?.title).toBe('Temple at dawn')

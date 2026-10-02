@@ -9,6 +9,9 @@ import { getDb } from '@/services/firebase/firestore'
 import type { CollaboratorRole, User } from '@/types'
 import { docPathFor, TRIP_CHILDREN, USER_COLLECTIONS } from './paths'
 
+/** How many times a write the rules refuse is retried before it is dropped. */
+const REFUSED_RETRIES = 3
+
 type Row = { id: string; updatedAt?: string } & Record<string, unknown>
 
 const ref = (path: string) => doc(getDb(), path)
@@ -91,11 +94,17 @@ export async function sendBatchToFirestore(ops: SyncOp[]): Promise<SyncResult[]>
     try {
       results.push(await sendOne(op, uid))
     } catch (e) {
-      // A rejected write will never succeed on retry (the rules said no). Drop it so it can't block everything behind it.
+      // The rules said no. That may be permanent (a viewer editing) or a setup problem (rules not deployed yet), so retry a
+      // few times before giving up on the change; dropping it at once could lose work to a misconfiguration.
       if ((e as { code?: string }).code === 'permission-denied') {
-        results.push({ id: op.id!, status: 'ok' })
-        console.warn(`Not allowed to sync ${op.entity}/${op.entityId}; dropped.`)
-        continue
+        const refusals = op.refusals ?? 0
+        if (refusals >= REFUSED_RETRIES) {
+          results.push({ id: op.id!, status: 'ok' })
+          console.warn(`Not allowed to sync ${op.entity}/${op.entityId}; dropped.`)
+          continue
+        }
+        await db.syncQueue.update(op.id!, { refusals: refusals + 1 })
+        console.warn(`Not allowed to sync ${op.entity}/${op.entityId} yet (refusal ${refusals + 1} of ${REFUSED_RETRIES + 1}).`)
       }
       if (results.length === 0) throw e
       break

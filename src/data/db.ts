@@ -12,6 +12,8 @@ export interface SyncOp {
   payload?: unknown
   createdAt: number
   attempts: number
+  /** Times the server's rules refused this change (kept apart from `attempts`, which also counts network failures). */
+  refusals?: number
 }
 
 export interface BlobRecord {

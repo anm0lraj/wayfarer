@@ -9,7 +9,9 @@ import { getFirebaseApp } from './app'
 export function getDb(): Firestore {
   const app = getFirebaseApp()
   try {
-    return initializeFirestore(app, { ignoreUndefinedProperties: true })
+    // Auto-detect long polling: some networks, proxies and embedded browsers break Firestore's default streaming
+    // transport ("Could not reach Cloud Firestore backend"), and this falls back to plain requests there.
+    return initializeFirestore(app, { ignoreUndefinedProperties: true, experimentalAutoDetectLongPolling: true })
   } catch {
     // Already initialised (hot reload, second caller): reuse it.
     return getFirestore(getApps()[0] ?? app)
