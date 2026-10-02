@@ -43,6 +43,26 @@ test.describe('itinerary and map', () => {
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2 + 10, { steps: 12 })
     await page.mouse.up()
     await expect(list.getByRole('listitem').nth(2)).toContainText('Arrive at Ngurah Rai Airport')
+
+    // The screen updates immediately (optimistic); the save to IndexedDB lands a moment later. Reload only once it has,
+    // and check the stored positions are a clean 0..5 with no two items sharing one.
+    const stored = () =>
+      page.evaluate(
+        () =>
+          new Promise<Array<{ title: string; position: number }>>((resolve, reject) => {
+            const open = indexedDB.open('travel-app')
+            open.onerror = () => reject(open.error)
+            open.onsuccess = () => {
+              const all = open.result.transaction('items').objectStore('items').getAll()
+              all.onsuccess = () => {
+                open.result.close()
+                resolve(all.result.filter((i) => i.dayId === 'day-1').map((i) => ({ title: i.title, position: i.position })).sort((x, y) => x.position - y.position))
+              }
+            }
+          }),
+      )
+    await expect.poll(async () => (await stored()).findIndex((i) => i.title === 'Arrive at Ngurah Rai Airport')).toBe(2)
+    expect((await stored()).map((i) => i.position)).toEqual([0, 1, 2, 3, 4, 5])
     await page.reload()
     await expect(page.getByRole('list', { name: 'Day 1 activities' }).getByRole('listitem').nth(2)).toContainText('Arrive at Ngurah Rai Airport')
   })

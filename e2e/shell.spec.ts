@@ -36,7 +36,9 @@ test('navigates between primary areas with real URLs and back/forward', async ({
 })
 
 test('trip workspace tabs are URLs and the seeded Bali trip loads', async ({ page }) => {
-  await page.getByRole('link', { name: /5 Days in Bali/ }).click()
+  // Several links on Home mention the trip (its card, "continue planning", similarly named public itineraries), so
+  // pick the trip's own card by its URL rather than by a name that may match more as the page fills in.
+  await page.locator('a[href="/trips/trip-bali"]').first().click()
   await expect(page).toHaveURL(/\/trips\/trip-bali$/)
   await page.getByRole('link', { name: 'Map' }).click()
   await expect(page).toHaveURL(/\/trips\/trip-bali\/map$/)

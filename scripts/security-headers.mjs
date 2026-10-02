@@ -11,7 +11,10 @@ export const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   `img-src 'self' data: blob: ${OSM} ${COMMONS}`,
-  `connect-src 'self' blob: data: ${OSM}`,
+  // The service worker caches images by fetching them itself, and a worker's fetches are governed by connect-src, not
+  // img-src. Every host allowed in img-src must also be here or photos load on the first visit and fail after the
+  // worker takes control. (A test enforces this.)
+  `connect-src 'self' blob: data: ${OSM} ${COMMONS}`,
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
   "manifest-src 'self'",

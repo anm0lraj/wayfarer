@@ -149,8 +149,12 @@ export const itineraryRepo = {
     const byId = new Map(items.map((i) => [i.id, i]))
     const ordered = itemIds.map((id) => byId.get(id)).filter((i): i is ItineraryItem => !!i)
     const rest = items.filter((i) => !itemIds.includes(i.id))
-    await writeOrder([...ordered, ...rest])
-    await refreshLegs(dayId)
+    // One transaction: a reorder rewrites several rows, and if the page is closed or reloaded part-way the day must
+    // end up in the old order or the new one — never with two items sharing a position.
+    await db.transaction('rw', db.tables, async () => {
+      await writeOrder([...ordered, ...rest])
+      await refreshLegs(dayId)
+    })
   },
 
   /** Makes a day realistic by spacing stops with their travel time. Returns the previous times for Undo. */

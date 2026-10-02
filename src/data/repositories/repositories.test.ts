@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 import { DEMO_USER_ID, setActorId } from '../actor'
 import { resetDemoData, seedIfNeeded } from '../seed'
@@ -21,6 +21,30 @@ describe('seed data', () => {
   })
   it('is idempotent', async () => {
     expect(await seedIfNeeded()).toBe(false)
+  })
+})
+
+describe('itinerary reorder is all-or-nothing', () => {
+  const positions = async () => (await db.items.where('dayId').equals('day-1').toArray()).sort((a, b) => a.position - b.position).map((i) => `${i.id}:${i.position}`)
+
+  it('applies the whole new order, with unique consecutive positions', async () => {
+    const ids = (await itineraryRepo.listItems('trip-bali')).filter((i) => i.dayId === 'day-1').map((i) => i.id)
+    await itineraryRepo.reorder('day-1', [ids[1]!, ids[2]!, ids[0]!, ...ids.slice(3)])
+    expect(await positions()).toEqual([ids[1], ids[2], ids[0], ...ids.slice(3)].map((id, i) => `${id}:${i}`))
+  })
+
+  it('leaves the day exactly as it was if a write fails part-way (e.g. the page is closed mid-save)', async () => {
+    const before = await positions()
+    const ids = (await itineraryRepo.listItems('trip-bali')).filter((i) => i.dayId === 'day-1').map((i) => i.id)
+    const realAdd = db.syncQueue.add.bind(db.syncQueue)
+    let calls = 0
+    const spy = vi.spyOn(db.syncQueue, 'add').mockImplementation(((...args: Parameters<typeof realAdd>) => {
+      if (++calls === 3) return Promise.reject(new Error('interrupted'))
+      return realAdd(...args)
+    }) as typeof db.syncQueue.add)
+    await expect(itineraryRepo.reorder('day-1', [...ids].reverse())).rejects.toThrow('interrupted')
+    spy.mockRestore()
+    expect(await positions()).toEqual(before) // nothing half-applied
   })
 })
 
