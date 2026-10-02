@@ -94,10 +94,6 @@ export default function SettingsRoute() {
           <Button variant="danger" onClick={() => void reset()}>Reset demo data</Button>
         </Section>
 
-        <Section title="Photo credits" description="Destination, place and hotel photos are free-licence images from Wikimedia Commons.">
-          <Button asChild variant="secondary"><Link to="/credits">See who took them</Link></Button>
-        </Section>
-
         <Section title="Install the app" description={installed ? 'Wayfarer is installed on this device.' : 'Add Wayfarer to your home screen or desktop. It opens full-screen and works offline.'}>
           {!installed && installEvent && <Button onClick={() => void promptInstall()}>Install Wayfarer</Button>}
           {!installed && !installEvent && <p className="text-sm text-fg-muted">Your browser didn’t offer an install button. In Chrome or Edge, use the install icon in the address bar. On iPhone or iPad, tap Share, then Add to Home Screen.</p>}

@@ -13,11 +13,11 @@ export function fitWithin(w: number, h: number, max = MAX_EDGE): { width: number
  * (including GPS) from the saved file. If the browser can't decode or encode (no canvas, odd format) the
  * original is returned unchanged so the traveller never loses a photo.
  */
-export async function compressImage(file: Blob): Promise<Blob> {
+export async function compressImage(file: Blob, maxEdge = MAX_EDGE): Promise<Blob> {
   try {
     if (typeof createImageBitmap !== 'function') return file
     const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
-    const { width, height } = fitWithin(bitmap.width, bitmap.height)
+    const { width, height } = fitWithin(bitmap.width, bitmap.height, maxEdge)
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
@@ -30,4 +30,26 @@ export async function compressImage(file: Blob): Promise<Blob> {
   } catch {
     return file
   }
+}
+
+/** Longest edge of a trip cover: cards show it at most ~1000 px wide, and it is stored inline with the trip. */
+export const COVER_EDGE = 1280
+/** Covers are stored inside the trip record (and synced with it), so refuse anything that would still be large. */
+export const MAX_COVER_BYTES = 600_000
+
+/**
+ * Turns a picked photo into a small data URL for `trip.coverImage`: resized, re-encoded (which strips EXIF/GPS) and
+ * self-contained, so it works offline, survives reloads and can be published without an object URL going stale.
+ * Throws a user-readable message for non-images or ones that can't be made small enough.
+ */
+export async function coverFromFile(file: Blob): Promise<string> {
+  if (!file.type.startsWith('image/')) throw new Error('Choose an image file.')
+  const small = await compressImage(file, COVER_EDGE)
+  if (small.size > MAX_COVER_BYTES) throw new Error('That photo is too large to use as a cover. Try a smaller one.')
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('Couldn’t read that photo.'))
+    reader.readAsDataURL(small)
+  })
 }

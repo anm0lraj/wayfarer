@@ -2,7 +2,7 @@ import type { TravelDB } from './db'
 import { db as defaultDb } from './db'
 
 /** Bump when fixtures change so existing IndexedDB data reseeds. */
-export const SEED_VERSION = 9
+export const SEED_VERSION = 10
 
 async function write(db: TravelDB) {
   // The fixtures are large and only needed on first run (or after a reset), so they load on demand.

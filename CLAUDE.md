@@ -103,3 +103,7 @@ Full product spec: @docs/PRODUCT_SPEC.md (read the relevant sections before buil
 
 ## Demo data
 Primary demo: "5 Days in Bali", 12-17 Oct 2026, 2 travellers, budget ₹60,000, interests Food + Beaches + Photography. At least 3 public itineraries for the Explore feed. Include a demo-mode date simulator to preview Upcoming and Live states.
+## Imagery
+- No third-party photos, so there is nothing to credit and no per-place asset to source. Cards use generated illustrations: fixtures call `img(id)` → `placeholderImage(id)` (`src/lib/placeholder.ts`), which picks a scene (coast, temple, terraces, mountains, city, food, hotel) from the id and a palette from its hash. A new place needs no work; add a keyword to `KEYWORDS` if its scene is wrong.
+- Photographs only come from the traveller (memories, trip cover). Changing any fixture image means bumping `SEED_VERSION`.
+- New image host ⇒ update `scripts/security-headers.mjs`, then run `node scripts/sync-vercel-csp.mjs` to copy the headers into `vercel.json`.

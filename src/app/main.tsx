@@ -4,12 +4,10 @@ import { registerSW } from 'virtual:pwa-register'
 import { App } from './App'
 import { installMockApi } from '@/mocks/install'
 import { initInstallPrompt, usePwa } from '@/lib/pwa'
-import { installImageFallback } from '@/lib/stock/fallback'
 import { initTheme } from '@/lib/theme'
 import '@/styles/globals.css'
 
 initTheme()
-installImageFallback() // a photo that can't load becomes its illustration, not a broken icon
 installMockApi() // serves /api/* in-page until a real backend proxy exists
 
 initInstallPrompt()
