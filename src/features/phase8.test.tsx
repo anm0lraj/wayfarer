@@ -77,6 +77,17 @@ describe('Navigation accessibility', () => {
     await waitFor(() => expect(document.getElementById('main')).toHaveFocus())
   })
 
+  it('moves focus when navigating between layouts, not only within one', async () => {
+    const router = renderApp('/t/7-days-in-japan-food-culture-k7p2') // public layout
+    await screen.findByRole('heading', { level: 1, name: /7 Days in Japan/ })
+    await new Promise((r) => setTimeout(r, 500)) // first load: handled, no focus move
+    expect(document.getElementById('main')).not.toHaveFocus()
+    await act(() => router.navigate('/explore')) // app shell
+    await waitFor(() => expect(document.getElementById('main')).toHaveFocus(), { timeout: 3000 })
+    await act(() => router.navigate('/onboarding/you')) // onboarding
+    await waitFor(() => expect(document.getElementById('main')).toHaveFocus(), { timeout: 3000 })
+  })
+
   it('names the trip tab in the title', async () => {
     renderApp('/trips/trip-bali/itinerary')
     await waitFor(() => expect(document.title).toBe('Itinerary · 5 Days in Bali · Wayfarer'), { timeout: 4000 })

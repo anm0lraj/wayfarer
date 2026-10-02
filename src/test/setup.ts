@@ -6,9 +6,13 @@ import { beforeEach } from 'vitest'
 // The first screen in a test file also pays for IndexedDB seeding and lazy chunk loading; give async queries room.
 configure({ asyncUtilTimeout: 6000 })
 import { useToastStore } from '@/components/feedback/toast'
+import { routeState } from '@/app/layouts/routeState'
 
 // Toasts live in a global store; clear it so one test's toasts (and their Undo buttons) don't leak into the next.
-beforeEach(() => useToastStore.setState({ items: [] }))
+beforeEach(() => {
+  useToastStore.setState({ items: [] })
+  routeState.lastKey = null // each test is a fresh session
+})
 
 // jsdom has no matchMedia; report "no match" for everything, i.e. the phone layout and light mode.
 if (!window.matchMedia) {
