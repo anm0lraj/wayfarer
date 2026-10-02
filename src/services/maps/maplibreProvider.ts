@@ -42,11 +42,14 @@ export const maplibreProvider: MapProvider = {
         markers = list.map((m) => {
           const node = document.createElement('button')
           node.type = 'button'
-          node.setAttribute('aria-label', m.ariaLabel)
           node.textContent = m.label ?? ''
           node.style.cssText = `min-width:32px;height:32px;border-radius:16px;border:2px solid #fff;color:#fff;font:600 13px system-ui;background:${KIND_COLOR[m.kind]};box-shadow:0 2px 6px rgba(0,0,0,.35);${m.selected ? 'outline:3px solid #fbbf24;' : ''}`
           node.addEventListener('click', () => options.onMarkerClick?.(m.id))
-          return new maplibregl.Marker({ element: node }).setLngLat(lngLat(m.point)).addTo(map)
+          const marker = new maplibregl.Marker({ element: node }).setLngLat(lngLat(m.point)).addTo(map)
+          // MapLibre stamps every marker element with aria-label="Map marker" when it is added; set ours afterwards or
+          // screen readers hear the same label for every stop.
+          node.setAttribute('aria-label', m.ariaLabel)
+          return marker
         })
       },
       drawRoute(points) {

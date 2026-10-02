@@ -22,7 +22,7 @@ npm run dev        # http://localhost:5173
 | `npm run preview` | Serve the production build with the production security headers (needed to test the PWA) |
 | `npm run typecheck` / `npm run lint` | TypeScript and ESLint (zero warnings allowed) |
 | `npm test` | Vitest unit, component and integration tests |
-| `npm run e2e` | Playwright at 390 / 820 / 1440 px (first time: `npx playwright install chromium`) |
+| `npm run e2e` | Playwright at 390 / 820 / 1440 px against the production build (first time: `npx playwright install chromium`, or set `PW_CHANNEL=chrome` to use the Chrome you already have) |
 
 The app seeds a demo on first load: **5 Days in Bali** (12–16 Oct 2026, 2 travellers, ₹60,000), a past Goa trip with photos and a story, 8 destinations and 8 public itineraries. Settings has a **demo date simulator** (to preview Upcoming, Live and Completed), a switch to simulate the AI being unavailable, **Install the app**, notification switches, and **Reset demo data**.
 
@@ -82,8 +82,8 @@ Built for current Chrome, Edge, Safari (iOS 16+) and Firefox. A few things to kn
 - The install button only exists in Chromium browsers. Safari users use Add to Home Screen, which Settings explains.
 - Web push on iOS needs the app added to the Home Screen. The in-app notification centre works everywhere.
 - The `:has()` highlight on the sharing options simply doesn't highlight on browsers without it.
-- Automated tests run in jsdom (Vitest). Playwright specs exist for the shell and itinerary at three widths. Safari and Firefox have not been exercised by automation.
+- Automated tests run in jsdom (Vitest) and in real Chrome (Playwright, three widths, against the production build and its CSP). Safari and Firefox have not been exercised by automation.
 
 ## Testing
 
-`npm test` runs unit, component and integration tests, including a walk through the whole demo journey (`src/features/journey.test.tsx`), a check that every route renders a real screen (`src/app/routes.smoke.test.tsx`), and a WCAG contrast check of the design tokens in both themes (`src/styles/contrast.test.ts`).
+`npm test` runs unit, component and integration tests, including a walk through the whole demo journey (`src/features/journey.test.tsx`), a check that every route renders a real screen (`src/app/routes.smoke.test.tsx`), and a WCAG contrast check of the design tokens in both themes (`src/styles/contrast.test.ts`). `npm run e2e` repeats the journey in a real browser (`e2e/journey.spec.ts`: live trip, a real photo through the browser's image pipeline, publish, copy, signed-out sign-in gate, and offline then sync) and checks the CSP is never violated.

@@ -6,7 +6,7 @@ const primaryNav = (page: Page) => page.locator('nav[aria-label="Primary"]:visib
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Your trips' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)/ })).toBeVisible()
 })
 
 test('shows exactly one navigation pattern for the viewport', async ({ page }, info) => {

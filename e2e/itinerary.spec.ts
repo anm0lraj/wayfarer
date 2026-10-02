@@ -28,7 +28,9 @@ test.describe('itinerary and map', () => {
     }
   })
 
-  test('drag and drop reorders and persists across reload', async ({ page }) => {
+  test('drag and drop reorders and persists across reload', async ({ page }, info) => {
+    // On a phone the third card is below the fold and a mouse can't drag to it; keep the width, make it taller.
+    if (info.project.name === 'phone') await page.setViewportSize({ width: page.viewportSize()!.width, height: 1800 })
     await page.goto('/trips/trip-bali/itinerary/day/1')
     const list = page.getByRole('list', { name: 'Day 1 activities' })
     const first = list.getByRole('button', { name: /^Reorder Arrive at Ngurah Rai Airport/ })
