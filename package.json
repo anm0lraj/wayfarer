@@ -13,8 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "test:rules": "node scripts/free-emulator-ports.mjs && firebase emulators:exec --only firestore --project demo-wayfarer \"vitest run --config vitest.rules.config.ts\"; node scripts/free-emulator-ports.mjs",
-    "test:sync": "node scripts/free-emulator-ports.mjs && firebase emulators:exec --only auth,firestore --project demo-wayfarer \"vitest run --config vitest.sync.config.ts\"; node scripts/free-emulator-ports.mjs"
+    "test:rules": "node scripts/with-emulators.mjs firestore vitest.rules.config.ts",
+    "test:sync": "node scripts/with-emulators.mjs auth,firestore vitest.sync.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
