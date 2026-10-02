@@ -40,3 +40,18 @@ export function countdownLabel(startDate: string, today: string): string {
   if (n === 0) return 'Starts today'
   return ''
 }
+
+/** Minutes the timezone is ahead of UTC at the given instant. */
+function offsetMinutes(at: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(at)
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value)
+  return (Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second')) - at.getTime()) / 60000
+}
+
+/** The instant (ISO, UTC) at which the wall clock in `timeZone` reads `date` `time` (HH:mm). */
+export function zonedIso(date: string, time: string, timeZone: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  const [hh, mm] = time.split(':').map(Number) as [number, number]
+  const guess = Date.UTC(y, m - 1, d, hh, mm)
+  return new Date(guess - offsetMinutes(new Date(guess), timeZone) * 60000).toISOString()
+}

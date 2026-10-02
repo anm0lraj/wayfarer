@@ -60,5 +60,11 @@ Full product spec: @docs/PRODUCT_SPEC.md (read the relevant sections before buil
 - AI: the assistant only *proposes*. Every action is Zod-validated in `useChat`, shown as a card, applied via `applyAIAction` on click (destructive ones ask again), and undoable. Chat state is persisted per conversation; the desktop docked panel width/open state is in `panelStore`.
 - Tests that need a map use `createFakeMap()` (`src/test/fakeMap.ts`) through `renderApp(path, { maps })`.
 
+## Phase 4 notes
+- Saving anything to a trip goes through `useSaveBooking` (`data/queries/bookings.ts`): `BookingService.createBooking` → only a `demo` result is stored (via `bookingRepo.saveDemo`), a `live` result throws until a real provider adapter exists. Every booking card/panel shows `DemoBadge` ("Saved to trip — not booked"); never word it as confirmed or purchased.
+- Hotel search state (stay dates, guests, filters, sort) lives in the URL query (`features/bookings/filters.ts` parses/serialises, defaulting to the trip's dates and party size). Filter chips come from the unfiltered list. Phone/tablet use a filter sheet, ≥1024px a sidebar. Flights use `?leg=return&from&to&date&travellers`.
+- Activities and transport are "saved" from itinerary items (`bookable.ts`), keyed by `refId = item.id`. Flight times are read as wall-clock straight from the ISO string (it carries the airport's offset); other times use the trip timezone (`zonedIso`, `bookingWhen(b, tz)`).
+- Checklist: the three booking items are derived from saved bookings (`resolveChecklist`), the rest are plain custom items the user can tick or delete.
+
 ## Demo data
 Primary demo: "5 Days in Bali", 12-17 Oct 2026, 2 travellers, budget ₹60,000, interests Food + Beaches + Photography. At least 3 public itineraries for the Explore feed. Include a demo-mode date simulator to preview Upcoming and Live states.

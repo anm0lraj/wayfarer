@@ -4,7 +4,7 @@ Plan your journey. Experience it. Capture it. Share it.
 
 A responsive React web app (phone, tablet, desktop) that installs as a PWA. It runs entirely on mock services and local storage, so it needs no paid APIs or keys.
 
-**Status:** Phases 1–3 of 8 are built (foundation, Home/Explore/Trips/Create Trip/Overview, Itinerary/Map/AI assistant). Bookings, Live Trip, memories, stories and public sharing are not built yet — those routes show a placeholder. Full spec: [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md).
+**Status:** Phases 1–4 of 8 are built (foundation, Home/Explore/Trips/Create Trip/Overview, Itinerary/Map/AI assistant, Hotels/Flights/Bookings/Checklist). Bookings are demo only: saved to the trip, never purchased. Live Trip, memories, stories and public sharing are not built yet — those routes show a placeholder. Full spec: [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md).
 
 ## Run it
 
