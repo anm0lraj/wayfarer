@@ -5,5 +5,5 @@ import { defineConfig } from 'vitest/config'
 // from fake-indexeddb) and are kept out of `npm test` because they need Java and the emulator download.
 export default defineConfig({
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
-  test: { environment: 'node', setupFiles: ['fake-indexeddb/auto'], include: ['src/**/*.emu.test.ts'], testTimeout: 30_000, fileParallelism: false },
+  test: { environment: 'node', setupFiles: ['src/test/emulatorSetup.ts'], include: ['src/**/*.emu.test.ts'], testTimeout: 30_000, fileParallelism: false },
 })

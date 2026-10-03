@@ -13,8 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "test:rules": "node scripts/with-emulators.mjs firestore vitest.rules.config.ts",
-    "test:sync": "node scripts/with-emulators.mjs auth,firestore vitest.sync.config.ts"
+    "test:rules": "node scripts/with-emulators.mjs firestore,storage vitest.rules.config.ts",
+    "test:sync": "node scripts/with-emulators.mjs auth,firestore,storage vitest.sync.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
