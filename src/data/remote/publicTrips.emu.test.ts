@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'firebase/auth'
 import { connectFirestoreEmulator, doc, getDoc, initializeFirestore, setDoc, type Firestore } from 'firebase/firestore'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActorId } from '../actor'
 import { db } from '../db'
 
@@ -15,6 +15,8 @@ import { getPublicTrip, getPublicTripBySlug, getPublicTrips, listPublicDestinati
 import { sendBatchToFirestore } from './firestoreSync'
 import { firestoreMediaService } from '@/services/storage/firestoreMedia'
 import type { PublicTrip } from '@/types'
+import { GET as previewPage } from '../../../api/og'
+import { GET as previewImage } from '../../../api/og-image'
 
 type Who = 'owner' | 'amy' | 'nobody'
 const people = {} as Record<Who, { uid: string; fs: Firestore }>
@@ -210,5 +212,58 @@ describe('the Explore feed', () => {
   it('knows which destinations have listings, and fetches saved trips by id', async () => {
     expect((await listPublicDestinationIds()).sort()).toEqual(['bali', 'manali'])
     expect((await getPublicTrips(['p1', 'p3', 'gone'])).map((t) => t.id)).toEqual(['p1', 'p3'])
+  })
+})
+
+describe('link previews for a real published page', () => {
+  const REST = 'http://127.0.0.1:8080/v1/projects/demo-wayfarer/databases/(default)/documents'
+  const shell = '<html><head><meta name="description" content="x" /><title>Wayfarer</title></head><body><div id="root"></div></body></html>'
+
+  /** The deployment's index.html is stubbed; everything else (the Firestore reads) goes to the emulator, signed out, under the real rules. */
+  function deployment() {
+    vi.stubEnv('FIRESTORE_REST_URL', REST)
+    const real = globalThis.fetch
+    vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => (String(input) === 'https://wayfarer.test/index.html' ? Promise.resolve(new Response(shell)) : real(input, init)))
+  }
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
+
+  async function publishWithPhotoCover(visibility: 'public' | 'link') {
+    await onDevice('owner')
+    const trip = await tripRepo.create({ title: 'Kyoto <3 "Temples"', destinationIds: ['kyoto'], startDate: '2026-12-01', endDate: '2026-12-04', timezone: 'Asia/Tokyo', travellers: { group: 'solo', count: 1 }, budget: { tier: 'comfort' }, interests: [], planningStyle: 'manual' })
+    await tripRepo.update(trip.id, { coverImage: 'data:image/jpeg;base64,' + Buffer.from([0xff, 0xd8, 0xff, 0xe0, 7, 7, 7]).toString('base64') })
+    const page = await publicTripRepo.publish(trip.id, { description: 'Tea, shrines and long walks.', visibility })
+    await sync()
+    return page
+  }
+
+  it('the page a visitor is sent to carries the trip’s title, description and photo', async () => {
+    const page = await publishWithPhotoCover('public')
+    deployment()
+    const res = await previewPage(new Request(`https://wayfarer.test/api/og?slug=${page.slug}`))
+    const html = await res.text()
+    expect(res.status).toBe(200)
+    expect(html).toContain('<title>Kyoto &lt;3 &quot;Temples&quot; · Wayfarer</title>')
+    expect(html).toContain('og:description" content="Tea, shrines and long walks.')
+    expect(html).toContain(`og:image" content="https://wayfarer.test/api/og-image?slug=${page.slug}"`)
+    expect(html).not.toContain('noindex')
+
+    const image = await previewImage(new Request(`https://wayfarer.test/api/og-image?slug=${page.slug}`))
+    expect(image.headers.get('Content-Type')).toBe('image/jpeg')
+    expect([...new Uint8Array(await image.arrayBuffer())]).toEqual([0xff, 0xd8, 0xff, 0xe0, 7, 7, 7])
+  })
+
+  it('an unlisted page still previews, but asks search engines to leave it out', async () => {
+    const page = await publishWithPhotoCover('link')
+    deployment()
+    const html = await (await previewPage(new Request(`https://wayfarer.test/api/og?slug=${page.slug}`))).text()
+    expect(html).toContain('<meta name="robots" content="noindex" />')
+  })
+
+  it('a page that was unpublished no longer previews', async () => {
+    const page = await publishWithPhotoCover('public')
+    await publicTripRepo.unpublish(page.tripId!)
+    await sync()
+    deployment()
+    expect((await previewPage(new Request(`https://wayfarer.test/api/og?slug=${page.slug}`))).status).toBe(404)
   })
 })

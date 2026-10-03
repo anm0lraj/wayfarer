@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/t/:slug",
+      "destination": "/api/og?slug=:slug"
+    },
+    {
       "source": "/((?!assets/|sw\\.js|workbox-.*\\.js|manifest\\.webmanifest|icon.*\\.svg).*)",
       "destination": "/index.html"
     }

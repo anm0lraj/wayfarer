@@ -29,6 +29,6 @@ describe('security headers', () => {
   })
 
   it('does not rewrite the theme script to index.html', () => {
-    expect(new RegExp(vercel ? (JSON.parse(readFileSync('vercel.json', 'utf8')).rewrites[0].source as string) : '').test('theme-init.js')).toBe(false)
+    expect(new RegExp((JSON.parse(readFileSync('vercel.json', 'utf8')).rewrites as Array<{ source: string; destination: string }>).find((r) => r.destination === '/index.html')!.source).test('theme-init.js')).toBe(false)
   })
 })
