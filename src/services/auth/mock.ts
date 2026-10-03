@@ -45,6 +45,9 @@ export const authService: AuthService = {
     write(true)
     await emit()
   },
+  async idToken() {
+    return null // the demo backend has no server to prove anything to
+  },
   onAuthChange(cb) {
     listeners.add(cb)
     return () => listeners.delete(cb)

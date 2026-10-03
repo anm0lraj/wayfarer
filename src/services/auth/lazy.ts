@@ -9,6 +9,7 @@ export function lazyAuthService(load: () => Promise<AuthService>): AuthService {
   const svc = () => (loaded ??= load())
   return {
     getSession: () => svc().then((s) => s.getSession()),
+    idToken: () => svc().then((s) => s.idToken()),
     signIn: (provider) => svc().then((s) => s.signIn(provider)),
     signOut: () => svc().then((s) => s.signOut()),
     deleteAccount: () => svc().then((s) => s.deleteAccount()),

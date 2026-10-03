@@ -105,6 +105,11 @@ export const firebaseAuthService: AuthService = {
     await releaseDevice()
   },
 
+  async idToken() {
+    // The SDK refreshes the token when it is close to expiring, so this is always valid.
+    return (await auth().currentUser?.getIdToken()) ?? null
+  },
+
   onAuthChange(cb) {
     // Loading a profile takes a moment and signing out doesn't; chain the callbacks so they reach the app in the order
     // Firebase reported them, or a quick sign-out could be overwritten by the sign-in before it.

@@ -28,8 +28,8 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
 }
 
 /** Raw fetch for streaming endpoints. */
-export function apiStream(path: string, json: unknown, signal?: AbortSignal): Promise<Response> {
+export function apiStream(path: string, json: unknown, signal?: AbortSignal, headers: Record<string, string> = {}): Promise<Response> {
   return fetch(new URL(path, globalThis.location?.origin ?? 'http://localhost'), {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(json),
+    method: 'POST', signal, headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(json),
   })
 }

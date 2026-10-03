@@ -4,11 +4,12 @@ import { registerSW } from 'virtual:pwa-register'
 import { App } from './App'
 import { installMockApi } from '@/mocks/install'
 import { initInstallPrompt, usePwa } from '@/lib/pwa'
+import { env } from '@/config/env'
 import { initTheme } from '@/lib/theme'
 import '@/styles/globals.css'
 
 initTheme()
-installMockApi() // serves /api/* in-page until a real backend proxy exists
+installMockApi({ passThrough: env.ai === 'live' ? ['/api/ai/'] : [] }) // serves /api/* in-page; the live assistant is a real function
 
 initInstallPrompt()
 if (import.meta.env.PROD) {

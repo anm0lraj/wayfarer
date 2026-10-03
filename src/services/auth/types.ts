@@ -11,4 +11,6 @@ export interface AuthService {
   /** Permanently removes the account and all of its local data. */
   deleteAccount(): Promise<void>
   onAuthChange(cb: (session: Session | null) => void): () => void
+  /** A fresh sign-in token for calling our own serverless functions, or null when not signed in (or on the demo backend). */
+  idToken(): Promise<string | null>
 }

@@ -14,7 +14,22 @@ service cloud.firestore {
 
       match /{collection}/{docId} {
         // Likes and saves of published trips have their own rules below; everything else here is private to the person.
-        allow read, write: if signedIn() && me() == userId && !(collection in ['likedTrips', 'savedTrips']);
+        allow read, write: if signedIn() && me() == userId && !(collection in ['likedTrips', 'savedTrips', 'usage']);
+      }
+
+      // The assistant's daily allowance (written by the AI function with the person's own token). The count can only go
+      // up, by at most one request's worth at a time, and the record can't be deleted, so it can't be reset for more.
+      match /usage/{day} {
+        allow read: if signedIn() && me() == userId;
+        allow create: if signedIn() && me() == userId
+          && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && request.resource.data.keys().hasOnly(['count'])
+          && request.resource.data.count is int && request.resource.data.count >= 1 && request.resource.data.count <= 3;
+        allow update: if signedIn() && me() == userId
+          && request.resource.data.keys().hasOnly(['count'])
+          && request.resource.data.count is int
+          && request.resource.data.count > resource.data.count && request.resource.data.count <= resource.data.count + 3;
+        allow delete: if false;
       }
 
       // A like or save of a published trip must change that trip's counter by exactly one, in the same write, so the

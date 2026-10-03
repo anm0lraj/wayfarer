@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { aiRepo } from '@/data/repositories'
 import { useServices } from '@/services'
-import { AIUnavailableError, type TripContext } from '@/services/ai/types'
+import { AIQuotaError, AIUnavailableError, type TripContext } from '@/services/ai/types'
 import { aiActionSchema, type AIAction, type AIMessage } from '@/types'
 
-export type ChatError = 'unavailable' | 'failed' | null
+export type ChatError = 'unavailable' | 'quota' | 'failed' | null
 
 const titleFrom = (text: string) => (text.length > 48 ? `${text.slice(0, 45).trimEnd()}…` : text)
 const messagesKey = (id: string | undefined) => ['ai', 'messages', id] as const
@@ -54,7 +54,7 @@ export function useChat({ conversationId, tripId, context }: { conversationId?: 
         else if (ev.type === 'done') break
       }
     } catch (e) {
-      if (!ctrl.signal.aborted) setError(e instanceof AIUnavailableError ? 'unavailable' : 'failed')
+      if (!ctrl.signal.aborted) setError(e instanceof AIQuotaError ? 'quota' : e instanceof AIUnavailableError ? 'unavailable' : 'failed')
     } finally {
       if (text.trim() || actions.length) {
         // Keep what arrived, including a partial reply after Stop. A failure with nothing received saves nothing.

@@ -4,12 +4,14 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
 import { securityHeaders } from './scripts/security-headers.mjs'
+import { localApi } from './scripts/local-api'
 
 export default defineConfig({
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   preview: { headers: securityHeaders },
   plugins: [
     react(),
+    localApi(),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['icon.svg'],

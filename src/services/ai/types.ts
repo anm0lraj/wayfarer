@@ -17,6 +17,21 @@ export interface TripContext {
   upcoming: string[]
   /** Activities on the focus day, in order. */
   items?: Pick<ItineraryItem, 'id' | 'title' | 'startTime' | 'dayId' | 'placeId'>[]
+  /** Every day of the plan with its activities, so the assistant can move, remove and reorder across days. */
+  plan?: Array<{ dayNumber: number; items: Array<{ id: string; title: string; startTime: string; durationMin: number }> }>
+}
+
+/** A place the assistant may recommend (the real model only knows the places it is sent). */
+export interface CatalogueEntry {
+  id: string
+  name: string
+  kind: string
+  tags: string[]
+  rating?: number
+  lat: number
+  lng: number
+  durationMin?: number
+  costInr?: number
 }
 
 export type AIStreamEvent =
@@ -63,5 +78,13 @@ export class AIUnavailableError extends Error {
   constructor(message = 'The assistant is unavailable right now.') {
     super(message)
     this.name = 'AIUnavailableError'
+  }
+}
+
+/** The traveller has used today's assistant allowance. It renews at midnight (India time). */
+export class AIQuotaError extends AIUnavailableError {
+  constructor() {
+    super('You’ve used today’s assistant allowance. It renews at midnight.')
+    this.name = 'AIQuotaError'
   }
 }

@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { itineraryRepo } from '@/data/repositories'
 import { useServices } from '@/services'
-import { AIUnavailableError } from '@/services/ai/types'
+import { AIQuotaError, AIUnavailableError } from '@/services/ai/types'
 import { newDayInputSchema, type ItineraryDay, type ItineraryItem, type NewDayInput, type Trip } from '@/types'
 import { DayPreview } from './DayPreview'
 
-type State = { status: 'loading' } | { status: 'error'; unavailable: boolean } | { status: 'preview'; after: NewDayInput }
+type State = { status: 'loading' } | { status: 'error'; unavailable: boolean; quota?: boolean } | { status: 'preview'; after: NewDayInput }
 
 /** Regenerate one day: shows the current day beside the proposal, and only replaces it when you confirm. */
 export function RegenerateDaySheet({ trip, day, items, open, onClose }: { trip: Trip; day: ItineraryDay; items: ItineraryItem[]; open: boolean; onClose: () => void }) {
@@ -36,7 +36,7 @@ export function RegenerateDaySheet({ trip, day, items, open, onClose }: { trip: 
       )
       if (!ctrl.signal.aborted) setState({ status: 'preview', after: newDayInputSchema.parse(diff.after) })
     } catch (e) {
-      if (!ctrl.signal.aborted) setState({ status: 'error', unavailable: e instanceof AIUnavailableError })
+      if (!ctrl.signal.aborted) setState({ status: 'error', unavailable: e instanceof AIUnavailableError, quota: e instanceof AIQuotaError })
     }
   }
 
@@ -66,7 +66,7 @@ export function RegenerateDaySheet({ trip, day, items, open, onClose }: { trip: 
       {state.status === 'loading' && <div role="status" aria-label="Drafting a new day" className="space-y-3 py-2"><Skeleton className="h-6 w-1/2" /><Skeleton className="h-32" /></div>}
       {state.status === 'error' && (
         <ErrorState
-          title={state.unavailable ? 'The AI assistant isn’t available right now' : 'Couldn’t regenerate this day'}
+          title={state.quota ? 'You’ve used today’s assistant allowance' : state.unavailable ? 'The AI assistant isn’t available right now' : 'Couldn’t regenerate this day'}
           description="Your current plan is unchanged."
           onRetry={() => void run()}
           className="py-6"

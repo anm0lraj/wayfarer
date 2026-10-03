@@ -70,6 +70,9 @@
   "functions": {
     "api/og.ts": {
       "includeFiles": "dist/index.html"
+    },
+    "api/ai/*.ts": {
+      "maxDuration": 60
     }
   },
   "regions": [

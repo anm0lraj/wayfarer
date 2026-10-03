@@ -28,6 +28,7 @@ export function buildTripContext(trip: Trip, plan: TripPlan | undefined, destina
     focusDay,
     completed: items.filter((i) => i.status === 'completed' && (dayNumber.get(i.dayId) ?? 0) <= focusDay).map((i) => i.title).slice(-5),
     upcoming: upcomingPool.slice(0, 3).map((i) => i.title),
+    plan: days.map((d) => ({ dayNumber: d.dayNumber, items: items.filter((i) => i.dayId === d.id).sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, title: i.title, startTime: i.startTime, durationMin: i.durationMin })) })),
     items: todays.map((i) => ({ id: i.id, title: i.title, startTime: i.startTime, dayId: i.dayId, placeId: i.placeId })),
   }
 }

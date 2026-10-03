@@ -16,6 +16,8 @@ const schema = z
     VITE_WEATHER: z.enum(['mock', 'live']).default('mock'),
     /** Route lines on the map: straight lines, or real roads from OSRM. */
     VITE_ROUTING: z.enum(['mock', 'live']).default('mock'),
+    /** The assistant: the in-page demo replies, or the real model through the serverless functions in `api/ai`. */
+    VITE_AI: z.enum(['mock', 'live']).default('mock'),
     VITE_FIREBASE_API_KEY: z.string().optional(),
     VITE_FIREBASE_AUTH_DOMAIN: z.string().optional(),
     VITE_FIREBASE_PROJECT_ID: z.string().optional(),
@@ -40,6 +42,7 @@ export interface AppEnv {
   backend: 'mock' | 'firebase'
   weather: 'mock' | 'live'
   routing: 'mock' | 'live'
+  ai: 'mock' | 'live'
   firebase?: { apiKey: string; authDomain: string; projectId: string; storageBucket: string; messagingSenderId?: string; appId: string }
 }
 
@@ -56,6 +59,7 @@ export function parseEnv(raw: Record<string, unknown>): AppEnv {
     backend: v.VITE_BACKEND,
     weather: v.VITE_WEATHER,
     routing: v.VITE_ROUTING,
+    ai: v.VITE_AI,
     firebase:
       v.VITE_BACKEND === 'firebase'
         ? { apiKey: v.VITE_FIREBASE_API_KEY!, authDomain: v.VITE_FIREBASE_AUTH_DOMAIN!, projectId: v.VITE_FIREBASE_PROJECT_ID!, storageBucket: v.VITE_FIREBASE_STORAGE_BUCKET!, messagingSenderId: v.VITE_FIREBASE_MESSAGING_SENDER_ID, appId: v.VITE_FIREBASE_APP_ID! }

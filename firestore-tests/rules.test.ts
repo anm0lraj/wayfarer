@@ -312,6 +312,36 @@ describe('likes and saves of a published trip', () => {
   })
 })
 
+describe('the assistant’s daily allowance', () => {
+  const today = '2026-10-04'
+  const doc = (db: ReturnType<typeof as>) => db.doc(`users/amy/usage/${today}`)
+
+  it('starts at the cost of the first request and can only go up, a request at a time', async () => {
+    await assertSucceeds(doc(as('amy')).set({ count: 1 }))
+    await assertSucceeds(doc(as('amy')).update({ count: 2 }))
+    await assertSucceeds(doc(as('amy')).update({ count: 5 })) // an itinerary costs 3
+  })
+
+  it('cannot be lowered, deleted, jumped, or started high, so it cannot be reset to get more', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc(`users/amy/usage/${today}`).set({ count: 10 }) })
+    await assertFails(doc(as('amy')).update({ count: 0 }))
+    await assertFails(doc(as('amy')).update({ count: 9 }))
+    await assertFails(doc(as('amy')).update({ count: 10 }))
+    await assertFails(doc(as('amy')).update({ count: 14 }))
+    await assertFails(doc(as('amy')).delete())
+    await assertFails(doc(as('amy')).set({ count: 1 })) // a fresh write is an update too
+    await assertFails(as('amy').doc('users/amy/usage/2026-10-05').set({ count: 50 }))
+    await assertFails(as('amy').doc('users/amy/usage/not-a-day').set({ count: 1 }))
+  })
+
+  it('belongs to its owner alone', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc(`users/amy/usage/${today}`).set({ count: 3 }) })
+    await assertSucceeds(doc(as('amy')).get())
+    await assertFails(doc(as('bob')).get())
+    await assertFails(as('bob').doc(`users/amy/usage/2026-10-06`).set({ count: 1 }))
+  })
+})
+
 describe('everything else', () => {
   it('is closed', async () => {
     await assertFails(as('owner').doc('admin/config').get())

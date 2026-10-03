@@ -11,12 +11,12 @@ import type { TripPlan } from '@/data/queries/plan'
 import { applyAIAction } from '@/data/repositories'
 import { tripLengthDays } from '@/lib/dates'
 import { useServices } from '@/services'
-import { AIUnavailableError } from '@/services/ai/types'
+import { AIQuotaError, AIUnavailableError } from '@/services/ai/types'
 import type { NewDayInput, Trip } from '@/types'
 import { generateDays } from '../generate'
 import { DayPreview } from './DayPreview'
 
-type State = { status: 'idle' } | { status: 'loading' } | { status: 'error'; unavailable: boolean } | { status: 'preview'; days: NewDayInput[] }
+type State = { status: 'idle' } | { status: 'loading' } | { status: 'error'; unavailable: boolean; quota?: boolean } | { status: 'preview'; days: NewDayInput[] }
 
 /** Draft a whole itinerary. Nothing is saved until you press Apply, and Apply can be undone. */
 export function GenerateItinerarySheet({ trip, plan, open, onClose }: { trip: Trip; plan?: TripPlan; open: boolean; onClose: () => void }) {
@@ -38,7 +38,7 @@ export function GenerateItinerarySheet({ trip, plan, open, onClose }: { trip: Tr
       const { days } = await generateDays(ai, chosen, { totalDays: tripLengthDays(trip.startDate, trip.endDate), interests: trip.interests, budgetTotal: trip.budget.total?.amount }, ctrl.signal)
       if (!ctrl.signal.aborted) setState({ status: 'preview', days })
     } catch (e) {
-      if (!ctrl.signal.aborted) setState({ status: 'error', unavailable: e instanceof AIUnavailableError })
+      if (!ctrl.signal.aborted) setState({ status: 'error', unavailable: e instanceof AIUnavailableError, quota: e instanceof AIQuotaError })
     }
   }
 
@@ -73,8 +73,8 @@ export function GenerateItinerarySheet({ trip, plan, open, onClose }: { trip: Tr
       )}
       {state.status === 'error' && (
         <ErrorState
-          title={state.unavailable ? 'The AI assistant isn’t available right now' : 'Couldn’t draft an itinerary'}
-          description={state.unavailable ? 'You can try again in a moment, or plan the days yourself.' : 'Please try again.'}
+          title={state.quota ? 'You’ve used today’s assistant allowance' : state.unavailable ? 'The AI assistant isn’t available right now' : 'Couldn’t draft an itinerary'}
+          description={state.quota ? 'It renews at midnight. You can plan the days yourself in the meantime.' : state.unavailable ? 'You can try again in a moment, or plan the days yourself.' : 'Please try again.'}
           onRetry={() => void generate()}
           className="py-6"
         />

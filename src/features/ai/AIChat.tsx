@@ -98,9 +98,9 @@ export function AIChat({ trip, conversationId, onConversation, className }: AICh
         )}
         {chat.error && (
           <div role="alert" className="rounded-lg border border-error/40 bg-error/10 p-3 text-sm">
-            <p className="font-semibold">{chat.error === 'unavailable' ? 'The assistant is unavailable right now.' : 'Something went wrong with that reply.'}</p>
-            <p className="text-fg-muted">The rest of your trip works as normal. You can try again in a moment.</p>
-            <Button size="sm" className="mt-2" onClick={() => void chat.retry()}>Try again</Button>
+            <p className="font-semibold">{chat.error === 'quota' ? 'You’ve used today’s assistant allowance.' : chat.error === 'unavailable' ? 'The assistant is unavailable right now.' : 'Something went wrong with that reply.'}</p>
+            <p className="text-fg-muted">{chat.error === 'quota' ? 'It renews at midnight. The rest of your trip works as normal.' : 'The rest of your trip works as normal. You can try again in a moment.'}</p>
+            {chat.error !== 'quota' && <Button size="sm" className="mt-2" onClick={() => void chat.retry()}>Try again</Button>}
           </div>
         )}
         <div ref={end} />
