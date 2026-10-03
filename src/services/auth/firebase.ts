@@ -75,7 +75,10 @@ export const firebaseAuthService: AuthService = {
 
   async signIn(provider) {
     if (provider !== 'google') throw new Error('Demo sign-in is only available in the demo environment.')
-    const cred = await signInWithPopup(auth(), new GoogleAuthProvider())
+    const google = new GoogleAuthProvider()
+    // Without this Google silently reuses the last account, so after signing out there is no way to pick another one.
+    google.setCustomParameters({ prompt: 'select_account' })
+    const cred = await signInWithPopup(auth(), google)
     return (await sessionFor(cred.user))!
   },
 

@@ -8,6 +8,7 @@ const fb = vi.hoisted(() => {
   const auth = { get currentUser() { return state.currentUser }, authStateReady: () => Promise.resolve() }
   return {
     state, listeners, auth,
+    lastProvider: undefined as undefined | { params?: unknown },
     signInWithPopup: vi.fn(),
     signOut: vi.fn(async () => { state.currentUser = null }),
     deleteUser: vi.fn(async () => { state.currentUser = null }),
@@ -15,7 +16,7 @@ const fb = vi.hoisted(() => {
 })
 
 vi.mock('firebase/auth', () => ({
-  GoogleAuthProvider: class {},
+  GoogleAuthProvider: class { params: unknown; setCustomParameters(p: unknown) { this.params = p; fb.lastProvider = this } },
   getAuth: () => fb.auth,
   onAuthStateChanged: (_a: unknown, cb: (u: typeof fb.state.currentUser) => void) => { fb.listeners.push(cb); return () => fb.listeners.splice(fb.listeners.indexOf(cb), 1) },
   signInWithPopup: fb.signInWithPopup,
@@ -54,6 +55,12 @@ describe('Firebase auth adapter', () => {
     expect(session.user.id).toBe('uid-ana')
     expect(getActorId()).toBe('uid-ana')
     expect((await db.users.get('uid-ana'))?.email).toBe('ana@example.com')
+  })
+
+  it('always lets the traveller choose which Google account to use', async () => {
+    fb.signInWithPopup.mockImplementation(async () => { fb.state.currentUser = ana; return { user: ana } })
+    await firebaseAuthService.signIn('google')
+    expect(fb.lastProvider?.params).toEqual({ prompt: 'select_account' })
   })
 
   it('restores the session on the next visit and keeps the profile the traveller already edited', async () => {
