@@ -117,6 +117,13 @@ describe('POST /api/ai/chat', () => {
     expect(out.at(-1)).toEqual({ type: 'done' })
   })
 
+  it('introduces a proposal that came without any words, so a card never appears out of nowhere', async () => {
+    providerReply = () => sse([{ choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'suggest_places', arguments: '{"placeIds":["p-ulu"]}' } }] } }] }])
+    const out = await events(await chat(ask('/api/ai/chat', chatBody())))
+    expect(out.map((e) => e.type)).toEqual(['token', 'action', 'done'])
+    expect(out[0].text).toContain('Nothing changes until you confirm')
+  })
+
   it('is not billed when the provider is down', async () => {
     providerReply = () => new Response('overloaded', { status: 503 })
     const out = await events(await chat(ask('/api/ai/chat', chatBody())))
