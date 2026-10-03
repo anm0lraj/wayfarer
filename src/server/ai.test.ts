@@ -171,7 +171,7 @@ describe('the provider connection', () => {
   it('is only available with a key, and the model can be chosen', () => {
     expect(providerConfig()).toBeUndefined()
     vi.stubEnv('GEMINI_API_KEY', 'k')
-    expect(providerConfig()).toEqual({ key: 'k', model: 'gemini-3.1-flash-lite' })
+    expect(providerConfig()).toEqual({ key: 'k', model: 'gemini-3.1-flash-lite', fallbackModel: 'gemini-3.5-flash-lite' })
     vi.stubEnv('AI_MODEL', 'gemini-x')
     expect(providerConfig()?.model).toBe('gemini-x')
   })
@@ -201,6 +201,48 @@ describe('the provider connection', () => {
     const events = []
     for await (const ev of streamCompletion(cfg, { messages: [], maxTokens: 10 })) events.push(ev)
     expect(events).toEqual([{ type: 'tool', name: 'remove_activity', args: { itemId: 'i1' } }])
+  })
+
+  it('retries an overloaded model, then uses the fallback model, before anything reaches the traveller', async () => {
+    vi.stubEnv('AI_RETRY_SCALE', '0')
+    const models: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      const model = JSON.parse(String(init.body)).model as string
+      models.push(model)
+      return model === 'main' ? new Response('overloaded', { status: 503 }) : sse([{ choices: [{ delta: { content: 'Hi' } }] }])
+    }))
+    const events = []
+    for await (const ev of streamCompletion({ key: 'k', model: 'main', fallbackModel: 'backup' }, { messages: [], maxTokens: 10 })) events.push(ev)
+    expect(events).toEqual([{ type: 'text', text: 'Hi' }])
+    expect(models).toEqual(['main', 'main', 'main', 'backup']) // the first try and two retries, then the fallback
+  })
+
+  it('recovers when a retry succeeds, without touching the fallback', async () => {
+    vi.stubEnv('AI_RETRY_SCALE', '0')
+    let calls = 0
+    vi.stubGlobal('fetch', vi.fn(async () => (++calls < 2 ? new Response('busy', { status: 503 }) : sse([{ choices: [{ delta: { content: 'ok' } }] }]))))
+    const events = []
+    for await (const ev of streamCompletion({ key: 'k', model: 'main', fallbackModel: 'backup' }, { messages: [], maxTokens: 10 })) events.push(ev)
+    expect(events).toEqual([{ type: 'text', text: 'ok' }])
+    expect(calls).toBe(2)
+  })
+
+  it('does not retry what retrying cannot fix: a wrong model, a bad key, a refused request', async () => {
+    vi.stubEnv('AI_RETRY_SCALE', '0')
+    for (const status of [400, 401, 403, 404, 429]) {
+      const fetchMock = vi.fn(async () => new Response('no', { status }))
+      vi.stubGlobal('fetch', fetchMock)
+      await expect((async () => { for await (const _ of streamCompletion({ key: 'k', model: 'main', fallbackModel: 'backup' }, { messages: [], maxTokens: 10 })) void _ })()).rejects.toMatchObject({ status })
+      expect(fetchMock).toHaveBeenCalledOnce()
+    }
+  })
+
+  it('gives up with the last status when every model is overloaded', async () => {
+    vi.stubEnv('AI_RETRY_SCALE', '0')
+    const fetchMock = vi.fn(async () => new Response('down', { status: 503 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect((async () => { for await (const _ of streamCompletion({ key: 'k', model: 'main', fallbackModel: 'backup' }, { messages: [], maxTokens: 10 })) void _ })()).rejects.toMatchObject({ status: 503 })
+    expect(fetchMock).toHaveBeenCalledTimes(6)
   })
 
   it('reports a provider failure with its status', async () => {

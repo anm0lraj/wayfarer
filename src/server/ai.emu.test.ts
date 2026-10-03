@@ -48,6 +48,7 @@ beforeEach(async () => {
   vi.stubEnv('GEMINI_API_KEY', 'test-key')
   vi.stubEnv('AI_BASE_URL', 'https://provider.test/v1')
   vi.stubEnv('AI_DAILY_LIMIT', '3')
+  vi.stubEnv('AI_RETRY_SCALE', '0')
   providerCalls = 0
   providerReply = () => sse([{ choices: [{ delta: { content: 'Try Uluwatu.' } }] }, { choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'suggest_places', arguments: '{"placeIds":["p-ulu","p-made-up"]}' } }] } }] }])
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {

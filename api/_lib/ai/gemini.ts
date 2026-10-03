@@ -4,13 +4,13 @@
  */
 const BASE = () => process.env.AI_BASE_URL ?? 'https://generativelanguage.googleapis.com/v1beta/openai'
 
-export interface ProviderConfig { key: string; model: string }
+export interface ProviderConfig { key: string; model: string; /** Tried when the main model is overloaded. */ fallbackModel?: string }
 
 /** The provider settings, or undefined when no key is set (the endpoints then answer "not configured"). */
 export function providerConfig(): ProviderConfig | undefined {
   const key = process.env.GEMINI_API_KEY ?? process.env.AI_API_KEY
   if (!key) return undefined
-  return { key, model: process.env.AI_MODEL ?? 'gemini-3.1-flash-lite' }
+  return { key, model: process.env.AI_MODEL ?? 'gemini-3.1-flash-lite', fallbackModel: process.env.AI_FALLBACK_MODEL ?? 'gemini-3.5-flash-lite' }
 }
 
 export class ProviderError extends Error {
@@ -25,14 +25,34 @@ type Tool = { type: 'function'; function: { name: string; description: string; p
 
 export type CompletionEvent = { type: 'text'; text: string } | { type: 'tool'; name: string; args: Record<string, unknown> }
 
-async function post(cfg: ProviderConfig, body: unknown, signal?: AbortSignal): Promise<Response> {
-  const res = await fetch(`${BASE()}/chat/completions`, {
-    method: 'POST', signal,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) throw new ProviderError(res.status, (await res.text().catch(() => '')).slice(0, 300))
-  return res
+/** Pause before retry n (0-based) after an overloaded answer. */
+const BACKOFF_MS = [600, 1500]
+const OVERLOADED = new Set([500, 502, 503, 504])
+const sleep = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve) => { const t = setTimeout(resolve, ms); signal?.addEventListener('abort', () => { clearTimeout(t); resolve() }, { once: true }) })
+
+/**
+ * One call to the provider. Newer models are often briefly "overloaded" (503), so that is retried a couple of times and
+ * then handed to the fallback model, all before a single word has been sent to the traveller. Other errors (a bad key,
+ * an unknown model, a refused request) are not retried: trying again cannot fix them.
+ */
+async function post(cfg: ProviderConfig, body: Record<string, unknown>, signal?: AbortSignal): Promise<Response> {
+  const models = [cfg.model, ...(cfg.fallbackModel && cfg.fallbackModel !== cfg.model ? [cfg.fallbackModel] : [])]
+  let last: ProviderError | undefined
+  for (const model of models) {
+    for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
+      if (signal?.aborted) throw last ?? new ProviderError(499, 'Aborted')
+      const res = await fetch(`${BASE()}/chat/completions`, {
+        method: 'POST', signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
+        body: JSON.stringify({ ...body, model }),
+      })
+      if (res.ok) return res
+      last = new ProviderError(res.status, (await res.text().catch(() => '')).slice(0, 300))
+      if (!OVERLOADED.has(res.status)) throw last
+      if (attempt < BACKOFF_MS.length) await sleep(BACKOFF_MS[attempt]! * Number(process.env.AI_RETRY_SCALE ?? 1), signal) // scale: 0 in tests
+    }
+  }
+  throw last!
 }
 
 function parseArgs(raw: string): Record<string, unknown> {
@@ -51,7 +71,7 @@ function parseArgs(raw: string): Record<string, unknown> {
 export async function* streamCompletion(
   cfg: ProviderConfig, input: { messages: ChatMessage[]; tools?: Tool[]; maxTokens: number; signal?: AbortSignal },
 ): AsyncGenerator<CompletionEvent> {
-  const res = await post(cfg, { model: cfg.model, messages: input.messages, tools: input.tools, stream: true, max_tokens: input.maxTokens, temperature: 0.6 }, input.signal)
+  const res = await post(cfg, { messages: input.messages, tools: input.tools, stream: true, max_tokens: input.maxTokens, temperature: 0.6 }, input.signal)
   if (!res.body) throw new ProviderError(502, 'Empty response')
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
@@ -93,7 +113,7 @@ export async function completeWithTool(
   cfg: ProviderConfig, input: { messages: ChatMessage[]; tool: Tool; maxTokens: number; signal?: AbortSignal },
 ): Promise<Record<string, unknown>> {
   const res = await post(cfg, {
-    model: cfg.model, messages: input.messages, tools: [input.tool], max_tokens: input.maxTokens, temperature: 0.7,
+    messages: input.messages, tools: [input.tool], max_tokens: input.maxTokens, temperature: 0.7,
     tool_choice: { type: 'function', function: { name: input.tool.function.name } },
   }, input.signal)
   const body = (await res.json()) as { choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }> }
