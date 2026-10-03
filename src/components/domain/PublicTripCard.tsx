@@ -16,7 +16,7 @@ export function PublicTripCard({ trip }: { trip: PublicTrip }) {
         <p className="text-sm text-fg-muted">by {trip.ownerName}</p>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted">
           <span className="inline-flex items-center gap-1.5"><CalendarDays aria-hidden className="size-4" />{trip.durationDays} days</span>
-          <span>{formatMoney(low)}–{formatMoney(high)}</span>
+          {high.amount > 0 && <span>{formatMoney(low)}–{formatMoney(high)}</span>}
           <span className="inline-flex items-center gap-1"><Bookmark aria-hidden className="size-4" />{trip.saveCount.toLocaleString('en-IN')}<span className="sr-only"> saves</span></span>
         </p>
       </div>

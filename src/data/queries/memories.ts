@@ -26,6 +26,9 @@ export function useMemoryRefresh() {
   ])
 }
 
+/** A little longer than the toast's own 6 s, so a late tap on Undo still finds the photo. */
+export const UNDO_WINDOW_MS = 8000
+
 export function useMemoryActions(tripId: string) {
   const refresh = useMemoryRefresh()
   const { storage } = useServices()
@@ -33,7 +36,12 @@ export function useMemoryActions(tripId: string) {
     remove: async (m: Memory) => {
       await memoryRepo.remove(m.id)
       await refresh(tripId)
-      toast({ title: 'Memory deleted', action: { label: 'Undo', onClick: () => void memoryRepo.restore(m).then(() => refresh(tripId)) } })
+      // The stored photo has to survive the Undo, so it is only deleted once that window has closed.
+      const cleanup = m.mediaKey ? setTimeout(() => void storage.remove(m.mediaKey!).catch(() => undefined), UNDO_WINDOW_MS) : undefined
+      toast({
+        title: 'Memory deleted',
+        action: { label: 'Undo', onClick: () => { clearTimeout(cleanup); void memoryRepo.restore(m).then(() => refresh(tripId)) } },
+      })
     },
     retry: async () => {
       await processMemoryUploads(storage, { retryFailed: true })

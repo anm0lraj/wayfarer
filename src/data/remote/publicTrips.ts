@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where, type DocumentSnapshot, type QueryConstraint } from 'firebase/firestore'
 import { getDb } from '@/services/firebase/firestore'
+import { publicTripSchema } from '@/types'
 import type { PublicTrip } from '@/types'
 
 /**
@@ -9,7 +10,16 @@ import type { PublicTrip } from '@/types'
 export interface PublicPage { items: PublicTrip[]; nextCursor: string | null }
 export interface PublicFilter { q?: string; destinationId?: string }
 
-const asTrip = (snap: DocumentSnapshot): PublicTrip => ({ ...snap.data(), id: snap.id }) as PublicTrip
+/**
+ * A published trip as this app understands it. The document is checked against the schema, which also drops any field
+ * it does not define: private notes, booking links and the like cannot reach a screen even if some other client wrote
+ * them into the page. A document that does not fit is skipped (and said so in the console), not shown half-formed.
+ */
+function asTrip(snap: DocumentSnapshot): PublicTrip | undefined {
+  const parsed = publicTripSchema.safeParse({ ...snap.data(), id: snap.id })
+  if (!parsed.success) console.warn(`Skipping published trip ${snap.id}: it doesn't match the expected shape.`)
+  return parsed.success ? parsed.data : undefined
+}
 
 /** How many documents a text search reads at a time; Firestore has no text search, so matching happens here. */
 const SEARCH_BATCH = 30
@@ -41,7 +51,8 @@ export async function listPublicPage(cursor: string | null, pageSize: number, fi
     hasMore = docs.length > batchSize
     for (const d of docs.slice(0, batchSize)) {
       lastSeen = d
-      if (matches(asTrip(d))) items.push(asTrip(d))
+      const trip = asTrip(d)
+      if (trip && matches(trip)) items.push(trip)
       if (items.length === pageSize) {
         hasMore = hasMore || docs.indexOf(d) < docs.length - 1
         break

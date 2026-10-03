@@ -14,6 +14,13 @@ const as = (uid: string | null, claims: Record<string, unknown> = {}) => {
 /** A signed-in Google account: the email is on the token and verified. */
 const google = (uid: string, email: string) => as(uid, { email, email_verified: true })
 
+/** A published page with every field the app defines. */
+const page = (id: string, over: Record<string, unknown> = {}) => ({
+  id, slug: `${id}-slug`, ownerId: 'owner', ownerName: 'Owner', visibility: 'public', title: 'Public', description: 'A trip.', coverImage: '',
+  destinationIds: ['bali'], durationDays: 3, budgetRange: [], travelStyle: 'Budget', tips: [], likeCount: 0, saveCount: 0, publishedAt: '2026-10-01T00:00:00.000Z',
+  snapshot: { days: [], items: [], places: [], memories: [] }, ...over,
+})
+
 const trip = (extra: Record<string, unknown> = {}) => ({ id: 't1', ownerId: 'owner', title: 'Bali', members: { owner: 'owner' }, ...extra })
 
 beforeAll(async () => {
@@ -29,8 +36,8 @@ beforeEach(async () => {
     await db.doc('trips/t1').set(trip({ members: { owner: 'owner', ed: 'editor', vw: 'viewer' } }))
     await db.doc('trips/t1/items/i1').set({ id: 'i1', tripId: 't1', title: 'Temple' })
     await db.doc('invites/t1__amy@example.com').set({ tripId: 't1', tripTitle: 'Bali', email: 'amy@example.com', role: 'editor', status: 'pending', invitedBy: 'owner' })
-    await db.doc('publicTrips/p1').set({ id: 'p1', ownerId: 'owner', title: 'Public', visibility: 'public', likeCount: 0, saveCount: 0 })
-    await db.doc('publicTrips/p-link').set({ id: 'p-link', ownerId: 'owner', title: 'Unlisted', visibility: 'link', likeCount: 0, saveCount: 0 })
+    await db.doc('publicTrips/p1').set(page('p1', { title: 'Public' }))
+    await db.doc('publicTrips/p-link').set(page('p-link', { title: 'Unlisted', visibility: 'link' }))
   })
 })
 
@@ -148,13 +155,45 @@ describe('published trips', () => {
   })
 
   it('only the publisher can create, change or remove one', async () => {
-    await assertSucceeds(as('amy').doc('publicTrips/p2').set({ id: 'p2', ownerId: 'amy', title: 'Mine' }))
-    await assertFails(as('amy').doc('publicTrips/p3').set({ id: 'p3', ownerId: 'bob', title: 'Not mine' }))
-    await assertFails(as(null).doc('publicTrips/p4').set({ id: 'p4', ownerId: 'x' }))
+    await assertSucceeds(as('amy').doc('publicTrips/p2').set(page('p2', { ownerId: 'amy', title: 'Mine' })))
+    await assertFails(as('amy').doc('publicTrips/p3').set(page('p3', { ownerId: 'bob', title: 'Not mine' })))
+    await assertFails(as(null).doc('publicTrips/p4').set(page('p4', { ownerId: 'x' })))
     await assertFails(as('amy').doc('publicTrips/p1').update({ title: 'Hijacked' }))
     await assertSucceeds(as('owner').doc('publicTrips/p1').update({ title: 'Edited' }))
     await assertFails(as('amy').doc('publicTrips/p1').delete())
     await assertSucceeds(as('owner').doc('publicTrips/p1').delete())
+  })
+})
+
+describe('what a published page may contain', () => {
+  const owner = () => as('owner')
+  const items = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `i${i}` }))
+
+  it('accepts a complete page, and edits to it', async () => {
+    await assertSucceeds(owner().doc('publicTrips/ok').set(page('ok')))
+    await assertSucceeds(owner().doc('publicTrips/ok').update({ description: 'Edited.' }))
+  })
+
+  it('refuses fields the app does not define, at the top and inside the snapshot', async () => {
+    await assertFails(owner().doc('publicTrips/x1').set(page('x1', { privateNotes: 'gate code 4821' })))
+    await assertFails(owner().doc('publicTrips/x2').set(page('x2', { snapshot: { days: [], items: [], places: [], memories: [], bookings: [{ confirmation: 'ABC123' }] } })))
+    await assertFails(owner().doc('publicTrips/ok').update({ confirmationNumber: 'ABC123' }))
+  })
+
+  it('refuses a page that is absurdly large or has an unknown visibility', async () => {
+    await assertSucceeds(owner().doc('publicTrips/big-ok').set(page('big-ok', { snapshot: { days: [], items: items(500), places: [], memories: [] } })))
+    await assertFails(owner().doc('publicTrips/big').set(page('big', { snapshot: { days: [], items: items(501), places: [], memories: [] } })))
+    await assertFails(owner().doc('publicTrips/long').set(page('long', { title: 'x'.repeat(201) })))
+    await assertFails(owner().doc('publicTrips/vis').set(page('vis', { visibility: 'everyone' })))
+    await assertFails(owner().doc('publicTrips/neg').set(page('neg', { likeCount: -1 })))
+  })
+
+  it('does not get in the way of other people’s likes and saves', async () => {
+    await assertSucceeds(owner().doc('publicTrips/ok2').set(page('ok2')))
+    const batch = as('amy').batch()
+    batch.set(as('amy').doc('users/amy/likedTrips/lk_amy_ok2'), { id: 'lk_amy_ok2', userId: 'amy', publicTripId: 'ok2', likedAt: '2026-10-01T00:00:00.000Z' })
+    batch.update(as('amy').doc('publicTrips/ok2'), { likeCount: 1 })
+    await assertSucceeds(batch.commit())
   })
 })
 
@@ -174,6 +213,9 @@ describe('finding published trips', () => {
     await assertFails(as(null).collection('publicSlugs').get())
     await assertSucceeds(as('owner').doc('publicSlugs/new-1').set({ publicTripId: 'p1', ownerId: 'owner' }))
     await assertFails(as('amy').doc('publicSlugs/new-2').set({ publicTripId: 'p1', ownerId: 'owner' })) // not yours to claim
+    await assertSucceeds(as('owner').doc('publicSlugs/bali-ab12').set({ publicTripId: 'p-link', ownerId: 'owner' })) // republishing rewrites it
+    await assertFails(as('amy').doc('publicSlugs/bali-ab12').set({ publicTripId: 'p1', ownerId: 'amy' })) // not hers to take over
+    await assertFails(as('owner').doc('publicSlugs/bali-ab12').set({ publicTripId: 'p-link', ownerId: 'amy' })) // nor to hand away
     await assertFails(as('amy').doc('publicSlugs/bali-ab12').delete())
     await assertSucceeds(as('owner').doc('publicSlugs/bali-ab12').delete())
   })

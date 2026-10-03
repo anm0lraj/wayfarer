@@ -118,7 +118,7 @@ function Loaded({ trip }: { trip: PublicTrip }) {
         <p className="text-fg-muted">by {trip.ownerName}</p>
         <ul className="flex flex-wrap gap-x-6 gap-y-1 text-lg">
           <li className="inline-flex items-center gap-2"><CalendarDays aria-hidden className="size-5 text-fg-muted" />{trip.durationDays} days</li>
-          <li className="inline-flex items-center gap-2"><Wallet aria-hidden className="size-5 text-fg-muted" />About {formatMoney(low)}–{formatMoney(high)}</li>
+          {high.amount > 0 && <li className="inline-flex items-center gap-2"><Wallet aria-hidden className="size-5 text-fg-muted" />About {formatMoney(low)}–{formatMoney(high)}</li>}
         </ul>
         <p className="max-w-3xl text-lg">{trip.description}</p>
         {isMine && <p className="rounded-md bg-surface-2 px-3 py-2 text-sm">This is your published trip. {trip.tripId && <Link className="font-medium text-primary underline" to={`/trips/${trip.tripId}/share`}>Manage sharing</Link>}</p>}

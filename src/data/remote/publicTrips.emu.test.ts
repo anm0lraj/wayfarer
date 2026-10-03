@@ -160,6 +160,7 @@ describe('likes and saves', () => {
     await publicTripRepo.publish(trip.id, { description: 'Second version of the page.', visibility: 'public' })
     await sync()
     const second = (await db.publicTrips.toArray()).find((p) => p.tripId === trip.id)!
+    expect(await db.syncQueue.count()).toBe(0) // republishing rewrites the short link too, and that must go through
     expect((await pub(second.id))?.description).toBe('Second version of the page.')
     expect((await pub(page.id))?.likeCount).toBe(1) // the first page is untouched
   })
@@ -175,10 +176,36 @@ describe('likes and saves', () => {
   })
 })
 
+describe('what readers accept from a published page', () => {
+  it('drops private fields that a page should not carry, even if another client wrote them', async () => {
+    const page = await ownerPublishes()
+    // Rules cannot look inside list entries, so a client could slip extra fields into an item.
+    const ref = doc(people.owner.fs, 'publicTrips', page.id)
+    const stored = (await getDoc(ref)).data()!
+    const item = { id: 'i1', tripId: 't', dayId: 'd', title: 'Temple', startTime: '09:00', durationMin: 60, category: 'sightseeing', position: 0, status: 'upcoming', source: 'user', createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z', notes: 'gate code 4821', bookingId: 'bk_secret' }
+    await setDoc(ref, { ...stored, snapshot: { ...stored.snapshot, items: [item] } })
+
+    current.db = people.nobody.fs
+    const read = await getPublicTrip(page.id)
+    expect(read?.snapshot.items[0]).toMatchObject({ title: 'Temple' })
+    expect(JSON.stringify(read)).not.toContain('4821')
+    expect(JSON.stringify(read)).not.toContain('bk_secret')
+  })
+
+  it('skips a page that does not have the expected shape, instead of showing it half-formed', async () => {
+    await ownerPublishes()
+    await setDoc(doc(people.owner.fs, 'publicTrips', 'broken'), { id: 'broken', ownerId: people.owner.uid, visibility: 'public', title: 'No snapshot', description: '', coverImage: '', destinationIds: [], durationDays: 1, budgetRange: [], travelStyle: '', tips: [], snapshot: { days: [], items: [], places: [], memories: [] }, likeCount: 0, saveCount: 0, publishedAt: '2026-12-31T00:00:00.000Z' })
+    current.db = people.nobody.fs
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const page = await listPublicPage(null, 10)
+    expect(page.items.map((t) => t.title)).toEqual(['Bali Escape'])
+  })
+})
+
 describe('the Explore feed', () => {
   const entry = (n: number, over: Record<string, unknown> = {}) => ({
     id: `p${n}`, slug: `trip-${n}`, ownerId: people.owner.uid, ownerName: n % 2 ? 'Ana' : 'Raj', visibility: 'public', title: `Trip ${n}`, description: n % 2 ? 'Beaches and food' : 'Mountains and trains',
-    coverImage: '', destinationIds: [n % 2 ? 'bali' : 'manali'], durationDays: 3, budgetRange: [], travelStyle: 'Budget', tips: [], snapshot: { days: [], items: [], places: [], memories: [] },
+    coverImage: '', destinationIds: [n % 2 ? 'bali' : 'manali'], durationDays: 3, budgetRange: [{ amount: 0, currency: 'INR' }, { amount: 0, currency: 'INR' }], travelStyle: 'Budget', tips: [], snapshot: { days: [], items: [], places: [], memories: [] },
     likeCount: 0, saveCount: 0, publishedAt: `2026-10-0${n}T00:00:00.000Z`, ...over,
   })
 

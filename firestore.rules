@@ -175,12 +175,29 @@ service cloud.firestore {
       );
     }
 
+    // What a published page may contain: only the fields the app defines, in sensible sizes. (Rules cannot look inside each
+    // list entry, so the app also drops unknown fields when it reads a page; see data/remote/publicTrips.ts.)
+    function validPublicTrip(d) {
+      return d.keys().hasOnly(['id', 'slug', 'tripId', 'ownerId', 'ownerName', 'visibility', 'title', 'description', 'coverImage',
+                               'destinationIds', 'durationDays', 'budgetRange', 'travelStyle', 'tips', 'snapshot', 'likeCount', 'saveCount', 'publishedAt'])
+        && d.visibility in ['link', 'public']
+        && d.title is string && d.title.size() <= 200
+        && d.description is string && d.description.size() <= 2000
+        && d.coverImage is string && d.coverImage.size() <= 400000
+        && d.tips.size() <= 8
+        && d.destinationIds.size() <= 10
+        && d.snapshot.keys().hasOnly(['days', 'items', 'places', 'memories'])
+        && d.snapshot.days.size() <= 60 && d.snapshot.items.size() <= 500
+        && d.snapshot.places.size() <= 300 && d.snapshot.memories.size() <= 100
+        && d.likeCount is int && d.likeCount >= 0 && d.saveCount is int && d.saveCount >= 0;
+    }
+
     match /publicTrips/{id} {
       allow get: if true;
       allow list: if resource.data.visibility == 'public';
-      allow create: if signedIn() && request.resource.data.ownerId == me();
+      allow create: if signedIn() && request.resource.data.ownerId == me() && validPublicTrip(request.resource.data);
       allow update: if signedIn() && (
-        (resource.data.ownerId == me() && request.resource.data.ownerId == me())
+        (resource.data.ownerId == me() && request.resource.data.ownerId == me() && validPublicTrip(request.resource.data))
         || bump(id, 'likeCount', likeDoc(id))
         || bump(id, 'saveCount', saveDoc(id))
       );
@@ -202,7 +219,8 @@ service cloud.firestore {
       allow list: if false;
       allow create: if signedIn() && request.resource.data.ownerId == me();
       allow delete: if signedIn() && resource.data.ownerId == me();
-      allow update: if false;
+      // Republishing writes the link again; only its owner may, and it cannot be handed to someone else.
+      allow update: if signedIn() && resource.data.ownerId == me() && request.resource.data.ownerId == me();
     }
 
     // Everything else is closed.
