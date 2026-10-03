@@ -75,10 +75,28 @@ export default function SettingsRoute() {
   }
 
   const deleteAccount = async () => {
-    if (!window.confirm('Delete your account and everything on this device — trips, memories and settings? This can’t be undone.')) return
-    await auth.deleteAccount()
+    const message = env.backend === 'firebase'
+      ? 'Permanently delete your account and everything stored for it: your trips and their photos, pages you published, saves and settings, on our servers and on this device? People you shared a trip with lose access to it. This can’t be undone.'
+      : 'Delete your account and everything on this device — trips, memories and settings? This can’t be undone.'
+    if (!window.confirm(message)) return
+    try {
+      await auth.deleteAccount()
+    } catch (e) {
+      toast({ title: 'Account not deleted', description: e instanceof Error ? e.message : 'Please try again.' })
+      return
+    }
     await qc.invalidateQueries()
     navigate('/signin', { replace: true })
+  }
+
+  const downloadData = async () => {
+    const { exportLocalAccountData } = await import('@/data/accountData')
+    const file = new Blob([JSON.stringify(await exportLocalAccountData(), null, 2)], { type: 'application/json' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(file)
+    link.download = `wayfarer-my-data-${format(new Date(), 'yyyy-MM-dd')}.json`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
   }
 
   const reset = async () => {
@@ -131,6 +149,7 @@ export default function SettingsRoute() {
           <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
           <Button variant="secondary" disabled={signingOut.busy} onClick={() => void signingOut.signOut()}>Sign out</Button>
           {signingOut.dialog}
+          <Button variant="secondary" onClick={() => void downloadData()}>Download my data</Button>
           <Button variant="danger" onClick={() => void deleteAccount()}>Delete account and data</Button>
         </Section>
       </div>

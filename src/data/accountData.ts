@@ -35,6 +35,22 @@ export async function wipeLocalAccountData(): Promise<void> {
   })
 }
 
+/** Tables whose rows are exported (queued changes and photo bytes are not: they are plumbing and files, not records). */
+const EXPORT_TABLES = ACCOUNT_TABLES.filter((t) => t !== 'syncQueue' && t !== 'blobs')
+
+export interface DataExport { exportedAt: string; note: string; data: Record<string, unknown[]> }
+
+/**
+ * Everything this device holds for the signed-in account as plain JSON, for "Download my data". Because the device
+ * keeps a full copy of the account's trips, this is the traveller's data. Photos and voice notes are referenced by key
+ * (they are files); the shared catalogue of places is not personal data.
+ */
+export async function exportLocalAccountData(now = new Date()): Promise<DataExport> {
+  const data: Record<string, unknown[]> = {}
+  for (const name of EXPORT_TABLES) data[name] = await db.table(name).toArray()
+  return { exportedAt: now.toISOString(), note: 'Your Wayfarer data as stored on this device. Photos and voice notes are files and are not included.', data }
+}
+
 const OWNER_KEY = 'accountUid'
 
 /**

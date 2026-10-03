@@ -1,4 +1,4 @@
-import { accessToken } from './google.js'
+import { accessToken } from '../admin/google.js'
 
 /** Where a message goes. Overridable so tests can stand in for Google. */
 const sendUrl = (project: string) => process.env.FCM_SEND_URL ?? `https://fcm.googleapis.com/v1/projects/${project}/messages:send`

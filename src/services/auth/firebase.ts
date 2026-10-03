@@ -1,5 +1,5 @@
 import {
-  GoogleAuthProvider, deleteUser, getAuth, onAuthStateChanged, signInWithPopup, signOut as fbSignOut, type User as FirebaseUser,
+  GoogleAuthProvider, getAuth, onAuthStateChanged, reauthenticateWithPopup, signInWithPopup, signOut as fbSignOut, type User as FirebaseUser,
 } from 'firebase/auth'
 import { claimDevice, releaseDevice, wipeLocalAccountData } from '@/data/accountData'
 import { db } from '@/data/db'
@@ -107,8 +107,16 @@ export const firebaseAuthService: AuthService = {
     const fb = auth().currentUser
     if (!fb) return
     await stopPush()
-    // Firebase asks for a recent sign-in before deleting an account; if so the error says so and nothing is removed.
-    await deleteUser(fb)
+    // The server removes everything stored for the account and then the sign-in itself (`api/account/delete`). It wants
+    // a sign-in from the last few minutes; if the session is older, confirm with Google once and try again.
+    const request = async () => fetch('/api/account/delete', { method: 'POST', headers: { Authorization: `Bearer ${await fb.getIdToken(true)}` } })
+    let res = await request()
+    if (res.status === 401 && ((await res.clone().json().catch(() => ({}))) as { error?: string }).error === 'recent_login_required') {
+      await reauthenticateWithPopup(fb, new GoogleAuthProvider())
+      res = await request()
+    }
+    if (!res.ok) throw new Error(`We couldn’t delete your account (error ${res.status}). Please try again.`)
+    await fbSignOut(auth()).catch(() => undefined) // the account no longer exists; this just clears the local session
     setActorId(null)
     await wipeLocalAccountData()
     await releaseDevice()

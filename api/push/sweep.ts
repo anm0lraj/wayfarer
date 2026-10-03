@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { json } from '../_lib/ai/http.js'
-import { serviceAccount } from '../_lib/push/google.js'
+import { serviceAccount } from '../_lib/admin/google.js'
 import { runSweep } from '../_lib/push/sweep.js'
 
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b))

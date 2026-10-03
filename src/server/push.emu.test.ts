@@ -3,7 +3,7 @@ import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'fi
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST as testPush } from '../../api/push/test'
 import { runSweep } from '../../api/_lib/push/sweep'
-import { resetTokenCache } from '../../api/_lib/push/google'
+import { resetTokenCache } from '../../api/_lib/admin/google'
 
 /**
  * The push sweep against the real Firestore emulator (so queries, subcollection reads and create-if-absent are the real

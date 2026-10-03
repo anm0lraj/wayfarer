@@ -76,6 +76,9 @@
     },
     "api/push/*.ts": {
       "maxDuration": 60
+    },
+    "api/account/*.ts": {
+      "maxDuration": 60
     }
   },
   "regions": [

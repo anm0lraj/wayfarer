@@ -20,7 +20,7 @@ export function serviceAccount(): ServiceAccount | undefined {
   }
 }
 
-const SCOPES = 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging'
+const SCOPES = 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/identitytoolkit'
 const tokenUrl = () => process.env.GOOGLE_TOKEN_URL ?? 'https://oauth2.googleapis.com/token'
 const b64 = (v: unknown) => Buffer.from(JSON.stringify(v)).toString('base64url')
 

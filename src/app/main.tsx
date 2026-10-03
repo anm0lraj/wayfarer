@@ -9,8 +9,8 @@ import { initTheme } from '@/lib/theme'
 import '@/styles/globals.css'
 
 initTheme()
-// Serves /api/* in-page. The live assistant and push (test notification) are real functions, so their paths go through.
-installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.pushKey ? ['/api/push/'] : [])] })
+// Serves /api/* in-page. The live assistant, push (test notification) and account deletion are real functions, so their paths go through.
+installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.pushKey ? ['/api/push/'] : []), ...(env.backend === 'firebase' ? ['/api/account/'] : [])] })
 
 initInstallPrompt()
 if (import.meta.env.PROD) {

@@ -24,7 +24,7 @@ export function localApi(): Plugin {
 
       server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url ?? '/', 'http://localhost')
-        if (!/^\/api\/(ai|push)\/[a-z-]+$/.test(url.pathname)) return next()
+        if (!/^\/api\/(ai|push|account)\/[a-z-]+$/.test(url.pathname)) return next()
         try {
           const mod = (await server.ssrLoadModule(`${url.pathname}.ts`)) as Record<string, ((r: Request) => Promise<Response>) | undefined>
           const handler = mod[req.method ?? 'GET']

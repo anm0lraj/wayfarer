@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { claimDevice, releaseDevice, unsentWork, wipeLocalAccountData } from './accountData'
+import { claimDevice, exportLocalAccountData, releaseDevice, unsentWork, wipeLocalAccountData } from './accountData'
 import { db } from './db'
 import { resetDemoData } from './seed'
 import { settle } from '@/test/settle'
@@ -24,6 +24,20 @@ describe('wiping an account from the device', () => {
     }
     expect({ destinations: await db.destinations.count(), places: await db.places.count(), hotels: await db.hotels.count(), flights: await db.flights.count() }).toEqual(catalogue)
     expect((await db.meta.get('seedVersion'))?.value).toBeDefined()
+  })
+})
+
+describe('exporting an account’s data', () => {
+  it('has the traveller’s records as plain JSON, without queued changes, photo bytes or the shared catalogue', async () => {
+    await db.blobs.put({ key: 'media/1', blob: new Blob(['x']), createdAt: 1 })
+    await db.syncQueue.add({ entity: 'trips', entityId: 't', op: 'put', createdAt: 1, attempts: 0 })
+    const out = await exportLocalAccountData(new Date('2026-10-05T00:00:00Z'))
+    expect(out.exportedAt).toBe('2026-10-05T00:00:00.000Z')
+    expect(out.data.trips!.length).toBe(await db.trips.count())
+    expect(out.data.items!.length).toBeGreaterThan(0)
+    expect(Object.keys(out.data)).not.toEqual(expect.arrayContaining(['syncQueue']))
+    for (const t of ['blobs', 'syncQueue', 'destinations', 'places', 'hotels', 'flights']) expect(out.data, t).not.toHaveProperty(t)
+    expect(() => JSON.stringify(out)).not.toThrow()
   })
 })
 

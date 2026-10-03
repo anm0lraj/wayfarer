@@ -100,4 +100,54 @@ export async function deleteDocument(path: string): Promise<void> {
   await call(`${firestoreBase()}/${path}`, { method: 'DELETE' })
 }
 
+/** Document paths where `field == value`, in one collection (or every collection of that name, anywhere). Names only: no data is read. */
+export async function pathsWhere(collectionId: string, field: string, value: string, allDescendants = false): Promise<string[]> {
+  const docs = await runQuery('', {
+    from: [{ collectionId, allDescendants }], select: { fields: [{ fieldPath: '__name__' }] },
+    where: { fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value: { stringValue: value } } }, limit: 1000,
+  })
+  return docs.map((d) => d.path)
+}
+
+/** The paths of everything in a collection, without downloading the documents (photos are large). */
+export async function listPaths(collectionPath: string): Promise<string[]> {
+  const out: string[] = []
+  let pageToken = ''
+  for (let page = 0; page < 20; page++) {
+    const res = await call(`${firestoreBase()}/${collectionPath}?pageSize=300&mask.fieldPaths=__name__${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`)
+    if (!res.ok) throw new Error(`Firestore list failed (${res.status})`)
+    const body = (await res.json()) as { documents?: Array<{ name: string }>; nextPageToken?: string }
+    out.push(...(body.documents ?? []).map((d) => toDoc(d).path))
+    if (!body.nextPageToken) break
+    pageToken = body.nextPageToken
+  }
+  return out
+}
+
+/** Deletes documents a few at a time. Deleting one that is already gone is not an error. */
+export async function deletePaths(paths: string[], concurrency = 8): Promise<void> {
+  const queue = [...paths]
+  await Promise.all(Array.from({ length: concurrency }, async () => {
+    for (let p = queue.shift(); p; p = queue.shift()) {
+      const res = await call(`${firestoreBase()}/${p}`, { method: 'DELETE' })
+      if (!res.ok && res.status !== 404) throw new Error(`Firestore delete failed (${res.status})`)
+    }
+  }))
+}
+
+/** Adds `delta` to a number in a document that exists (nothing happens if it does not). */
+export async function addToNumber(path: string, field: string, delta: number): Promise<void> {
+  const base = firestoreBase()
+  await call(`${base}:commit`, {
+    method: 'POST',
+    body: JSON.stringify({ writes: [{ update: { name: `${documentsRoot(base)}/${path}`, fields: {} }, updateMask: { fieldPaths: [] }, updateTransforms: [{ fieldPath: field, increment: { integerValue: String(delta) } }], currentDocument: { exists: true } }] }),
+  })
+}
+
+/** Removes one entry from a map field (`members.{uid}`) of a document that exists. */
+export async function removeMapEntry(path: string, mapField: string, key: string): Promise<void> {
+  const fieldPath = `${mapField}.\`${key.replace(/`/g, '')}\``
+  await call(`${firestoreBase()}/${path}?updateMask.fieldPaths=${encodeURIComponent(fieldPath)}&currentDocument.exists=true`, { method: 'PATCH', body: JSON.stringify({ fields: {} }) })
+}
+
 export { documentsRoot }

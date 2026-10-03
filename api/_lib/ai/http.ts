@@ -23,7 +23,18 @@ export class HttpError extends Error {
   }
 }
 
-export interface Caller { uid: string; token: string }
+/** `email` only when Google says the person has verified it; `signedInAt` is when they last proved who they are (seconds). */
+export interface Caller { uid: string; token: string; email?: string; signedInAt?: number }
+
+/** When the ID token's owner last signed in (`auth_time`). The token was already checked with Firebase, so its claims can be read. */
+function signInTime(token: string): number | undefined {
+  try {
+    const claims = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString()) as { auth_time?: number }
+    return typeof claims.auth_time === 'number' ? claims.auth_time : undefined
+  } catch {
+    return undefined
+  }
+}
 
 const projectKey = () => process.env.VITE_FIREBASE_API_KEY ?? process.env.FIREBASE_API_KEY
 const identityBase = () => process.env.IDENTITY_TOOLKIT_URL ?? 'https://identitytoolkit.googleapis.com'
@@ -46,9 +57,9 @@ export async function authenticate(request: Request): Promise<Caller> {
     throw new HttpError(503, 'auth_unavailable')
   }
   if (!res.ok) throw new HttpError(401, 'sign_in_required')
-  const uid = ((await res.json()) as { users?: Array<{ localId?: string; disabled?: boolean }> }).users?.[0]
+  const uid = ((await res.json()) as { users?: Array<{ localId?: string; disabled?: boolean; email?: string; emailVerified?: boolean }> }).users?.[0]
   if (!uid?.localId || uid.disabled) throw new HttpError(401, 'sign_in_required')
-  return { uid: uid.localId, token }
+  return { uid: uid.localId, token, email: uid.emailVerified ? uid.email?.toLowerCase() : undefined, signedInAt: signInTime(token) }
 }
 
 /** Test hook: where the quota documents live. */

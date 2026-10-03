@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/data/db'
 import { getActorId, setActorId } from '@/data/actor'
 
 const fb = vi.hoisted(() => {
-  const state = { currentUser: null as null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null } }
+  const state = { currentUser: null as null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null; getIdToken?: (force?: boolean) => Promise<string> } }
   const listeners: Array<(u: typeof state.currentUser) => void> = []
   const auth = { get currentUser() { return state.currentUser }, authStateReady: () => Promise.resolve() }
   return {
@@ -11,7 +11,7 @@ const fb = vi.hoisted(() => {
     lastProvider: undefined as undefined | { params?: unknown },
     signInWithPopup: vi.fn(),
     signOut: vi.fn(async () => { state.currentUser = null }),
-    deleteUser: vi.fn(async () => { state.currentUser = null }),
+    reauthenticateWithPopup: vi.fn(async () => undefined),
   }
 })
 
@@ -21,7 +21,7 @@ vi.mock('firebase/auth', () => ({
   onAuthStateChanged: (_a: unknown, cb: (u: typeof fb.state.currentUser) => void) => { fb.listeners.push(cb); return () => fb.listeners.splice(fb.listeners.indexOf(cb), 1) },
   signInWithPopup: fb.signInWithPopup,
   signOut: fb.signOut,
-  deleteUser: fb.deleteUser,
+  reauthenticateWithPopup: fb.reauthenticateWithPopup,
 }))
 vi.mock('@/services/firebase/app', () => ({ getFirebaseApp: () => ({}) }))
 
@@ -76,17 +76,62 @@ describe('Firebase auth adapter', () => {
     expect(fb.signInWithPopup).not.toHaveBeenCalled()
   })
 
-  it('sign out clears the actor; delete account removes the Firebase user and local data', async () => {
+  it('sign out clears the actor', async () => {
     fb.state.currentUser = ana
     await firebaseAuthService.getSession()
     await firebaseAuthService.signOut()
     expect(getActorId()).toBeNull()
+  })
 
-    fb.state.currentUser = ana
-    await firebaseAuthService.getSession()
-    await firebaseAuthService.deleteAccount()
-    expect(fb.deleteUser).toHaveBeenCalledOnce()
-    expect(await db.users.count()).toBe(0)
+  describe('deleting the account', () => {
+    const signedInAs = async () => {
+      fb.state.currentUser = { ...ana, getIdToken: async (force) => (force ? 'fresh-token' : 'cached-token') }
+      await firebaseAuthService.getSession()
+      await db.trips.put({ id: 't1', ownerId: 'uid-ana', title: 'Ana trip' } as never)
+    }
+    const answers = (...statuses: Array<[number, unknown]>) => {
+      const fetchMock = vi.fn(async () => { const [status, body] = statuses.shift() ?? [200, {}]; return Response.json(body, { status }) })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('asks the server to remove everything, with a fresh token, then clears this device', async () => {
+      await signedInAs()
+      const fetchMock = answers([200, { deleted: true }])
+      await firebaseAuthService.deleteAccount()
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, { method: string; headers: Record<string, string> }]
+      expect(url).toBe('/api/account/delete')
+      expect(init).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer fresh-token' } })
+      expect(await db.users.count()).toBe(0)
+      expect(await db.trips.count()).toBe(0)
+      expect(getActorId()).toBeNull()
+    })
+
+    it('confirms with Google once when the session is too old, then tries again', async () => {
+      await signedInAs()
+      const fetchMock = answers([401, { error: 'recent_login_required' }], [200, { deleted: true }])
+      await firebaseAuthService.deleteAccount()
+      expect(fb.reauthenticateWithPopup).toHaveBeenCalledOnce()
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(await db.trips.count()).toBe(0)
+    })
+
+    it('keeps everything on the device, and says so, when the server could not delete', async () => {
+      await signedInAs()
+      answers([500, { error: 'server_error' }])
+      await expect(firebaseAuthService.deleteAccount()).rejects.toThrow('couldn’t delete your account')
+      expect(await db.trips.count()).toBe(1)
+      expect(getActorId()).toBe('uid-ana')
+    })
+
+    it('keeps everything when the person backs out of confirming with Google', async () => {
+      await signedInAs()
+      answers([401, { error: 'recent_login_required' }])
+      fb.reauthenticateWithPopup.mockRejectedValueOnce(new Error('auth/popup-closed-by-user'))
+      await expect(firebaseAuthService.deleteAccount()).rejects.toThrow('popup-closed')
+      expect(await db.trips.count()).toBe(1)
+    })
   })
 
   it('signing out removes the account’s data from the device', async () => {

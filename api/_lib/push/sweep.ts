@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { sendPush, type PushMessage } from './fcm.js'
 import { TIMED_TYPES, buildReminders, dateInTimezone, daysBetween, effectiveState, placeName, sociableHour, type BookingFacts, type Candidate, type DayFacts, type ItemFacts, type NotificationType } from './rules.js'
-import { createIfAbsent, deleteDocument, getDocument, listCollection, listDevices, tripsOf, type Doc } from './store.js'
+import { createIfAbsent, deleteDocument, getDocument, listCollection, listDevices, tripsOf, type Doc } from '../admin/store.js'
 
 export interface SweepResult { people: number; trips: number; sent: number; held: number; removedDevices: number; failures: number }
 

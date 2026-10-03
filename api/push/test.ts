@@ -1,5 +1,5 @@
 import { HttpError, authenticate, json } from '../_lib/ai/http.js'
-import { serviceAccount } from '../_lib/push/google.js'
+import { serviceAccount } from '../_lib/admin/google.js'
 import { sendTest } from '../_lib/push/sweep.js'
 
 /** `POST /api/push/test` — sends a test notification to the caller's own registered devices (signed-in people only). */
