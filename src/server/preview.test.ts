@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { findPublishedPage } from '../../api/_lib/firestore'
 import { buildHead, coverIsPhoto, decodeCover, escapeHtml, injectHead, parseTrip, previewDescription, type PreviewTrip } from '../../api/_lib/preview'
@@ -74,12 +75,12 @@ describe('link preview tags', () => {
 describe('the preview endpoints', () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
 
-  /** The deployment serves index.html; Firestore holds one published page under one short link. */
+  /** The function reads index.html from disk; Firestore holds one published page under one short link. */
   function backend(t: PreviewTrip | undefined, slug = 'bali-ab12') {
     vi.stubEnv('FIRESTORE_REST_URL', 'https://firestore.test/documents')
+    vi.stubEnv('APP_SHELL_FILE', join(process.cwd(), 'index.html')) // the app's HTML, read from disk as the function does
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
-      if (url === 'https://wayfarer.test/index.html') return new Response(indexHtml)
       if (t && url === `https://firestore.test/documents/publicSlugs/${slug}`) return Response.json({ fields: { publicTripId: { stringValue: t.id } } })
       if (t && url === `https://firestore.test/documents/publicTrips/${t.id}`) return Response.json(restDoc(t))
       return new Response('{}', { status: 404 })

@@ -66,5 +66,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/og.ts": {
+      "includeFiles": "dist/index.html"
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'firebase/auth'
 import { connectFirestoreEmulator, doc, getDoc, initializeFirestore, setDoc, type Firestore } from 'firebase/firestore'
+import { join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActorId } from '../actor'
 import { db } from '../db'
@@ -217,13 +218,11 @@ describe('the Explore feed', () => {
 
 describe('link previews for a real published page', () => {
   const REST = 'http://127.0.0.1:8080/v1/projects/demo-wayfarer/databases/(default)/documents'
-  const shell = '<html><head><meta name="description" content="x" /><title>Wayfarer</title></head><body><div id="root"></div></body></html>'
 
-  /** The deployment's index.html is stubbed; everything else (the Firestore reads) goes to the emulator, signed out, under the real rules. */
+  /** The app's index.html is read from disk as in the deployed function; the Firestore reads go to the emulator, signed out, under the real rules. */
   function deployment() {
     vi.stubEnv('FIRESTORE_REST_URL', REST)
-    const real = globalThis.fetch
-    vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => (String(input) === 'https://wayfarer.test/index.html' ? Promise.resolve(new Response(shell)) : real(input, init)))
+    vi.stubEnv('APP_SHELL_FILE', join(process.cwd(), 'index.html'))
   }
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
 
