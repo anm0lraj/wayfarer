@@ -59,9 +59,12 @@ export function TripMap({ markers, route, selectedId, onSelect, fallbackCenter, 
 
   useEffect(() => {
     if (!handle) return
-    if (route && route.length > 1) handle.drawRoute(route)
-    else handle.clearRoute()
-  }, [handle, route])
+    if (!route || route.length < 2) return handle.clearRoute()
+    handle.drawRoute(route) // the straight line at once, so the map is never bare while the roads load
+    let cancelled = false
+    maps.routing.route(route).then((r) => { if (!cancelled && r.points !== route && r.points.length > 1) handle.drawRoute(r.points) }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [handle, route, maps.routing])
 
   const points = markers.map((m) => m.point)
   useEffect(() => {

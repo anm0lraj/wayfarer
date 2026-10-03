@@ -1,6 +1,6 @@
 import type { GeoPoint } from '@/types'
 
-export type WeatherCondition = 'sunny' | 'partly_cloudy' | 'cloudy' | 'rain' | 'storm'
+export type WeatherCondition = 'sunny' | 'partly_cloudy' | 'cloudy' | 'rain' | 'storm' | 'snow'
 
 export interface DayForecast {
   date: string
