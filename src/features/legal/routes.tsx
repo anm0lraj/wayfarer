@@ -41,7 +41,7 @@ export function PrivacyPage() {
         <><strong>A device record</strong> if you turn on reminders: a token that lets our server send notifications to that browser, and its time zone.</>,
         <><strong>People you share with</strong>: the email addresses you invite, and the role you give them.</>,
       ]} />
-      <p>We do not use advertising or tracking cookies, and we do not run analytics on what you do in the app.</p>
+      <p>We do not use advertising or tracking cookies, and we do not run analytics on what you do in the app. If the app crashes it sends one small report to our server log: the error message, the page path (without any details after it), and your browser type. It contains no account details.</p>
 
       <H>Where it is kept, and who handles it</H>
       <List items={[

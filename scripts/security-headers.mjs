@@ -30,6 +30,8 @@ export const csp = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  // Browsers report anything the policy blocks (a missed new host, an injected script) to a function that logs it.
+  "report-uri /api/report",
 ].join('; ')
 
 export const securityHeaders = {

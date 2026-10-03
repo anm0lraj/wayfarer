@@ -5,12 +5,14 @@ import { App } from './App'
 import { installMockApi } from '@/mocks/install'
 import { initInstallPrompt, usePwa } from '@/lib/pwa'
 import { env } from '@/config/env'
+import { installErrorReporting } from '@/lib/monitoring'
 import { initTheme } from '@/lib/theme'
 import '@/styles/globals.css'
 
 initTheme()
+installErrorReporting() // crash reports to /api/report (deployed environments only)
 // Serves /api/* in-page. The live assistant, push (test notification) and account deletion are real functions, so their paths go through.
-installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.pushKey ? ['/api/push/'] : []), ...(env.backend === 'firebase' ? ['/api/account/'] : [])] })
+installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.pushKey ? ['/api/push/'] : []), ...(env.backend === 'firebase' ? ['/api/account/', '/api/report'] : [])] })
 
 initInstallPrompt()
 if (import.meta.env.PROD) {
