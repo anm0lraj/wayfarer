@@ -33,17 +33,27 @@ export async function POST(request: Request): Promise<Response> {
     const stream = new ReadableStream({
       async start(controller) {
         let charged = false
+        let said = false // anything the traveller will see: words or a usable proposal
         // Charged on the first thing the model says: if the provider is down the traveller is not billed for it.
         const charge = async () => { if (!charged) { charged = true; await chargeCredits(who, 1) } }
         try {
           for await (const ev of streamCompletion(cfg, { messages, tools: body.context ? CHAT_TOOLS : undefined, maxTokens: 900, reasoning: reasoningFor('chat'), signal: request.signal })) {
             await charge()
-            if (ev.type === 'text') controller.enqueue(line({ type: 'token', text: ev.text }))
-            else {
+            if (ev.type === 'text') {
+              if (ev.text.trim()) said = true
+              controller.enqueue(line({ type: 'token', text: ev.text }))
+            } else {
               const action = groundedAction(ev.name, ev.args, grounding)
-              if (action) controller.enqueue(line({ type: 'action', action }))
+              if (action) {
+                said = true
+                controller.enqueue(line({ type: 'action', action }))
+              } else {
+                console.warn('Dropped an AI proposal that does not fit the trip', ev.name, JSON.stringify(ev.args).slice(0, 300))
+              }
             }
           }
+          // A reply that is empty, or only proposals that were dropped, would leave the traveller looking at nothing.
+          if (!said) controller.enqueue(line({ type: 'token', text: 'I couldn’t find a good change for that. Could you tell me a bit more about what you’d like?' }))
           controller.enqueue(line({ type: 'done' }))
         } catch (e) {
           if (!request.signal.aborted) {

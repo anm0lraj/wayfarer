@@ -108,6 +108,15 @@ describe('POST /api/ai/chat', () => {
     expect((await chat(ask('/api/ai/chat', chatBody(), otherToken))).status).toBe(200)
   })
 
+  it('never leaves the traveller with an empty reply when every proposal had to be dropped', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    providerReply = () => sse([{ choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'remove_activity', arguments: '{"itemId":"made-up"}' } }] } }] }])
+    const out = await events(await chat(ask('/api/ai/chat', chatBody())))
+    expect(out.some((e) => e.type === 'action')).toBe(false)
+    expect(out[0]).toMatchObject({ type: 'token', text: expect.stringContaining('couldn’t find a good change') })
+    expect(out.at(-1)).toEqual({ type: 'done' })
+  })
+
   it('is not billed when the provider is down', async () => {
     providerReply = () => new Response('overloaded', { status: 503 })
     const out = await events(await chat(ask('/api/ai/chat', chatBody())))
