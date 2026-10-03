@@ -9,7 +9,8 @@ import { initTheme } from '@/lib/theme'
 import '@/styles/globals.css'
 
 initTheme()
-installMockApi({ passThrough: env.ai === 'live' ? ['/api/ai/'] : [] }) // serves /api/* in-page; the live assistant is a real function
+// Serves /api/* in-page. The live assistant and push (test notification) are real functions, so their paths go through.
+installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.pushKey ? ['/api/push/'] : [])] })
 
 initInstallPrompt()
 if (import.meta.env.PROD) {
