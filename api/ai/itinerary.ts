@@ -26,7 +26,10 @@ export async function POST(request: Request): Promise<Response> {
     return json({ days, summary: typeof args.summary === 'string' ? args.summary.slice(0, 300) : `A ${days.length}-day plan.` })
   } catch (e) {
     if (e instanceof HttpError) return json({ error: e.code, ...e.extra }, e.status)
-    if (e instanceof ProviderError) return json({ error: 'provider_error' }, e.status === 429 ? 503 : 502)
+    if (e instanceof ProviderError) {
+      console.error('AI provider failed', { status: e.status, detail: e.message })
+      return json({ error: 'provider_error', providerStatus: e.status }, e.status === 429 ? 503 : 502)
+    }
     return json({ error: 'server_error' }, 500)
   }
 }

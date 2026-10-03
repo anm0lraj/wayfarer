@@ -46,7 +46,12 @@ export async function POST(request: Request): Promise<Response> {
           }
           controller.enqueue(line({ type: 'done' }))
         } catch (e) {
-          if (!request.signal.aborted) controller.enqueue(line({ type: 'error', message: e instanceof ProviderError && e.status === 429 ? 'The assistant is busy. Try again in a minute.' : 'The assistant couldn’t finish that reply.' }))
+          if (!request.signal.aborted) {
+            // The provider's answer goes to the server log (never to the traveller); the app only learns the status.
+            console.error('AI provider failed', e instanceof ProviderError ? { status: e.status, detail: e.message } : e)
+            const status = e instanceof ProviderError ? e.status : undefined
+            controller.enqueue(line({ type: 'error', message: status === 429 ? 'The assistant is busy. Try again in a minute.' : `The assistant couldn’t finish that reply${status ? ` (provider ${status})` : ''}.` }))
+          }
         } finally {
           controller.close()
         }
