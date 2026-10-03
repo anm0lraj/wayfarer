@@ -1,4 +1,4 @@
-import { ProviderError, completeWithTool, providerConfig } from '../_lib/ai/gemini.js'
+import { ProviderError, completeWithTool, providerConfig, reasoningFor } from '../_lib/ai/gemini.js'
 import { HttpError, authenticate, json, readJson } from '../_lib/ai/http.js'
 import { itinerarySystemPrompt } from '../_lib/ai/prompts.js'
 import { chargeCredits, checkCredits } from '../_lib/ai/quota.js'
@@ -18,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const args = await completeWithTool(cfg, {
       messages: [{ role: 'system', content: itinerarySystemPrompt(b) }, { role: 'user', content: `Draft ${b.days} day${b.days === 1 ? '' : 's'} for ${b.destinationName ?? b.destinationId}.` }],
-      tool: DAYS_TOOL, maxTokens: 3500, signal: request.signal,
+      tool: DAYS_TOOL, maxTokens: 3500, reasoning: reasoningFor('plan'), signal: request.signal,
     })
     const days = groundedDays(args.days, b.catalogue ?? [], b.days)
     if (days.length === 0) throw new HttpError(502, 'no_plan')

@@ -1,4 +1,4 @@
-import { ProviderError, completeWithTool, providerConfig } from '../_lib/ai/gemini.js'
+import { ProviderError, completeWithTool, providerConfig, reasoningFor } from '../_lib/ai/gemini.js'
 import { HttpError, authenticate, json, readJson } from '../_lib/ai/http.js'
 import { regenerateSystemPrompt } from '../_lib/ai/prompts.js'
 import { chargeCredits, checkCredits } from '../_lib/ai/quota.js'
@@ -18,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const args = await completeWithTool(cfg, {
       messages: [{ role: 'system', content: regenerateSystemPrompt(b) }, { role: 'user', content: `Propose a new plan for day ${b.dayNumber}.` }],
-      tool: DAYS_TOOL, maxTokens: 1500, signal: request.signal,
+      tool: DAYS_TOOL, maxTokens: 1500, reasoning: reasoningFor('plan'), signal: request.signal,
     })
     const [after] = groundedDays(args.days, b.catalogue ?? [], 1)
     if (!after) throw new HttpError(502, 'no_plan')

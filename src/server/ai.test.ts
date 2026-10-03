@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aiActionSchema, itemCategorySchema, newDayInputSchema } from '@/types'
-import { completeWithTool, providerConfig, streamCompletion } from '../../api/_lib/ai/gemini'
+import { completeWithTool, providerConfig, reasoningFor, streamCompletion } from '../../api/_lib/ai/gemini'
 import { chatSystemPrompt, itinerarySystemPrompt } from '../../api/_lib/ai/prompts'
 import { ITEM_CATEGORIES, aiAction, chatBody, newDay, type CatalogPlace, type TripContextInput } from '../../api/_lib/ai/schemas'
 import { DAYS_TOOL, groundedAction, groundedDays } from '../../api/_lib/ai/tools'
@@ -243,6 +243,21 @@ describe('the provider connection', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect((async () => { for await (const _ of streamCompletion({ key: 'k', model: 'main', fallbackModel: 'backup' }, { messages: [], maxTokens: 10 })) void _ })()).rejects.toMatchObject({ status: 503 })
     expect(fetchMock).toHaveBeenCalledTimes(6)
+  })
+
+  it('asks the model to think as little as chat needs, and leaves the setting out when told to', async () => {
+    const bodies: Array<Record<string, unknown>> = []
+    vi.stubGlobal('fetch', vi.fn(async (_u: string, init: RequestInit) => { bodies.push(JSON.parse(String(init.body))); return sse([{ choices: [{ delta: { content: 'x' } }] }]) }))
+    const drain = async (reasoning?: string) => { for await (const _ of streamCompletion(cfg, { messages: [], maxTokens: 10, reasoning })) void _ }
+    await drain(reasoningFor('chat'))
+    vi.stubEnv('AI_REASONING_PLAN', 'medium')
+    await drain(reasoningFor('plan'))
+    vi.stubEnv('AI_REASONING_CHAT', 'off')
+    await drain(reasoningFor('chat'))
+    expect(bodies.map((b) => b.reasoning_effort)).toEqual(['minimal', 'medium', undefined])
+    expect(reasoningFor('plan')).toBe('medium')
+    vi.unstubAllEnvs()
+    expect(reasoningFor('plan')).toBe('low')
   })
 
   it('reports a provider failure with its status', async () => {

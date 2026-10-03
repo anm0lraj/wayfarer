@@ -1,4 +1,4 @@
-import { ProviderError, providerConfig, streamCompletion, type ChatMessage } from '../_lib/ai/gemini.js'
+import { ProviderError, providerConfig, reasoningFor, streamCompletion, type ChatMessage } from '../_lib/ai/gemini.js'
 import { HttpError, authenticate, json, readJson } from '../_lib/ai/http.js'
 import { chatSystemPrompt } from '../_lib/ai/prompts.js'
 import { chargeCredits, checkCredits } from '../_lib/ai/quota.js'
@@ -36,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
         // Charged on the first thing the model says: if the provider is down the traveller is not billed for it.
         const charge = async () => { if (!charged) { charged = true; await chargeCredits(who, 1) } }
         try {
-          for await (const ev of streamCompletion(cfg, { messages, tools: body.context ? CHAT_TOOLS : undefined, maxTokens: 900, signal: request.signal })) {
+          for await (const ev of streamCompletion(cfg, { messages, tools: body.context ? CHAT_TOOLS : undefined, maxTokens: 900, reasoning: reasoningFor('chat'), signal: request.signal })) {
             await charge()
             if (ev.type === 'text') controller.enqueue(line({ type: 'token', text: ev.text }))
             else {
