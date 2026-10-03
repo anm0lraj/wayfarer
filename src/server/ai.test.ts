@@ -171,7 +171,7 @@ describe('the provider connection', () => {
   it('is only available with a key, and the model can be chosen', () => {
     expect(providerConfig()).toBeUndefined()
     vi.stubEnv('GEMINI_API_KEY', 'k')
-    expect(providerConfig()).toEqual({ key: 'k', model: 'gemini-2.5-flash-lite' })
+    expect(providerConfig()).toEqual({ key: 'k', model: 'gemini-3.1-flash-lite' })
     vi.stubEnv('AI_MODEL', 'gemini-x')
     expect(providerConfig()?.model).toBe('gemini-x')
   })

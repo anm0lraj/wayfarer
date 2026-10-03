@@ -10,7 +10,7 @@ export interface ProviderConfig { key: string; model: string }
 export function providerConfig(): ProviderConfig | undefined {
   const key = process.env.GEMINI_API_KEY ?? process.env.AI_API_KEY
   if (!key) return undefined
-  return { key, model: process.env.AI_MODEL ?? 'gemini-2.5-flash-lite' }
+  return { key, model: process.env.AI_MODEL ?? 'gemini-3.1-flash-lite' }
 }
 
 export class ProviderError extends Error {
