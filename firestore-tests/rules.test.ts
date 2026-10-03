@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 let env: RulesTestEnvironment
-const as = (uid: string | null) => (uid ? env.authenticatedContext(uid) : env.unauthenticatedContext()).firestore()
+const as = (uid: string | null, claims: Record<string, unknown> = {}) => (uid ? env.authenticatedContext(uid, claims) : env.unauthenticatedContext()).firestore()
+/** A signed-in Google account: the email is on the token and verified. */
+const google = (uid: string, email: string) => as(uid, { email, email_verified: true })
 
 const trip = (extra: Record<string, unknown> = {}) => ({ id: 't1', ownerId: 'owner', title: 'Bali', members: { owner: 'owner' }, ...extra })
 
@@ -18,6 +21,7 @@ beforeEach(async () => {
     const db = ctx.firestore()
     await db.doc('trips/t1').set(trip({ members: { owner: 'owner', ed: 'editor', vw: 'viewer' } }))
     await db.doc('trips/t1/items/i1').set({ id: 'i1', tripId: 't1', title: 'Temple' })
+    await db.doc('invites/t1__amy@example.com').set({ tripId: 't1', tripTitle: 'Bali', email: 'amy@example.com', role: 'editor', status: 'pending', invitedBy: 'owner' })
     await db.doc('publicTrips/p1').set({ id: 'p1', ownerId: 'owner', title: 'Public' })
   })
 })
@@ -118,5 +122,72 @@ describe('everything else', () => {
   it('is closed', async () => {
     await assertFails(as('owner').doc('admin/config').get())
     await assertFails(as('owner').doc('places/p-dps').set({ name: 'x' }))
+  })
+})
+
+describe('invitations', () => {
+  const invite = (over: Record<string, unknown> = {}) => ({ tripId: 't1', tripTitle: 'Bali', email: 'bob@example.com', role: 'viewer', status: 'pending', invitedBy: 'owner', ...over })
+
+  it('only the trip owner can invite, by email, as editor or viewer', async () => {
+    await assertSucceeds(as('owner').doc('invites/t1__bob@example.com').set(invite()))
+    await assertFails(as('ed').doc('invites/t1__bob@example.com').set(invite({ invitedBy: 'ed' })))
+    await assertFails(as('stranger').doc('invites/t1__bob@example.com').set(invite({ invitedBy: 'stranger' })))
+    await assertFails(as('owner').doc('invites/t1__bob@example.com').set(invite({ role: 'owner' })))
+    await assertFails(as('owner').doc('invites/wrong-id').set(invite()))
+    await assertFails(as('owner').doc('invites/t1__Bob@Example.com').set(invite({ email: 'Bob@Example.com' })))
+    await assertFails(as('owner').doc('invites/t1__bob@example.com').set(invite({ status: 'accepted' })))
+  })
+
+  it('the invited person sees their invitations, and nobody else does', async () => {
+    const mine = await assertSucceeds(getDocs(query(collection(google('amy-uid', 'amy@example.com') as never, 'invites'), where('email', '==', 'amy@example.com'))))
+    await assertSucceeds(Promise.resolve(mine))
+    await assertFails(getDocs(query(collection(google('zed', 'zed@example.com') as never, 'invites'), where('email', '==', 'amy@example.com'))))
+    await assertFails(as('stranger').doc('invites/t1__amy@example.com').get())
+    // The owner sees the invitations they sent.
+    await assertSucceeds(getDocs(query(collection(as('owner') as never, 'invites'), where('tripId', '==', 't1'), where('invitedBy', '==', 'owner'))))
+  })
+
+  it('accepting adds you to the trip with exactly the offered role', async () => {
+    await assertSucceeds(google('amy-uid', 'amy@example.com').doc('trips/t1').update({ 'members.amy-uid': 'editor' }))
+  })
+
+  it('accepting cannot be used to take more than was offered, or to change anything else', async () => {
+    const amy = () => google('amy-uid', 'amy@example.com')
+    await assertFails(amy().doc('trips/t1').update({ 'members.amy-uid': 'owner' }))
+    await assertFails(amy().doc('trips/t1').update({ 'members.amy-uid': 'viewer' })) // offered editor, not viewer
+    await assertFails(amy().doc('trips/t1').update({ 'members.amy-uid': 'editor', title: 'Mine now' }))
+    await assertFails(amy().doc('trips/t1').update({ 'members.amy-uid': 'editor', 'members.friend': 'editor' }))
+  })
+
+  it('accepting needs a verified email that matches the invitation', async () => {
+    await assertFails(as('amy-uid', { email: 'amy@example.com', email_verified: false }).doc('trips/t1').update({ 'members.amy-uid': 'editor' }))
+    await assertFails(google('zed', 'zed@example.com').doc('trips/t1').update({ 'members.zed': 'editor' })) // no invitation for zed
+    await assertFails(as('amy-uid').doc('trips/t1').update({ 'members.amy-uid': 'editor' })) // no email on the token
+  })
+
+  it('a declined or already used invitation cannot be accepted', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('invites/t1__amy@example.com').update({ status: 'declined' }) })
+    await assertFails(google('amy-uid', 'amy@example.com').doc('trips/t1').update({ 'members.amy-uid': 'editor' }))
+  })
+
+  it('once in, a member can record themselves as a collaborator, at their own role only', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('trips/t1').update({ 'members.amy-uid': 'editor' }) })
+    const amy = () => google('amy-uid', 'amy@example.com')
+    const me = { id: 'c1', tripId: 't1', userId: 'amy-uid', role: 'editor', status: 'accepted' }
+    await assertSucceeds(amy().doc('trips/t1/collaborators/c1').set(me))
+    await assertFails(amy().doc('trips/t1/collaborators/c2').set({ ...me, id: 'c2', role: 'owner' }))
+    await assertFails(amy().doc('trips/t1/collaborators/c3').set({ ...me, id: 'c3', userId: 'someone-else' }))
+  })
+
+  it('the invited person can answer the invitation but not rewrite it', async () => {
+    const amy = () => google('amy-uid', 'amy@example.com')
+    await assertFails(amy().doc('invites/t1__amy@example.com').update({ role: 'owner' }))
+    await assertFails(amy().doc('invites/t1__amy@example.com').update({ status: 'pending-forever' }))
+    await assertSucceeds(amy().doc('invites/t1__amy@example.com').update({ status: 'accepted' }))
+  })
+
+  it('the owner can withdraw an invitation', async () => {
+    await assertSucceeds(as('owner').doc('invites/t1__amy@example.com').delete())
+    await assertFails(as('stranger').doc('invites/t1__amy@example.com').delete())
   })
 })

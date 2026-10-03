@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight, Image as ImageIcon, Plus, Radio } from 'lucide-react'
 import { useSession } from '@/app/providers/session'
+import { InvitationsCard } from '@/features/sharing/InvitationsCard'
 import { DestinationCard } from '@/components/domain/DestinationCard'
 import { PublicTripCard } from '@/components/domain/PublicTripCard'
 import { TripCard } from '@/components/domain/TripCard'
@@ -74,6 +75,8 @@ export default function HomeRoute() {
       </header>
 
       {active && <LiveBanner trip={active} />}
+
+      <InvitationsCard />
 
       <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
         <div className="min-w-0 space-y-8 lg:col-span-8">

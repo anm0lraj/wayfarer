@@ -6,6 +6,9 @@ import { toast } from '@/components/feedback/toast'
 import { Button } from '@/components/ui/Button'
 import type { TripWithState } from '@/data/queries/trips'
 import { tripRepo } from '@/data/repositories'
+import { useSession } from '@/app/providers/session'
+import { sharingAvailable } from '@/data/queries/invites'
+import { SharePeopleSheet } from '@/features/sharing/SharePeopleSheet'
 import { coverFromFile } from '@/lib/media/image'
 import { placeholderImage } from '@/lib/placeholder'
 
@@ -13,6 +16,9 @@ import { placeholderImage } from '@/lib/placeholder'
 export function TripActions({ trip }: { trip: TripWithState }) {
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
+  const session = useSession()
+  const [sharing, setSharing] = useState(false)
+  const canShare = sharingAvailable && session?.user.id === trip.ownerId
   const navigate = useNavigate()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -60,6 +66,8 @@ export function TripActions({ trip }: { trip: TripWithState }) {
       <input ref={fileRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label="Choose a cover photo" onChange={(e) => { setCover(e.target.files?.[0]); e.target.value = '' }} />
       <Button variant="secondary" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>{hasOwnCover ? 'Change cover photo' : 'Add cover photo'}</Button>
       {hasOwnCover && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void resetCover()}>Use illustration</Button>}
+      {canShare && <Button variant="secondary" size="sm" onClick={() => setSharing(true)}>Share with people</Button>}
+      {canShare && <SharePeopleSheet trip={trip} open={sharing} onOpenChange={setSharing} />}
       <Button variant="secondary" size="sm" disabled={busy} onClick={() => void toggleArchive()}>{archived ? 'Restore trip' : 'Archive trip'}</Button>
       <Button variant="ghost" size="sm" className="text-error" disabled={busy} onClick={() => setConfirming(true)}>Delete trip</Button>
       <ResponsiveSheet open={confirming} onOpenChange={setConfirming} title="Delete this trip?" description={`“${trip.title}” and its itinerary, bookings and memories will be permanently deleted.`} wide="dialog">

@@ -101,5 +101,8 @@ export const tripCollaboratorSchema = z.object({
   status: z.enum(['invited', 'accepted']),
   invitedBy: idSchema,
   invitedAt: isoDateTimeSchema,
+  /** Shown in the people list. Set when the person accepts, from their own account. */
+  name: z.string().optional(),
+  email: z.string().optional(),
 })
 export type TripCollaborator = z.infer<typeof tripCollaboratorSchema>

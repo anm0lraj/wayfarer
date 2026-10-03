@@ -26,6 +26,22 @@ service cloud.firestore {
       return collection in ['days', 'items', 'bookings', 'checklist', 'memories', 'stories', 'collaborators'];
     }
 
+    // ---- invitations ---------------------------------------------------------------------------------------------
+    // One document per (trip, email): invites/{tripId}__{email}. The owner writes it; the person with that verified email
+    // can accept it, which is what lets them add themselves to the trip's members (and only with the role offered).
+    function myEmail() { return request.auth.token.email.lower(); }
+    function emailVerified() { return request.auth.token.email_verified == true; }
+    function inviteDoc(tripId) {
+      return get(/databases/$(database)/documents/invites/$(tripId + '__' + myEmail())).data;
+    }
+    function acceptingInvite(tripId) {
+      return emailVerified()
+        && inviteDoc(tripId).status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([me()])
+        && request.resource.data.members[me()] == inviteDoc(tripId).role;
+    }
+
     match /trips/{tripId} {
       // Reading an id that does not exist yet is how the app checks before creating; there is nothing to reveal.
       allow read: if signedIn() && (resource == null || roleOf(resource.data.members) != null);
@@ -42,6 +58,7 @@ service cloud.firestore {
         && (
           (roleOf(resource.data.members) == 'owner' && request.resource.data.members[resource.data.ownerId] == 'owner')
           || (roleOf(resource.data.members) == 'editor' && request.resource.data.members == resource.data.members)
+          || acceptingInvite(tripId)
         );
 
       allow delete: if signedIn() && roleOf(resource.data.members) == 'owner';
@@ -55,7 +72,8 @@ service cloud.firestore {
           && request.resource.data.tripId == tripId
           && (
             collection == 'collaborators'
-              ? tripRole(tripId) == 'owner'
+              // The owner manages the list; a member may write only their own entry, at the role they were given.
+              ? (tripRole(tripId) == 'owner' || (request.resource.data.userId == me() && request.resource.data.role == tripRole(tripId)))
               : tripRole(tripId) in ['owner', 'editor']
           );
 
@@ -67,6 +85,41 @@ service cloud.firestore {
               : tripRole(tripId) in ['owner', 'editor']
           );
       }
+    }
+
+    match /invites/{inviteId} {
+      function tripOf(tripId) { return get(/databases/$(database)/documents/trips/$(tripId)).data; }
+
+      // Written so list queries can be checked against their filters: the invited person queries by their own email,
+      // the inviting owner by their own uid. (Emails are stored lower-case, as Google returns them.)
+      allow read: if signedIn() && (
+        (emailVerified() && resource.data.email == request.auth.token.email)
+        || resource.data.invitedBy == me()
+      );
+
+      allow create: if signedIn()
+        && tripOf(request.resource.data.tripId).members.get(me(), null) == 'owner'
+        && inviteId == request.resource.data.tripId + '__' + request.resource.data.email
+        && request.resource.data.email == request.resource.data.email.lower()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.role in ['editor', 'viewer']
+        && request.resource.data.invitedBy == me();
+
+      // The invited person can only answer it. The owner can change the role offered, but not who or what it is for.
+      allow update: if signedIn() && (
+        (tripOf(resource.data.tripId).members.get(me(), null) == 'owner'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'status'])
+          && request.resource.data.role in ['editor', 'viewer']
+          && request.resource.data.status in [resource.data.status, 'pending']) // only the invitee can accept or decline
+        || (emailVerified() && resource.data.email == myEmail()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+            && request.resource.data.status in ['accepted', 'declined'])
+      );
+
+      allow delete: if signedIn() && (
+        tripOf(resource.data.tripId).members.get(me(), null) == 'owner'
+        || (emailVerified() && resource.data.email == myEmail())
+      );
     }
 
     // ---- published trips: anyone can read, only the publisher can change ------------------------------------------
