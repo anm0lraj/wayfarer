@@ -26,7 +26,10 @@ const lngLat = (p: GeoPoint): [number, number] => [p.lng, p.lat]
 export const maplibreProvider: MapProvider = {
   name: 'maplibre-osm',
   async create(el: HTMLElement, options: MapOptions): Promise<MapHandle> {
-    const maplibregl = (await import('maplibre-gl')).default
+    const maplibregl = await import('maplibre-gl')
+    // MapLibre 6 looks for its worker next to its own script, which the build does not copy. Bundle the worker (with the
+    // shared code it imports) ourselves and tell the library where it is, or no map tile is ever drawn.
+    maplibregl.setWorkerUrl((await import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url')).default)
     await import('maplibre-gl/dist/maplibre-gl.css')
     const map = new maplibregl.Map({
       container: el, style: TILE_STYLE, center: lngLat(options.center), zoom: options.zoom ?? 10, attributionControl: { compact: true },

@@ -9,6 +9,7 @@ import { localApi } from './scripts/local-api'
 export default defineConfig({
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   preview: { headers: securityHeaders },
+  worker: { format: 'es' }, // maplibre-gl's worker is an ES module with imports
   plugins: [
     react(),
     localApi(),

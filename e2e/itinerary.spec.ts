@@ -3,7 +3,13 @@ import { expect, test } from '@playwright/test'
 // Runs at 390 / 820 / 1440 px. Written to catch what jsdom can't: real map rendering and real drag and drop.
 test.describe('itinerary and map', () => {
   test('the map renders with a real size and one numbered pin per located stop', async ({ page }, info) => {
+    // Regression: MapLibre 6 looks for its worker next to its own script; the build didn't ship it, the request got the
+    // app's HTML, and the map drew pins but never a tile. The worker must actually start and be real JavaScript.
+    const workerFailed = page.waitForEvent('console', { predicate: (m) => /worker|Failed to fetch/i.test(m.text()) && m.type() === 'error', timeout: 6000 }).then(() => true, () => false)
+    const worker = page.waitForEvent('worker', { timeout: 15_000 })
     await page.goto('/trips/trip-bali/map?day=1')
+    expect((await worker).url()).toMatch(/maplibre-gl-worker.*\.js$/)
+    expect(await workerFailed).toBe(false)
     const map = page.getByRole('application', { name: 'Map of your stops' })
     await expect(map).toBeVisible()
     // Regression: the vendor CSS once collapsed the container to 0px tall.

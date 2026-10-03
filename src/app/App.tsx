@@ -36,7 +36,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ServicesProvider>
         <Bootstrap>
-          <RouterProvider router={router} future={{ v7_startTransition: true }} />
+          <RouterProvider router={router} />
         </Bootstrap>
         <Toaster />
         <LiveRegion />

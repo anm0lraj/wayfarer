@@ -91,4 +91,4 @@ export const routes: RouteObject[] = [
   },
 ]
 
-export const createRouter = () => createBrowserRouter(routes, { future: { v7_relativeSplatPath: true } })
+export const createRouter = () => createBrowserRouter(routes)
