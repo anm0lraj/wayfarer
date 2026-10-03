@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider, deleteUser, getAuth, onAuthStateChanged, signInWithPopup, signOut as fbSignOut, type User as FirebaseUser,
 } from 'firebase/auth'
+import { claimDevice, releaseDevice, wipeLocalAccountData } from '@/data/accountData'
 import { db } from '@/data/db'
 import { setActorId } from '@/data/actor'
 import { put } from '@/data/repositories/shared'
@@ -60,6 +61,7 @@ async function sessionFor(fb: FirebaseUser | null): Promise<Session | null> {
     setActorId(null)
     return null
   }
+  await claimDevice(fb.uid) // a different account's leftovers are removed before this one is shown anything
   const user = await ensureLocalUser(fb)
   setActorId(user.id)
   return { user }
@@ -82,9 +84,15 @@ export const firebaseAuthService: AuthService = {
     return (await sessionFor(cred.user))!
   },
 
+  /**
+   * Signs out and removes this account's data from the device, so the next person here finds nothing of theirs. The
+   * caller is expected to have offered to save unsent work first (`unsentWork`); this does not ask.
+   */
   async signOut() {
     await fbSignOut(auth())
     setActorId(null)
+    await wipeLocalAccountData()
+    await releaseDevice()
   },
 
   async deleteAccount() {
@@ -92,8 +100,9 @@ export const firebaseAuthService: AuthService = {
     if (!fb) return
     // Firebase asks for a recent sign-in before deleting an account; if so the error says so and nothing is removed.
     await deleteUser(fb)
-    await Promise.all(db.tables.map((t) => t.clear()))
     setActorId(null)
+    await wipeLocalAccountData()
+    await releaseDevice()
   },
 
   onAuthChange(cb) {

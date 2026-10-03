@@ -9,6 +9,7 @@ import { Badge, Chip } from '@/components/ui/Chip'
 import { NotificationSettings } from '@/features/notifications/NotificationSettings'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
 import { useSession } from '@/app/providers/session'
+import { useSignOut } from '@/features/account/useSignOut'
 import { usePendingChanges, useSyncState } from '@/features/sync/useSyncStatus'
 import { env } from '@/config/env'
 import { resetDemoData } from '@/data/seed'
@@ -60,6 +61,7 @@ export default function SettingsRoute() {
   const { auth } = useServices()
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const signingOut = useSignOut()
   const { installed, installEvent } = usePwa()
   const [aiDown, setAiDown] = useState(() => {
     try { return localStorage.getItem('mock-ai-unavailable') === '1' } catch { return false }
@@ -125,7 +127,8 @@ export default function SettingsRoute() {
 
         <Section title="Account" description={env.backend === 'firebase' ? `You’re signed in as ${session?.user.email ?? session?.user.name ?? 'a traveller'}.` : 'You’re signed in as the demo traveller.'}>
           <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
-          <Button variant="secondary" onClick={() => void auth.signOut()}>Sign out</Button>
+          <Button variant="secondary" disabled={signingOut.busy} onClick={() => void signingOut.signOut()}>Sign out</Button>
+          {signingOut.dialog}
           <Button variant="danger" onClick={() => void deleteAccount()}>Delete account and data</Button>
         </Section>
       </div>

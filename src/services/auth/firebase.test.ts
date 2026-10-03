@@ -89,6 +89,31 @@ describe('Firebase auth adapter', () => {
     expect(await db.users.count()).toBe(0)
   })
 
+  it('signing out removes the account’s data from the device', async () => {
+    fb.state.currentUser = ana
+    await firebaseAuthService.getSession()
+    await db.trips.put({ id: 't1', ownerId: 'uid-ana', title: 'Ana trip' } as never)
+    await db.syncQueue.add({ entity: 'trips', entityId: 't1', op: 'put', createdAt: 1, attempts: 0 })
+    await firebaseAuthService.signOut()
+    expect(await db.trips.count()).toBe(0)
+    expect(await db.syncQueue.count()).toBe(0)
+    expect(await db.users.count()).toBe(0)
+  })
+
+  it('a different account signing in never sees, or syncs, the previous one’s leftovers', async () => {
+    fb.state.currentUser = ana
+    await firebaseAuthService.getSession()
+    await db.trips.put({ id: 't1', ownerId: 'uid-ana', title: 'Ana trip' } as never)
+    await db.syncQueue.add({ entity: 'trips', entityId: 't1', op: 'put', createdAt: 1, attempts: 0 })
+
+    // The tab was closed without signing out; someone else opens the browser.
+    fb.state.currentUser = { uid: 'uid-ben', displayName: 'Ben', email: 'ben@example.com', photoURL: null }
+    await firebaseAuthService.getSession()
+    expect(await db.trips.count()).toBe(0)
+    expect((await db.syncQueue.toArray()).map((o) => `${o.entity}/${o.entityId}`)).toEqual(['users/uid-ben']) // only Ben's own new profile
+    expect(await db.users.get('uid-ben')).toBeDefined()
+  })
+
   it('reports auth changes to listeners', async () => {
     const seen: Array<string | null> = []
     const off = firebaseAuthService.onAuthChange((s) => seen.push(s?.user.id ?? null))
