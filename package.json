@@ -80,6 +80,7 @@
     },
     "universal-analytics": {
       "uuid": "^8.3.2"
-    }
+    },
+    "@grpc/grpc-js": "^1.14.5"
   }
 }
