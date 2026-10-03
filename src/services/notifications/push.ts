@@ -52,10 +52,17 @@ export const firebasePush: PushChannel = {
     const registration = await worker()
     if (!registration) return false
     const messaging = getMessaging(getFirebaseApp())
-    const last = await readState()
+    let last = await readState()
     // Another account was here and never unregistered (closed tab, lost session): mint a new token so the old account's
     // record, which this account cannot delete, stops working instead of delivering this person's reminders here.
     if (last && last.uid !== uid) await deleteToken(messaging).catch(() => false)
+    // The worker was reset (unregistered, site data cleared) so the browser's push subscription is gone, but Firebase and
+    // the server still hold a token for it and Google keeps accepting messages for it: they would never arrive. Start over.
+    else if (last && !(await registration.pushManager.getSubscription())) {
+      await deleteToken(messaging).catch(() => false)
+      await db.meta.delete(STATE_KEY)
+      last = undefined
+    }
     const token = await getToken(messaging, { vapidKey: key, serviceWorkerRegistration: registration })
     if (!token) return false
     // Unchanged and recent: nothing to write (this runs on every app load).
