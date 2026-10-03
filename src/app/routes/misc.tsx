@@ -40,6 +40,7 @@ export function SignIn() {
         <Button size="lg" variant="secondary" asChild><Link to="/explore">Browse public itineraries</Link></Button>
       </div>
       <p className="mt-6 text-sm text-fg-muted">{env.backend === 'firebase' ? 'Your trips are saved to your account and kept on this device so they work offline.' : 'Demo mode: no real account is created and nothing leaves this device.'}</p>
+      <p className="mt-2 text-sm text-fg-muted">By continuing you agree to the <Link className="underline" to="/terms">terms</Link> and the <Link className="underline" to="/privacy">privacy notice</Link>.</p>
     </div>
   )
 }

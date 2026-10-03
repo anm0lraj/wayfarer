@@ -145,6 +145,11 @@ export default function SettingsRoute() {
           {!installed && !installEvent && <p className="text-sm text-fg-muted">Your browser didn’t offer an install button. In Chrome or Edge, use the install icon in the address bar. On iPhone or iPad, tap Share, then Add to Home Screen.</p>}
         </Section>
 
+        <Section title="About" description="How Wayfarer handles your data, and the rules of use.">
+          <Button asChild variant="secondary"><Link to="/privacy">Privacy notice</Link></Button>
+          <Button asChild variant="secondary"><Link to="/terms">Terms of use</Link></Button>
+        </Section>
+
         <Section title="Account" description={env.backend === 'firebase' ? `You’re signed in as ${session?.user.email ?? session?.user.name ?? 'a traveller'}.` : 'You’re signed in as the demo traveller.'}>
           <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
           <Button variant="secondary" disabled={signingOut.busy} onClick={() => void signingOut.signOut()}>Sign out</Button>

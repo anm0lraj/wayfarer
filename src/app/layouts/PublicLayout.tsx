@@ -22,6 +22,10 @@ export function PublicLayout() {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 pb-12 outline-none"><Outlet /></main>
+      <footer className="mx-auto flex max-w-5xl flex-wrap gap-x-5 border-t border-border px-4 py-4 pb-[calc(var(--safe-bottom,0px)+1rem)] text-sm text-fg-muted">
+        <Link to="/privacy" className="min-h-touch content-center underline-offset-2 hover:underline">Privacy</Link>
+        <Link to="/terms" className="min-h-touch content-center underline-offset-2 hover:underline">Terms</Link>
+      </footer>
     </div>
   )
 }

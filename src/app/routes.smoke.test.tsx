@@ -19,7 +19,7 @@ const SIGNED_IN = [
   '/trips/trip-bali/memories', '/trips/trip-bali/memories/new', '/trips/trip-bali/stories/new', '/trips/trip-bali/share', '/trips/trip-bali/ai',
   '/trips/trip-goa/stories/story-goa-1',
 ]
-const PUBLIC = ['/t/7-days-in-japan-food-culture-k7p2', '/signin', '/explore/itineraries']
+const PUBLIC = ['/t/7-days-in-japan-food-culture-k7p2', '/signin', '/explore/itineraries', '/privacy', '/terms']
 
 beforeAll(() => installMockApi())
 beforeEach(async () => {

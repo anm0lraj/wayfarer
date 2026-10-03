@@ -18,6 +18,7 @@ const itinerary = () => import('@/features/itinerary/routes')
 const bookings = () => import('@/features/bookings/routes')
 const memories = () => import('@/features/memories/routes')
 const publicTrips = () => import('@/features/public-trips/routes')
+const legal = () => import('@/features/legal/routes')
 
 /**
  * Every spec §40 screen has a real URL here. Static segments (e.g. /trips/new, /explore/itineraries) are
@@ -33,6 +34,8 @@ export const routes: RouteObject[] = [
         children: [
           { path: 't/:publicSlug', lazy: lazyNamed(publicTrips, 'PublicTripPage') },
           { path: 'signin', element: <SignIn /> },
+          { path: 'privacy', lazy: lazyNamed(legal, 'PrivacyPage') },
+          { path: 'terms', lazy: lazyNamed(legal, 'TermsPage') },
         ],
       },
       // Explore is browsable when signed out; the shell and nav still apply.
