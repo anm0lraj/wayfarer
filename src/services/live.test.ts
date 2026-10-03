@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseEnv } from '@/config/env'
 import { osrmRouting } from './maps/osrm'
@@ -73,7 +74,8 @@ describe('Open-Meteo adapter', () => {
   it('reports a failure instead of inventing weather', async () => {
     stubFetch(() => new Response('{}', { status: 500 }))
     await expect(openMeteoWeather.getCurrent(bali)).rejects.toThrow('Weather unavailable')
-    await expect(openMeteoWeather.getForecast(bali, new Date().toISOString().slice(0, 10), new Date().toISOString().slice(0, 10))).rejects.toThrow()
+    const today = format(new Date(), 'yyyy-MM-dd') // the same local calendar day the adapter uses (UTC would differ in India after midnight)
+    await expect(openMeteoWeather.getForecast(bali, today, today)).rejects.toThrow()
   })
 })
 
