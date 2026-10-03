@@ -36,6 +36,8 @@ export const csp = [
 
 export const securityHeaders = {
   'Content-Security-Policy': csp,
+  // Browsers talk to this site over HTTPS only, for a year (ignored on plain-http localhost).
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'strict-origin-when-cross-origin',

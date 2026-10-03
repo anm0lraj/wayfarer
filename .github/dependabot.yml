@@ -1,0 +1,15 @@
+# Weekly pull requests for out-of-date or vulnerable dependencies (npm packages and the GitHub Actions the workflows use).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      # Related packages move together, so one pull request each instead of a dozen.
+      firebase: { patterns: ['firebase*', '@firebase/*'] }
+      testing: { patterns: ['vitest*', '@vitest/*', '@playwright/*', '@testing-library/*'] }
+      react: { patterns: ['react', 'react-dom', 'react-router*', '@types/react*'] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
