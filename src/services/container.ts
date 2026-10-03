@@ -16,6 +16,7 @@ import { geolocationService } from './geolocation/geolocation'
 import { mapService } from './maps/mock'
 import { notificationService } from './notifications/mock'
 import { lazyStorageService } from './storage/lazy'
+import { FIRESTORE_MEDIA_LIMITS } from './storage/limits'
 import { storageService } from './storage/mock'
 import { weatherService } from './weather/mock'
 
@@ -34,7 +35,7 @@ export interface Services {
 export const defaultServices: Services = {
   ai: aiService, maps: mapService, bookings: bookingService, weather: weatherService,
   auth: env.backend === 'firebase' ? lazyAuthService(async () => (await import('./auth/firebase')).firebaseAuthService) : authService,
-  storage: env.backend === 'firebase' ? lazyStorageService(async () => (await import('./storage/firebase')).firebaseStorageService) : storageService, notifications: notificationService, geolocation: geolocationService,
+  storage: env.backend === 'firebase' ? lazyStorageService(async () => (await import('./storage/firestoreMedia')).firestoreMediaService, FIRESTORE_MEDIA_LIMITS) : storageService, notifications: notificationService, geolocation: geolocationService,
 }
 
 export const ServicesContext = createContext<Services>(defaultServices)

@@ -11,7 +11,7 @@ import type { TripWithState } from '@/data/queries/trips'
 import { memoryRepo } from '@/data/repositories'
 import { processMemoryUploads } from '@/data/uploadQueue'
 import { readExif } from '@/lib/media/exif'
-import { compressImage } from '@/lib/media/image'
+import { compressToFit } from '@/lib/media/image'
 import { useOnline } from '@/lib/hooks/useOnline'
 import { useServices } from '@/services'
 import { clock } from '@/services/clock/clock'
@@ -24,7 +24,6 @@ const KINDS: Array<{ kind: Kind; label: string; icon: typeof Camera }> = [
   { kind: 'photo', label: 'Photo', icon: Camera }, { kind: 'video', label: 'Video', icon: Video }, { kind: 'text', label: 'Note', icon: FileText },
   { kind: 'voice', label: 'Voice note', icon: Mic }, { kind: 'location', label: 'Place', icon: MapPin },
 ]
-const MAX_VIDEO_MB = 50
 const field = 'min-h-touch w-full rounded-md border border-border-strong bg-surface px-3 text-base'
 
 /** EXIF is a bonus: if the file can't be read for any reason we carry on without it. */
@@ -60,8 +59,8 @@ function LocationPicker({ point, required, onChange }: { point?: GeoPoint; requi
   )
 }
 
-function VoiceSection({ onBlob }: { onBlob: (b: Blob | undefined) => void }) {
-  const { state, start, stop, reset } = useVoiceRecorder()
+function VoiceSection({ onBlob, maxSeconds }: { onBlob: (b: Blob | undefined) => void; maxSeconds: number }) {
+  const { state, start, stop, reset } = useVoiceRecorder(maxSeconds)
   useEffect(() => { onBlob(state.kind === 'recorded' ? state.blob : undefined) }, [state, onBlob])
   switch (state.kind) {
     case 'unsupported': return <p className="text-fg-muted">This browser can’t record audio. You can add a note instead.</p>
@@ -69,7 +68,7 @@ function VoiceSection({ onBlob }: { onBlob: (b: Blob | undefined) => void }) {
     case 'error': return <div className="space-y-2"><p role="alert" className="text-error">{state.message}</p><Button variant="secondary" onClick={() => void start()}>Try again</Button></div>
     case 'recording': return <div className="space-y-3"><p role="status" className="flex items-center gap-2 font-medium"><span aria-hidden className="size-3 rounded-full bg-error motion-safe:animate-pulse" /> Recording…</p><Button variant="danger" onClick={stop}><Square aria-hidden className="size-4" /> Stop</Button></div>
     case 'recorded': return <div className="space-y-3"><audio src={state.url} controls aria-label="Your recording" className="w-full" /><Button variant="secondary" onClick={reset}>Record again</Button></div>
-    default: return <div className="space-y-2"><p className="text-sm text-fg-muted">Your browser will ask to use the microphone. It’s only on while you record.</p><Button variant="secondary" onClick={() => void start()}><Mic aria-hidden className="size-4" /> Start recording</Button></div>
+    default: return <div className="space-y-2"><p className="text-sm text-fg-muted">Your browser will ask to use the microphone. It’s only on while you record. Voice notes can be up to {maxSeconds >= 120 ? `${Math.round(maxSeconds / 60)} minutes` : `${maxSeconds} seconds`}.</p><Button variant="secondary" onClick={() => void start()}><Mic aria-hidden className="size-4" /> Start recording</Button></div>
   }
 }
 
@@ -113,7 +112,7 @@ export function AddMemory() {
   const onFile = async (f: File | undefined) => {
     setError(undefined)
     if (!f) return
-    if (kind === 'video' && f.size > MAX_VIDEO_MB * 1024 * 1024) return setError(`That video is over ${MAX_VIDEO_MB} MB. Try a shorter clip.`)
+    if (kind === 'video' && f.size > storage.limits.maxBytes) return setError(`That video is over ${Math.round(storage.limits.maxBytes / 1024 / 1024)} MB. Try a shorter clip.`)
     if (kind === 'photo' && !f.type.startsWith('image/')) return setError('Please choose an image.')
     setFile(f)
     setPreview(kind === 'photo' ? URL.createObjectURL(f) : undefined)
@@ -133,7 +132,8 @@ export function AddMemory() {
     setSaving(true)
     try {
       let mediaKey: string | undefined
-      const blob = kind === 'photo' ? file && (await compressImage(file)) : kind === 'video' ? file : kind === 'voice' ? voice : undefined
+      const blob = kind === 'photo' ? file && (await compressToFit(file, storage.limits.maxBytes)) : kind === 'video' ? file : kind === 'voice' ? voice : undefined
+      if (blob && blob.size > storage.limits.maxBytes) throw new Error(kind === 'voice' ? 'That recording is too long to save. Record a shorter one.' : 'That file is too large to save.')
       if (blob) mediaKey = (await storage.upload(blob, { path: `trips/${trip.id}/memories` })).key
       await memoryRepo.add({
         tripId: trip.id, kind, caption: caption.trim() || undefined, text: kind === 'text' ? text.trim() : kind === 'location' ? placeName.trim() || undefined : undefined,
@@ -157,7 +157,7 @@ export function AddMemory() {
       </div>
 
       <div role="group" aria-label="Type of memory" className="flex flex-wrap gap-2">
-        {KINDS.map((k) => <Chip key={k.kind} selected={kind === k.kind} onClick={() => switchKind(k.kind)}><k.icon aria-hidden className="size-4" /> {k.label}</Chip>)}
+        {KINDS.filter((k) => k.kind !== 'video' || storage.limits.video).map((k) => <Chip key={k.kind} selected={kind === k.kind} onClick={() => switchKind(k.kind)}><k.icon aria-hidden className="size-4" /> {k.label}</Chip>)}
       </div>
 
       {(kind === 'photo' || kind === 'video') && (
@@ -188,7 +188,7 @@ export function AddMemory() {
           <textarea id="mem-text" value={text} onChange={(e) => setText(e.target.value)} rows={5} className={`${field} py-2`} placeholder="What do you want to remember?" />
         </div>
       )}
-      {kind === 'voice' && <VoiceSection onBlob={setVoice} />}
+      {kind === 'voice' && <VoiceSection onBlob={setVoice} maxSeconds={storage.limits.voiceSeconds} />}
       {kind === 'location' && <Input label="Name of the place (optional)" value={placeName} onChange={(e) => setPlaceName(e.target.value)} />}
 
       {(kind === 'location' || kind === 'photo' || kind === 'video' || kind === 'text') && <LocationPicker point={point} required={kind === 'location'} onChange={setPoint} />}

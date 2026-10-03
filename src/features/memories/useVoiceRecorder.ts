@@ -14,7 +14,7 @@ const supported = () => typeof navigator !== 'undefined' && !!navigator.mediaDev
  * Voice notes with MediaRecorder. The microphone is only opened when `start()` is called (from a button the
  * traveller pressed) and is released the moment recording stops, so the browser's mic indicator goes away.
  */
-export function useVoiceRecorder() {
+export function useVoiceRecorder(maxSeconds?: number) {
   const [state, setState] = useState<RecorderState>(() => (supported() ? { kind: 'idle' } : { kind: 'unsupported' }))
   const recorder = useRef<MediaRecorder | null>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -40,12 +40,14 @@ export function useVoiceRecorder() {
       }
       r.start()
       setState({ kind: 'recording', startedAt: Date.now() })
+      // Where recordings must stay small, stop by itself rather than produce something that cannot be saved.
+      if (maxSeconds) window.setTimeout(() => { if (r.state === 'recording') r.stop() }, maxSeconds * 1000)
     } catch (e) {
       release()
       const name = (e as { name?: string }).name
       setState(name === 'NotAllowedError' || name === 'SecurityError' ? { kind: 'denied' } : { kind: 'error', message: 'We couldn’t start the microphone.' })
     }
-  }, [release])
+  }, [release, maxSeconds])
 
   const stop = useCallback(() => { if (recorder.current?.state === 'recording') recorder.current.stop() }, [])
 

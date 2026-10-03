@@ -53,3 +53,19 @@ export async function coverFromFile(file: Blob): Promise<string> {
     reader.readAsDataURL(small)
   })
 }
+
+/** Longest edges tried, in order, when a photo has to fit a size budget. */
+const FIT_EDGES = [MAX_EDGE, 1280, 1024, 800, 640, 480]
+
+/**
+ * Re-encodes a photo so it is at most `maxBytes`, shrinking it step by step. Throws if even the smallest size is too
+ * big (or the browser can't re-encode), so the caller can say so instead of storing something that will be refused.
+ */
+export async function compressToFit(file: Blob, maxBytes: number): Promise<Blob> {
+  let best = file
+  for (const edge of FIT_EDGES) {
+    best = await compressImage(file, edge)
+    if (best.size <= maxBytes) return best
+  }
+  throw new Error('That photo is too large to store. Try a smaller one.')
+}

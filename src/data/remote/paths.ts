@@ -13,6 +13,8 @@ import type { SyncOp } from '../db'
  * Catalogue tables (destinations, places, hotels, flights) are reference data shipped with the app and are not synced.
  */
 export const TRIP_CHILDREN = ['days', 'items', 'bookings', 'checklist', 'memories', 'stories', 'collaborators'] as const
+/** Photos and voice notes (`trips/{id}/media`). Written by the storage adapter rather than synced like the tables above, but removed with the trip. */
+export const TRIP_MEDIA = 'media'
 export const USER_COLLECTIONS = ['savedTrips', 'savedPlaces', 'likedTrips', 'notifications', 'aiConversations', 'aiMessages'] as const
 
 const tripChildren = new Set<string>(TRIP_CHILDREN)

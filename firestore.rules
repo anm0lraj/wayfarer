@@ -23,7 +23,12 @@ service cloud.firestore {
     }
 
     function inTrip(collection) {
-      return collection in ['days', 'items', 'bookings', 'checklist', 'memories', 'stories', 'collaborators'];
+      return collection in ['days', 'items', 'bookings', 'checklist', 'memories', 'stories', 'collaborators', 'media'];
+    }
+
+    // Photos and voice notes are stored as documents; keep them within Firestore's 1 MiB document limit and to media types.
+    function validMedia(collection, data) {
+      return collection != 'media' || (data.data.size() <= 900000 && data.mime.matches('image/.*|audio/.*'));
     }
 
     // ---- invitations ---------------------------------------------------------------------------------------------
@@ -70,6 +75,7 @@ service cloud.firestore {
         allow create, update: if signedIn()
           && inTrip(collection)
           && request.resource.data.tripId == tripId
+          && validMedia(collection, request.resource.data)
           && (
             collection == 'collaborators'
               // The owner manages the list; a member may write only their own entry, at the role they were given.

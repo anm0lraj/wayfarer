@@ -1,11 +1,14 @@
 import { db } from '@/data/db'
 import { placeholderImage } from '@/lib/placeholder'
+import { LOCAL_MEDIA_LIMITS } from './limits'
 import type { StorageService } from './types'
 
 const urlCache = new Map<string, string>()
 
 /** Local blob storage in IndexedDB. Seed keys (`seed:<id>:<label>`) resolve to generated placeholder images. */
 export const storageService: StorageService = {
+  limits: LOCAL_MEDIA_LIMITS,
+
   async upload(blob, { path, onProgress, signal }) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     onProgress?.(0.4)

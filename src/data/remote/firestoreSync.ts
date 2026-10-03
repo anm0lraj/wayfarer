@@ -7,7 +7,7 @@ import type { SyncOp } from '../db'
 import type { SyncResult } from '../syncEngine'
 import { getDb } from '@/services/firebase/firestore'
 import type { CollaboratorRole, User } from '@/types'
-import { docPathFor, TRIP_CHILDREN, USER_COLLECTIONS } from './paths'
+import { docPathFor, TRIP_CHILDREN, TRIP_MEDIA, USER_COLLECTIONS } from './paths'
 
 /** How many times a write the rules refuse is retried before it is dropped. */
 const REFUSED_RETRIES = 3
@@ -23,7 +23,7 @@ const withoutMembers = <T extends Record<string, unknown>>(row: T): Omit<T, 'mem
 
 /** Removes a trip and everything under it. Children go first: the rules read the trip to decide who may delete them. */
 async function deleteTripTree(tripId: string) {
-  for (const name of TRIP_CHILDREN) {
+  for (const name of [...TRIP_CHILDREN, TRIP_MEDIA]) {
     const snap = await getDocs(collection(getDb(), `trips/${tripId}/${name}`))
     for (let i = 0; i < snap.docs.length; i += 400) {
       const batch = writeBatch(getDb())

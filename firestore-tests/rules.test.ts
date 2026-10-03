@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { Bytes, collection, getDocs, query, where } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 let env: RulesTestEnvironment
@@ -89,6 +89,38 @@ describe('inside a trip', () => {
 
   it('unknown collections inside a trip stay closed', async () => {
     await assertFails(as('owner').doc('trips/t1/secrets/s1').set({ tripId: 't1' }))
+  })
+})
+
+describe('photos and voice notes', () => {
+  const bytes = (n: number) => Bytes.fromUint8Array(new Uint8Array(n))
+  const media = (over: Record<string, unknown> = {}) => ({ id: 'm1', tripId: 't1', mime: 'image/jpeg', size: 4, data: bytes(4), ...over })
+
+  it('members read them; editors and owners add them; viewers and strangers cannot', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('trips/t1/media/m0').set(media({ id: 'm0' })) })
+    for (const u of ['owner', 'ed', 'vw']) await assertSucceeds(as(u).doc('trips/t1/media/m0').get())
+    await assertFails(as('stranger').doc('trips/t1/media/m0').get())
+    await assertSucceeds(as('ed').doc('trips/t1/media/m1').set(media()))
+    await assertSucceeds(as('owner').doc('trips/t1/media/m2').set(media({ id: 'm2', mime: 'audio/webm' })))
+    await assertFails(as('vw').doc('trips/t1/media/m3').set(media({ id: 'm3' })))
+    await assertFails(as('stranger').doc('trips/t1/media/m4').set(media({ id: 'm4' })))
+  })
+
+  it('only images and audio, and kept within the size Firestore can hold', async () => {
+    await assertSucceeds(as('ed').doc('trips/t1/media/a').set(media({ id: 'a', data: bytes(900_000) })))
+    await assertFails(as('ed').doc('trips/t1/media/b').set(media({ id: 'b', data: bytes(900_001) })))
+    await assertFails(as('ed').doc('trips/t1/media/c').set(media({ id: 'c', mime: 'video/mp4' })))
+    await assertFails(as('ed').doc('trips/t1/media/d').set(media({ id: 'd', mime: 'text/html' })))
+  })
+
+  it('belong to the trip they are stored under', async () => {
+    await assertFails(as('ed').doc('trips/t1/media/x').set(media({ id: 'x', tripId: 'other' })))
+  })
+
+  it('editors can delete them; viewers cannot', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('trips/t1/media/m0').set(media({ id: 'm0' })) })
+    await assertFails(as('vw').doc('trips/t1/media/m0').delete())
+    await assertSucceeds(as('ed').doc('trips/t1/media/m0').delete())
   })
 })
 
