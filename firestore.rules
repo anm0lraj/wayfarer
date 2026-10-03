@@ -11,9 +11,41 @@ service cloud.firestore {
     // ---- profile and private collections: only the person themselves -------------------------------------------
     match /users/{userId} {
       allow read, write: if signedIn() && me() == userId;
+
       match /{collection}/{docId} {
-        allow read, write: if signedIn() && me() == userId;
+        // Likes and saves of published trips have their own rules below; everything else here is private to the person.
+        allow read, write: if signedIn() && me() == userId && !(collection in ['likedTrips', 'savedTrips']);
       }
+
+      // A like or save of a published trip must change that trip's counter by exactly one, in the same write, so the
+      // counts cannot be inflated or drifted. The document id says whose it is and which trip: lk_/sv_ + uid + _ + trip.
+      match /likedTrips/{docId} {
+        allow read: if signedIn() && me() == userId;
+        allow create: if signedIn() && me() == userId
+          && docId == 'lk_' + me() + '_' + request.resource.data.publicTripId
+          && counterMoves(request.resource.data.publicTripId, 'likeCount', 1);
+        allow delete: if signedIn() && me() == userId
+          && (!pubExists(resource.data.publicTripId) || counterMoves(resource.data.publicTripId, 'likeCount', -1));
+      }
+
+      match /savedTrips/{docId} {
+        allow read: if signedIn() && me() == userId;
+        // Saving one of your own trips (no published trip involved) is just a private note.
+        allow create: if signedIn() && me() == userId
+          && (!('publicTripId' in request.resource.data)
+              || (docId == 'sv_' + me() + '_' + request.resource.data.publicTripId
+                  && counterMoves(request.resource.data.publicTripId, 'saveCount', 1)));
+        allow delete: if signedIn() && me() == userId
+          && (!('publicTripId' in resource.data) || !pubExists(resource.data.publicTripId)
+              || counterMoves(resource.data.publicTripId, 'saveCount', -1));
+      }
+    }
+
+    function pubPath(pubId) { return /databases/$(database)/documents/publicTrips/$(pubId); }
+    function pubExists(pubId) { return exists(pubPath(pubId)); }
+    // The published trip's counter after this write is its counter before, plus delta.
+    function counterMoves(pubId, field, delta) {
+      return pubExists(pubId) && getAfter(pubPath(pubId)).data[field] == get(pubPath(pubId)).data[field] + delta;
     }
 
     // ---- trips ---------------------------------------------------------------------------------------------------
@@ -128,12 +160,49 @@ service cloud.firestore {
       );
     }
 
-    // ---- published trips: anyone can read, only the publisher can change ------------------------------------------
+    // ---- published trips ------------------------------------------------------------------------------------------
+    // Anyone with a trip's id can open it, signed in or not; only `public` ones can be listed (queries must say so).
+    // Anyone signed in may like or save, which moves one counter by one; only the publisher changes anything else.
+    function onlyChanges(field) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([field]);
+    }
+    function likeDoc(pubId) { return /databases/$(database)/documents/users/$(me())/likedTrips/$('lk_' + me() + '_' + pubId); }
+    function saveDoc(pubId) { return /databases/$(database)/documents/users/$(me())/savedTrips/$('sv_' + me() + '_' + pubId); }
+    function bump(pubId, field, doc) {
+      return onlyChanges(field) && (
+        (request.resource.data[field] == resource.data[field] + 1 && !exists(doc) && existsAfter(doc))
+        || (request.resource.data[field] == resource.data[field] - 1 && exists(doc) && !existsAfter(doc))
+      );
+    }
+
     match /publicTrips/{id} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if resource.data.visibility == 'public';
       allow create: if signedIn() && request.resource.data.ownerId == me();
-      allow update: if signedIn() && resource.data.ownerId == me() && request.resource.data.ownerId == me();
+      allow update: if signedIn() && (
+        (resource.data.ownerId == me() && request.resource.data.ownerId == me())
+        || bump(id, 'likeCount', likeDoc(id))
+        || bump(id, 'saveCount', saveDoc(id))
+      );
       allow delete: if signedIn() && resource.data.ownerId == me();
+
+      // Photos shown on the public page (copies of the publisher's trip photos), readable by anyone who can open the page.
+      match /media/{mediaId} {
+        allow read: if true;
+        allow create, update: if signedIn()
+          && get(/databases/$(database)/documents/publicTrips/$(id)).data.ownerId == me()
+          && validMedia('media', request.resource.data);
+        allow delete: if signedIn() && get(/databases/$(database)/documents/publicTrips/$(id)).data.ownerId == me();
+      }
+    }
+
+    // Short links: slug -> published trip, so a page can be opened by its URL without being listed.
+    match /publicSlugs/{slug} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.ownerId == me();
+      allow delete: if signedIn() && resource.data.ownerId == me();
+      allow update: if false;
     }
 
     // Everything else is closed.

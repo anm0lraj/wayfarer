@@ -23,7 +23,8 @@ const userCollections = new Set<string>(USER_COLLECTIONS)
 /** The slash-separated document path for a queued change, or null when it must not be sent (reference data, unknown). */
 export function docPathFor(op: Pick<SyncOp, 'entity' | 'entityId' | 'payload'>, uid: string): string | null {
   const { entity, entityId } = op
-  if (entity === 'trips' || entity === 'publicTrips') return `${entity}/${entityId}`
+  // `publicSlugs` maps a page's URL slug to its published trip, so a page can be opened by link without being listed.
+  if (entity === 'trips' || entity === 'publicTrips' || entity === 'publicSlugs') return `${entity}/${entityId}`
   if (entity === 'users') return entityId === uid ? `users/${uid}` : null // never write another person's profile
   if (userCollections.has(entity)) return `users/${uid}/${entity}/${entityId}`
   if (tripChildren.has(entity)) {

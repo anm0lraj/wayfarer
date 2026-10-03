@@ -1,5 +1,5 @@
 import {
-  collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch,
+  collection, deleteDoc, deleteField, doc, getDoc, getDocs, increment, query, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore'
 import { getActorId } from '../actor'
 import { db } from '../db'
@@ -39,6 +39,56 @@ async function syncMember(tripId: string, userId: string, role: CollaboratorRole
   await updateDoc(ref(`trips/${tripId}`), { [`members.${userId}`]: role ?? deleteField() })
 }
 
+/** Likes and saves of a published trip move a counter on it; the rules only allow both in one write. */
+const COUNTERS: Record<string, string> = { likedTrips: 'likeCount', savedTrips: 'saveCount' }
+
+async function sendCounted(op: SyncOp, target: ReturnType<typeof ref>): Promise<void> {
+  const field = COUNTERS[op.entity]!
+  const existing = await getDoc(target)
+
+  if (op.op === 'put') {
+    if (existing.exists()) return // already recorded
+    const value = op.payload as { publicTripId?: string }
+    const pubRef = value.publicTripId ? ref(`publicTrips/${value.publicTripId}`) : undefined
+    if (!pubRef) return void (await setDoc(target, value)) // a note about one of your own trips: nothing to count
+    if (!(await getDoc(pubRef)).exists()) return // unpublished in the meantime
+    const batch = writeBatch(getDb())
+    batch.set(target, value)
+    batch.update(pubRef, { [field]: increment(1) })
+    return batch.commit()
+  }
+
+  if (!existing.exists()) return
+  const pubId = (existing.data() as { publicTripId?: string }).publicTripId
+  const pubRef = pubId ? ref(`publicTrips/${pubId}`) : undefined
+  if (!pubRef || !(await getDoc(pubRef)).exists()) return deleteDoc(target)
+  const batch = writeBatch(getDb())
+  batch.delete(target)
+  batch.update(pubRef, { [field]: increment(-1) })
+  return batch.commit()
+}
+
+/** Removes a published trip's photos, then the page itself (the rules read the page to decide who may delete them). */
+async function deletePublicTree(pubId: string) {
+  const snap = await getDocs(collection(getDb(), `publicTrips/${pubId}/media`))
+  for (let i = 0; i < snap.docs.length; i += 400) {
+    const batch = writeBatch(getDb())
+    snap.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref))
+    await batch.commit()
+  }
+  await deleteDoc(ref(`publicTrips/${pubId}`))
+}
+
+/** Copies the trip photos a published page shows (`public/{pubId}/{memoryId}`) to the page, once the page exists. */
+async function copyPublicPhotos(pub: { id: string; snapshot: { memories: Array<{ id: string; mediaUrl: string }> } }) {
+  const { copyToPublic } = await import('@/services/storage/firestoreMedia')
+  for (const m of pub.snapshot.memories) {
+    if (!m.mediaUrl.startsWith(`public/${pub.id}/`)) continue
+    const mediaKey = (await db.memories.get(m.id))?.mediaKey
+    if (mediaKey) await copyToPublic(mediaKey, pub.id, m.id)
+  }
+}
+
 async function sendOne(op: SyncOp, uid: string): Promise<SyncResult> {
   const path = docPathFor(op, uid)
   if (!path) return { id: op.id!, status: 'ok' } // reference data or something that must not be written: drop it
@@ -46,8 +96,14 @@ async function sendOne(op: SyncOp, uid: string): Promise<SyncResult> {
   const target = ref(path)
   const tripId = (op.payload as { tripId?: string } | undefined)?.tripId
 
+  if (COUNTERS[op.entity]) {
+    await sendCounted(op, target)
+    return { id: op.id!, status: 'ok' }
+  }
+
   if (op.op === 'delete') {
     if (op.entity === 'trips') await deleteTripTree(op.entityId)
+    else if (op.entity === 'publicTrips') await deletePublicTree(op.entityId)
     else {
       if (op.entity === 'collaborators' && tripId) {
         const existing = await getDoc(target)
@@ -73,6 +129,11 @@ async function sendOne(op: SyncOp, uid: string): Promise<SyncResult> {
     // full replace keeps the stored map. (A full replace also clears fields the traveller emptied, which a merge would not.)
     const members = (remote.data()?.members as Record<string, string> | undefined) ?? { [value.ownerId as string]: 'owner' }
     await setDoc(target, { ...value, members })
+  } else if (op.entity === 'publicTrips') {
+    // Likes and saves come from other people, so a republish keeps the counts stored on the server.
+    const stored = remote.data() as { likeCount?: number; saveCount?: number } | undefined
+    await setDoc(target, { ...value, likeCount: stored?.likeCount ?? value.likeCount, saveCount: stored?.saveCount ?? value.saveCount })
+    await copyPublicPhotos(value as unknown as Parameters<typeof copyPublicPhotos>[0])
   } else {
     await setDoc(target, value)
     if (op.entity === 'collaborators' && tripId) {

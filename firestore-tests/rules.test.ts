@@ -4,7 +4,13 @@ import { Bytes, collection, getDocs, query, where } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 let env: RulesTestEnvironment
-const as = (uid: string | null, claims: Record<string, unknown> = {}) => (uid ? env.authenticatedContext(uid, claims) : env.unauthenticatedContext()).firestore()
+// One Firestore instance per person per test: a batch can only mix documents from the same instance.
+const instances = new Map<string, ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore'] extends () => infer R ? R : never>()
+const as = (uid: string | null, claims: Record<string, unknown> = {}) => {
+  const key = `${uid}|${JSON.stringify(claims)}`
+  if (!instances.has(key)) instances.set(key, (uid ? env.authenticatedContext(uid, claims) : env.unauthenticatedContext()).firestore())
+  return instances.get(key)!
+}
 /** A signed-in Google account: the email is on the token and verified. */
 const google = (uid: string, email: string) => as(uid, { email, email_verified: true })
 
@@ -15,6 +21,7 @@ beforeAll(async () => {
 })
 afterAll(async () => { await env.cleanup() })
 beforeEach(async () => {
+  instances.clear()
   await env.clearFirestore()
   // A trip owned by "owner", with an editor and a viewer, and one activity in it.
   await env.withSecurityRulesDisabled(async (ctx) => {
@@ -22,7 +29,8 @@ beforeEach(async () => {
     await db.doc('trips/t1').set(trip({ members: { owner: 'owner', ed: 'editor', vw: 'viewer' } }))
     await db.doc('trips/t1/items/i1').set({ id: 'i1', tripId: 't1', title: 'Temple' })
     await db.doc('invites/t1__amy@example.com').set({ tripId: 't1', tripTitle: 'Bali', email: 'amy@example.com', role: 'editor', status: 'pending', invitedBy: 'owner' })
-    await db.doc('publicTrips/p1').set({ id: 'p1', ownerId: 'owner', title: 'Public' })
+    await db.doc('publicTrips/p1').set({ id: 'p1', ownerId: 'owner', title: 'Public', visibility: 'public', likeCount: 0, saveCount: 0 })
+    await db.doc('publicTrips/p-link').set({ id: 'p-link', ownerId: 'owner', title: 'Unlisted', visibility: 'link', likeCount: 0, saveCount: 0 })
   })
 })
 
@@ -147,6 +155,118 @@ describe('published trips', () => {
     await assertSucceeds(as('owner').doc('publicTrips/p1').update({ title: 'Edited' }))
     await assertFails(as('amy').doc('publicTrips/p1').delete())
     await assertSucceeds(as('owner').doc('publicTrips/p1').delete())
+  })
+})
+
+describe('finding published trips', () => {
+  it('anyone can open one by its id, listed or not; only public ones can be listed', async () => {
+    await assertSucceeds(as(null).doc('publicTrips/p1').get())
+    await assertSucceeds(as(null).doc('publicTrips/p-link').get())
+    const listed = (db: ReturnType<typeof as>) => db.collection('publicTrips').where('visibility', '==', 'public').get()
+    await assertSucceeds(listed(as(null)))
+    await assertFails(as(null).collection('publicTrips').get()) // an unfiltered list would reveal the unlisted ones
+    await assertFails(as('amy').collection('publicTrips').where('visibility', '==', 'link').get())
+  })
+
+  it('a short link opens its page without being listable', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('publicSlugs/bali-ab12').set({ publicTripId: 'p-link', ownerId: 'owner' }) })
+    await assertSucceeds(as(null).doc('publicSlugs/bali-ab12').get())
+    await assertFails(as(null).collection('publicSlugs').get())
+    await assertSucceeds(as('owner').doc('publicSlugs/new-1').set({ publicTripId: 'p1', ownerId: 'owner' }))
+    await assertFails(as('amy').doc('publicSlugs/new-2').set({ publicTripId: 'p1', ownerId: 'owner' })) // not yours to claim
+    await assertFails(as('amy').doc('publicSlugs/bali-ab12').delete())
+    await assertSucceeds(as('owner').doc('publicSlugs/bali-ab12').delete())
+  })
+
+  it('photos on a published page are readable by anyone, writable only by the publisher, and kept small', async () => {
+    const bytes = (n: number) => Bytes.fromUint8Array(new Uint8Array(n))
+    const m = { id: 'm1', mime: 'image/jpeg', size: 4, data: bytes(4) }
+    await assertSucceeds(as('owner').doc('publicTrips/p1/media/m1').set(m))
+    await assertSucceeds(as(null).doc('publicTrips/p1/media/m1').get())
+    await assertFails(as('amy').doc('publicTrips/p1/media/m2').set({ ...m, id: 'm2' }))
+    await assertFails(as('owner').doc('publicTrips/p1/media/m3').set({ ...m, id: 'm3', data: bytes(900_001) }))
+    await assertFails(as('owner').doc('publicTrips/p1/media/m4').set({ ...m, id: 'm4', mime: 'video/mp4' }))
+    await assertFails(as('amy').doc('publicTrips/p1/media/m1').delete())
+    await assertSucceeds(as('owner').doc('publicTrips/p1/media/m1').delete())
+  })
+})
+
+describe('likes and saves of a published trip', () => {
+  const amy = () => as('amy')
+  const likeDoc = (db: ReturnType<typeof as>) => db.doc('users/amy/likedTrips/lk_amy_p1')
+  const like = { id: 'lk_amy_p1', userId: 'amy', publicTripId: 'p1', likedAt: '2026-10-01T00:00:00.000Z' }
+
+  async function setCounts(likeCount: number, saveCount = 0) {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('publicTrips/p1').update({ likeCount, saveCount }) })
+  }
+
+  it('liking records the like and raises the count by one, together', async () => {
+    const batch = amy().batch()
+    batch.set(likeDoc(amy()), like)
+    batch.update(amy().doc('publicTrips/p1'), { likeCount: 1 })
+    await assertSucceeds(batch.commit())
+  })
+
+  it('a like without the count, or a count without the like, or the wrong amount, is refused', async () => {
+    await assertFails(likeDoc(amy()).set(like))
+    await assertFails(amy().doc('publicTrips/p1').update({ likeCount: 1 }))
+    const twice = amy().batch()
+    twice.set(likeDoc(amy()), like)
+    twice.update(amy().doc('publicTrips/p1'), { likeCount: 2 })
+    await assertFails(twice.commit())
+  })
+
+  it('a like must carry the right id and belong to the person liking', async () => {
+    const wrongId = amy().batch()
+    wrongId.set(amy().doc('users/amy/likedTrips/anything'), like)
+    wrongId.update(amy().doc('publicTrips/p1'), { likeCount: 1 })
+    await assertFails(wrongId.commit())
+    const asOther = as('bob').batch()
+    asOther.set(as('bob').doc('users/amy/likedTrips/lk_amy_p1'), like)
+    asOther.update(as('bob').doc('publicTrips/p1'), { likeCount: 1 })
+    await assertFails(asOther.commit())
+  })
+
+  it('unliking removes the like and lowers the count together; neither alone is allowed', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc('users/amy/likedTrips/lk_amy_p1').set(like)
+      await ctx.firestore().doc('publicTrips/p1').update({ likeCount: 1 })
+    })
+    await assertFails(likeDoc(amy()).delete()) // would let the count drift
+    await assertFails(amy().doc('publicTrips/p1').update({ likeCount: 0 }))
+    const undo = amy().batch()
+    undo.delete(likeDoc(amy()))
+    undo.update(amy().doc('publicTrips/p1'), { likeCount: 0 })
+    await assertSucceeds(undo.commit())
+  })
+
+  it('the count cannot be moved without a like, so it cannot be inflated by repeating', async () => {
+    await setCounts(5)
+    await assertFails(amy().doc('publicTrips/p1').update({ likeCount: 6 }))
+    await assertFails(amy().doc('publicTrips/p1').update({ likeCount: 4 }))
+    await assertFails(amy().doc('publicTrips/p1').update({ likeCount: 1000 }))
+  })
+
+  it('saving works the same way with its own counter, and saving one of your own trips needs no counter', async () => {
+    const save = { id: 'sv_amy_p1', userId: 'amy', publicTripId: 'p1', savedAt: '2026-10-01T00:00:00.000Z' }
+    await assertFails(amy().doc('users/amy/savedTrips/sv_amy_p1').set(save))
+    const batch = amy().batch()
+    batch.set(amy().doc('users/amy/savedTrips/sv_amy_p1'), save)
+    batch.update(amy().doc('publicTrips/p1'), { saveCount: 1 })
+    await assertSucceeds(batch.commit())
+    await assertSucceeds(amy().doc('users/amy/savedTrips/sv_own').set({ id: 'sv_own', userId: 'amy', tripId: 't9', savedAt: '2026-10-01T00:00:00.000Z' }))
+  })
+
+  it('the publisher can still edit their own page; nobody else can', async () => {
+    await assertSucceeds(as('owner').doc('publicTrips/p1').update({ title: 'Edited' }))
+    await assertFails(amy().doc('publicTrips/p1').update({ title: 'Hijacked' }))
+    await assertFails(amy().doc('publicTrips/p1').update({ ownerId: 'amy' }))
+  })
+
+  it('likes and saves stay private to their owner', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('users/amy/likedTrips/lk_amy_p1').set(like) })
+    await assertSucceeds(likeDoc(amy()).get())
+    await assertFails(likeDoc(as('bob')).get())
   })
 })
 

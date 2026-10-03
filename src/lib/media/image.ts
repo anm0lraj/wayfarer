@@ -33,9 +33,9 @@ export async function compressImage(file: Blob, maxEdge = MAX_EDGE): Promise<Blo
 }
 
 /** Longest edge of a trip cover: cards show it at most ~1000 px wide, and it is stored inline with the trip. */
-export const COVER_EDGE = 1280
+export const COVER_EDGE = 1024
 /** Covers are stored inside the trip record (and synced with it), so refuse anything that would still be large. */
-export const MAX_COVER_BYTES = 600_000
+export const MAX_COVER_BYTES = 300_000
 
 /**
  * Turns a picked photo into a small data URL for `trip.coverImage`: resized, re-encoded (which strips EXIF/GPS) and

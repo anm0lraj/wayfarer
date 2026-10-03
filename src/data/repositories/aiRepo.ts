@@ -1,5 +1,5 @@
 import { db } from '../db'
-import { newId, nowIso, put, requireActor } from './shared'
+import { del, newId, nowIso, put, requireActor } from './shared'
 import { itineraryRepo } from './itineraryRepo'
 import { aiActionSchema, aiMessageSchema } from '@/types'
 import type { AIAction, AIConversation, AIMessage } from '@/types'
@@ -22,8 +22,9 @@ export const aiRepo = {
   },
 
   async removeConversation(id: string): Promise<void> {
-    await db.aiMessages.where('conversationId').equals(id).delete()
-    await db.aiConversations.delete(id)
+    // Queued like every other write, or the chat comes back from the server on the next download.
+    for (const m of await db.aiMessages.where('conversationId').equals(id).toArray()) await del('aiMessages', db.aiMessages, m.id)
+    await del('aiConversations', db.aiConversations, id)
   },
 
   listMessages: async (conversationId: string): Promise<AIMessage[]> =>

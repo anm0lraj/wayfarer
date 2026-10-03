@@ -7,6 +7,7 @@ describe('Firestore document paths', () => {
   it('puts trips and public trips at the top level', () => {
     expect(at('trips', 't1')).toBe('trips/t1')
     expect(at('publicTrips', 'p1')).toBe('publicTrips/p1')
+    expect(at('publicSlugs', 'bali-ab12')).toBe('publicSlugs/bali-ab12')
   })
 
   it('nests trip contents under the trip, using the tripId carried with the change', () => {

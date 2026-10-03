@@ -1,5 +1,7 @@
+import { env } from '@/config/env'
 import { db } from '../db'
-import { newId, nowIso, put, requireActor, requireTripAccess } from './shared'
+import { enqueue } from '../syncQueue'
+import { del, newId, nowIso, put, requireActor, requireTripAccess } from './shared'
 import { itineraryRepo } from './itineraryRepo'
 import { tripRepo } from './tripRepo'
 import { likedTripSchema, publicTripSchema, savedPlaceSchema, savedTripSchema } from '@/types'
@@ -53,10 +55,14 @@ export const publicTripRepo = {
     const dayNumberById = new Map(days.map((d) => [d.id, d.dayNumber]))
     const user = await db.users.get(requireActor())
     const existing = trip.publicTripId ? await db.publicTrips.get(trip.publicTripId) : undefined
+    const pubId = existing?.id ?? newId('pub')
+    const slug = existing?.slug ?? `${slugify(trip.title)}-${slugSuffix()}`
+    // On the real backend a page's photos are copies stored with the page (so anyone can see them); sync makes the copies.
+    const photoKey = (m: { id: string; mediaKey?: string }) => (env.backend === 'firebase' ? `public/${pubId}/${m.id}` : m.mediaKey!)
     const total = trip.budget.total?.amount ?? 0
     const publicTrip = publicTripSchema.parse({
-      id: existing?.id ?? newId('pub'),
-      slug: existing?.slug ?? `${slugify(trip.title)}-${slugSuffix()}`,
+      id: pubId,
+      slug,
       tripId, ownerId: trip.ownerId, ownerName: user?.name ?? 'Traveller',
       visibility: opts.visibility, title: trip.title, description: opts.description, coverImage: trip.coverImage ?? '',
       destinationIds: trip.destinationIds, durationDays: tripLengthDays(trip.startDate, trip.endDate),
@@ -68,11 +74,12 @@ export const publicTripRepo = {
         places,
         memories: (opts.includeMemories === false ? [] : memories)
           .filter((m) => m.kind === 'photo' && m.mediaKey && m.uploadState === 'done')
-          .map((m) => ({ id: m.id, caption: m.caption, mediaUrl: m.mediaKey!, dayNumber: m.dayId ? dayNumberById.get(m.dayId) : undefined })),
+          .map((m) => ({ id: m.id, caption: m.caption, mediaUrl: photoKey(m), dayNumber: m.dayId ? dayNumberById.get(m.dayId) : undefined })),
       },
       likeCount: existing?.likeCount ?? 0, saveCount: existing?.saveCount ?? 0, publishedAt: existing?.publishedAt ?? nowIso(),
     })
     await put('publicTrips', db.publicTrips, publicTrip)
+    await enqueue('publicSlugs', slug, 'put', { publicTripId: publicTrip.id, ownerId: trip.ownerId })
     await tripRepo.update(tripId, { visibility: opts.visibility, publicTripId: publicTrip.id })
     return publicTrip
   },
@@ -80,13 +87,17 @@ export const publicTripRepo = {
   async unpublish(tripId: string): Promise<void> {
     await requireTripAccess(tripId, 'publish')
     const trip = (await db.trips.get(tripId))!
-    if (trip.publicTripId) await db.publicTrips.delete(trip.publicTripId)
+    const published = trip.publicTripId ? await db.publicTrips.get(trip.publicTripId) : undefined
+    if (published) {
+      await del('publicTrips', db.publicTrips, published.id) // queued, so the page really disappears for everyone
+      await enqueue('publicSlugs', published.slug, 'delete')
+    }
     await tripRepo.update(tripId, { visibility: 'private', publicTripId: undefined })
   },
 
   /** "Use This Itinerary": copies a public itinerary into a new trip owned by the signed-in user. Never edits the original. */
   async useItinerary(publicTripId: string, dates: { startDate: string; endDate: string }): Promise<Trip> {
-    const pub = await db.publicTrips.get(publicTripId)
+    const pub = (await db.publicTrips.get(publicTripId)) ?? (env.backend === 'firebase' ? await (await import('../remote/publicTrips')).getPublicTrip(publicTripId) : undefined)
     if (!pub) throw new Error('Itinerary not found')
     const dest = await db.destinations.get(pub.destinationIds[0] ?? '')
     const trip = await tripRepo.create({
@@ -120,7 +131,7 @@ export const savedPlaceRepo = {
     const userId = requireActor()
     const id = `sp_${userId}_${placeId}`
     if (await db.savedPlaces.get(id)) {
-      await db.savedPlaces.delete(id)
+      await del('savedPlaces', db.savedPlaces, id)
       return false
     }
     await put('savedPlaces', db.savedPlaces, savedPlaceSchema.parse({ id, userId, placeId, savedAt: nowIso() }))
@@ -136,7 +147,8 @@ export const savedRepo = {
     const userId = requireActor()
     const existing = (await db.savedTrips.where('userId').equals(userId).toArray()).find((s) => s.publicTripId === publicTripId)
     if (existing) return existing
-    const saved = savedTripSchema.parse({ id: newId('sv'), userId, publicTripId, savedAt: nowIso() })
+    // The id is predictable on purpose: the security rules tie a save to its counter by it.
+    const saved = savedTripSchema.parse({ id: `sv_${userId}_${publicTripId}`, userId, publicTripId, savedAt: nowIso() })
     await put('savedTrips', db.savedTrips, saved)
     const pub = await db.publicTrips.get(publicTripId)
     if (pub) await db.publicTrips.update(pub.id, { saveCount: pub.saveCount + 1 })
@@ -145,7 +157,7 @@ export const savedRepo = {
   async unsave(publicTripId: string): Promise<void> {
     const existing = (await savedRepo.list()).find((s) => s.publicTripId === publicTripId)
     if (!existing) return
-    await db.savedTrips.delete(existing.id)
+    await del('savedTrips', db.savedTrips, existing.id) // queued, or the removal never reaches the server
     const pub = await db.publicTrips.get(publicTripId)
     if (pub) await db.publicTrips.update(pub.id, { saveCount: Math.max(0, pub.saveCount - 1) })
   },
@@ -161,7 +173,7 @@ export const likeRepo = {
     const id = `lk_${userId}_${publicTripId}`
     const pub = await db.publicTrips.get(publicTripId)
     if (await db.likedTrips.get(id)) {
-      await db.likedTrips.delete(id)
+      await del('likedTrips', db.likedTrips, id) // queued, or the removal never reaches the server
       if (pub) await db.publicTrips.update(pub.id, { likeCount: Math.max(0, pub.likeCount - 1) })
       return false
     }

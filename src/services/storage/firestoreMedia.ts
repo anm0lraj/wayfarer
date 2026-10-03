@@ -43,15 +43,16 @@ export const firestoreMediaService: StorageService = {
     if (key.startsWith('seed:')) return placeholderImage(key.split(':')[1] ?? key)
     const cached = urlCache.get(key)
     if (cached) return cached
-    let blob = (await db.blobs.get(key))?.blob
+    const pub = /^public\/([^/]+)\/([^/]+)$/.exec(key)
+    let blob = pub ? undefined : (await db.blobs.get(key))?.blob
     if (!blob) {
       // Not on this device (someone else's photo, or a new device): fetch it, and keep a copy for next time.
       try {
-        const snap = await getDoc(doc(getDb(), mediaPath(key)))
+        const snap = await getDoc(doc(getDb(), pub ? `publicTrips/${pub[1]}/media/${pub[2]}` : mediaPath(key)))
         if (!snap.exists()) return undefined
         const data = snap.data() as { data: Bytes; mime: string }
         blob = new Blob([data.data.toUint8Array()], { type: data.mime })
-        await db.blobs.put({ key, blob, createdAt: Date.now() })
+        if (!pub) await db.blobs.put({ key, blob, createdAt: Date.now() }) // someone else's published photos are not kept
       } catch {
         return undefined // offline, or not a member of the trip
       }
@@ -87,4 +88,26 @@ export const firestoreMediaService: StorageService = {
       console.warn(`Couldn't remove ${key} from the server.`) // must not stop the memory being deleted locally
     }
   },
+}
+
+/**
+ * Copies a trip photo to the published page so anyone who opens the page can see it (the trip's own copy is for its
+ * members only). Written to `publicTrips/{pubId}/media/{memoryId}`, which the publisher may write and anyone may read.
+ * The source is the local file if this device has it, otherwise the trip's stored copy.
+ */
+export async function copyToPublic(mediaKey: string, pubId: string, memoryId: string): Promise<void> {
+  let bytes: Uint8Array | undefined
+  let mime = 'application/octet-stream'
+  const local = await db.blobs.get(mediaKey)
+  if (local) {
+    bytes = new Uint8Array(await local.blob.arrayBuffer())
+    mime = local.blob.type || mime
+  } else {
+    const snap = await getDoc(doc(getDb(), mediaPath(mediaKey)))
+    if (!snap.exists()) throw new Error('The photo is not available to publish')
+    const data = snap.data() as { data: Bytes; mime: string }
+    bytes = data.data.toUint8Array()
+    mime = data.mime
+  }
+  await setDoc(doc(getDb(), 'publicTrips', pubId, 'media', memoryId), { id: memoryId, mime, size: bytes.byteLength, data: Bytes.fromUint8Array(bytes), createdAt: new Date().toISOString() })
 }
