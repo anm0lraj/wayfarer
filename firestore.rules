@@ -14,7 +14,20 @@ service cloud.firestore {
 
       match /{collection}/{docId} {
         // Likes and saves of published trips have their own rules below; everything else here is private to the person.
-        allow read, write: if signedIn() && me() == userId && !(collection in ['likedTrips', 'savedTrips', 'usage']);
+        allow read, write: if signedIn() && me() == userId && !(collection in ['likedTrips', 'savedTrips', 'usage', 'devices', 'pushLog']);
+      }
+
+      // A phone or browser that wants push reminders. The token lets the server (never other people) message that device;
+      // the shape is fixed so nothing else can be stored here. The log of reminders already sent (`pushLog`) is written
+      // by the server alone and has no client rule at all.
+      match /devices/{deviceId} {
+        allow read, delete: if signedIn() && me() == userId;
+        allow create, update: if signedIn() && me() == userId
+          && request.resource.data.keys().hasOnly(['token', 'tz', 'platform', 'updatedAt'])
+          && request.resource.data.token is string && request.resource.data.token.size() >= 20 && request.resource.data.token.size() <= 4096
+          && request.resource.data.tz is string && request.resource.data.tz.size() <= 64
+          && request.resource.data.platform in ['web', 'ios-web', 'android-web']
+          && request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 40;
       }
 
       // The assistant's daily allowance (written by the AI function with the person's own token). The count can only go

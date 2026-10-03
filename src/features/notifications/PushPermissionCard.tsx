@@ -5,6 +5,9 @@ import { Card } from '@/components/ui/Card'
 import { useServices } from '@/services'
 import type { PushPermission } from '@/services/notifications/types'
 
+/** Fired after the permission prompt is answered, so other parts of the screen (the device status) can update. */
+export const PERMISSION_CHANGED = 'wayfarer:notification-permission'
+
 /**
  * Asks to show system notifications — but only after explaining what they're for, and only when the
  * traveller presses the button. Never rendered on first load; it appears after a relevant action
@@ -37,7 +40,7 @@ export function PushPermissionCard({ onDone }: { onDone?: () => void }) {
       <h2 className="flex items-center gap-2 font-semibold"><BellRing aria-hidden className="size-5" /> Get reminders on your device?</h2>
       <p className="text-fg-muted">We can nudge you about your trip countdown, hotel check-in, and when your next activity is about to start. You choose which kinds in Settings, and we keep them few.</p>
       <div className="flex gap-2">
-        <Button onClick={async () => { setPermission(await notifications.requestPermission()); onDone?.() }}>Turn on notifications</Button>
+        <Button onClick={async () => { setPermission(await notifications.requestPermission()); window.dispatchEvent(new Event(PERMISSION_CHANGED)); onDone?.() }}>Turn on notifications</Button>
         <Button variant="ghost" onClick={() => { setDismissed(true); onDone?.() }}>Not now</Button>
       </div>
     </Card>

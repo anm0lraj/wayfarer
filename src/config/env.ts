@@ -24,6 +24,8 @@ const schema = z
     VITE_FIREBASE_STORAGE_BUCKET: z.string().optional(),
     VITE_FIREBASE_MESSAGING_SENDER_ID: z.string().optional(),
     VITE_FIREBASE_APP_ID: z.string().optional(),
+    /** The public "Web Push certificate" key from Firebase → Cloud Messaging. Without it reminders stay in the app. */
+    VITE_FIREBASE_VAPID_KEY: z.string().optional(),
   })
   .superRefine((v, ctx) => {
     if (v.VITE_BACKEND !== 'firebase') return
@@ -43,6 +45,8 @@ export interface AppEnv {
   weather: 'mock' | 'live'
   routing: 'mock' | 'live'
   ai: 'mock' | 'live'
+  /** Public key for web push (see `VITE_FIREBASE_VAPID_KEY`); push is available only with the Firebase backend and this. */
+  pushKey?: string
   firebase?: { apiKey: string; authDomain: string; projectId: string; storageBucket: string; messagingSenderId?: string; appId: string }
 }
 
@@ -60,6 +64,7 @@ export function parseEnv(raw: Record<string, unknown>): AppEnv {
     weather: v.VITE_WEATHER,
     routing: v.VITE_ROUTING,
     ai: v.VITE_AI,
+    pushKey: v.VITE_BACKEND === 'firebase' ? v.VITE_FIREBASE_VAPID_KEY || undefined : undefined,
     firebase:
       v.VITE_BACKEND === 'firebase'
         ? { apiKey: v.VITE_FIREBASE_API_KEY!, authDomain: v.VITE_FIREBASE_AUTH_DOMAIN!, projectId: v.VITE_FIREBASE_PROJECT_ID!, storageBucket: v.VITE_FIREBASE_STORAGE_BUCKET!, messagingSenderId: v.VITE_FIREBASE_MESSAGING_SENDER_ID, appId: v.VITE_FIREBASE_APP_ID! }

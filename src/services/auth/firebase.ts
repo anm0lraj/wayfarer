@@ -67,6 +67,13 @@ async function sessionFor(fb: FirebaseUser | null): Promise<Session | null> {
   return { user }
 }
 
+/** Stops push reminders for the account on this device. Never blocks or fails signing out (it can be offline). */
+async function stopPush(): Promise<void> {
+  try {
+    await Promise.race([(await import('@/services/notifications/push')).firebasePush.unregister(), new Promise((r) => setTimeout(r, 4000))])
+  } catch { /* the server drops a dead token on its next send */ }
+}
+
 /** Real accounts through Firebase Authentication. The SDK keeps the session; nothing is stored by us in localStorage. */
 export const firebaseAuthService: AuthService = {
   async getSession() {
@@ -89,6 +96,7 @@ export const firebaseAuthService: AuthService = {
    * caller is expected to have offered to save unsent work first (`unsentWork`); this does not ask.
    */
   async signOut() {
+    await stopPush() // while still signed in, so this device's reminder record can be removed
     await fbSignOut(auth())
     setActorId(null)
     await wipeLocalAccountData()
@@ -98,6 +106,7 @@ export const firebaseAuthService: AuthService = {
   async deleteAccount() {
     const fb = auth().currentUser
     if (!fb) return
+    await stopPush()
     // Firebase asks for a recent sign-in before deleting an account; if so the error says so and nothing is removed.
     await deleteUser(fb)
     setActorId(null)

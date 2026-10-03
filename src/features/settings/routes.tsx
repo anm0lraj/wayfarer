@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge, Chip } from '@/components/ui/Chip'
 import { NotificationSettings } from '@/features/notifications/NotificationSettings'
+import { PushDeviceStatus } from '@/features/notifications/PushDeviceStatus'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
 import { useSession } from '@/app/providers/session'
 import { useSignOut } from '@/features/account/useSignOut'
@@ -99,6 +100,7 @@ export default function SettingsRoute() {
           <Card className="space-y-4 p-5">
             <div><h2 className="text-lg font-semibold">Notifications</h2><p className="mt-1 text-fg-muted">Choose which reminders you get. They always appear in the app; system notifications need your permission.</p></div>
             <PushPermissionCard />
+            <PushDeviceStatus />
             <NotificationSettings />
           </Card>
         </div>

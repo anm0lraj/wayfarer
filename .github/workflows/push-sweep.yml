@@ -1,0 +1,28 @@
+name: Push sweep
+
+# Sends the push reminders that are due ("your next activity starts in 30 minutes"). Vercel's free plan runs a cron job
+# only once a day, which is fine for countdowns but too slow for that one, so GitHub calls the same endpoint every 10
+# minutes. Scheduled workflows run from the default branch (main) only, and GitHub may delay them a few minutes.
+#
+# Set up once in the repository settings (Settings → Secrets and variables → Actions):
+#   Variable PUSH_SWEEP_URL  e.g. https://wayfarer-xyz.vercel.app/api/push/sweep   (the production URL)
+#   Secret   CRON_SECRET     the same value as the CRON_SECRET environment variable on Vercel
+# Until the variable exists this workflow does nothing.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sweep:
+    if: vars.PUSH_SWEEP_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send the reminders that are due
+        env:
+          SWEEP_URL: ${{ vars.PUSH_SWEEP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SWEEP_URL"

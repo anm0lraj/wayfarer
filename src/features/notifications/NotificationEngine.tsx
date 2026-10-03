@@ -44,6 +44,11 @@ function TripNotifier({ trip }: { trip: TripWithState }) {
  * so the simulator shows the same reminders a real day would.
  */
 export function NotificationEngine() {
+  const { notifications } = useServices()
   const trips = useTrips().data?.filter((t) => WATCHED.has(t.effectiveState))
+  // Already allowed on this device: make sure the server knows about it (a token can change; a new account can sign in).
+  useEffect(() => {
+    if (notifications.push.available && notifications.getPermission() === 'granted') void notifications.push.register().catch(() => false)
+  }, [notifications])
   return <>{trips?.map((t) => <TripNotifier key={t.id} trip={t} />)}</>
 }

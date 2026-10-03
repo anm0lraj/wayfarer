@@ -342,6 +342,41 @@ describe('the assistant’s daily allowance', () => {
   })
 })
 
+describe('push devices', () => {
+  const device = { token: 'x'.repeat(40), tz: 'Asia/Kolkata', platform: 'web', updatedAt: '2026-10-04T10:00:00.000Z' }
+
+  it('lets a person register, refresh and remove their own device', async () => {
+    const ref = as('amy').doc('users/amy/devices/dev1')
+    await assertSucceeds(ref.set(device))
+    await assertSucceeds(ref.set({ ...device, token: 'y'.repeat(60) }))
+    await assertSucceeds(ref.get())
+    await assertSucceeds(ref.delete())
+  })
+
+  it('keeps one person’s tokens from anyone else', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('users/amy/devices/dev1').set(device) })
+    await assertFails(as('bob').doc('users/amy/devices/dev1').get())
+    await assertFails(as('bob').doc('users/amy/devices/dev2').set(device))
+    await assertFails(as('bob').doc('users/amy/devices/dev1').delete())
+  })
+
+  it('accepts only the fields a device record has, at sane sizes', async () => {
+    const ref = as('amy').doc('users/amy/devices/dev1')
+    await assertFails(ref.set({ ...device, extra: 'x' }))
+    await assertFails(ref.set({ ...device, token: 'short' }))
+    await assertFails(ref.set({ ...device, token: 'x'.repeat(5000) }))
+    await assertFails(ref.set({ ...device, platform: 'toaster' }))
+    await assertFails(ref.set({ token: device.token }))
+  })
+
+  it('keeps the log of sent reminders to the server', async () => {
+    await assertFails(as('amy').doc('users/amy/pushLog/abc').set({ key: 'k' }))
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('users/amy/pushLog/abc').set({ key: 'k' }) })
+    await assertFails(as('amy').doc('users/amy/pushLog/abc').get())
+    await assertFails(as('amy').doc('users/amy/pushLog/abc').delete())
+  })
+})
+
 describe('everything else', () => {
   it('is closed', async () => {
     await assertFails(as('owner').doc('admin/config').get())

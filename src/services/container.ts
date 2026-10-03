@@ -17,7 +17,8 @@ import { bookingService } from './bookings/mock'
 import { geolocationService } from './geolocation/geolocation'
 import { mapService } from './maps/mock'
 import { osrmRouting } from './maps/osrm'
-import { notificationService } from './notifications/mock'
+import { lazyPush } from './notifications/lazy'
+import { createNotificationService, noPush } from './notifications/mock'
 import { lazyStorageService } from './storage/lazy'
 import { FIRESTORE_MEDIA_LIMITS } from './storage/limits'
 import { storageService } from './storage/mock'
@@ -44,7 +45,9 @@ export const defaultServices: Services = {
   bookings: bookingService,
   weather: env.weather === 'live' ? openMeteoWeather : weatherService,
   auth: authAdapter,
-  storage: env.backend === 'firebase' ? lazyStorageService(async () => (await import('./storage/firestoreMedia')).firestoreMediaService, FIRESTORE_MEDIA_LIMITS) : storageService, notifications: notificationService, geolocation: geolocationService,
+  storage: env.backend === 'firebase' ? lazyStorageService(async () => (await import('./storage/firestoreMedia')).firestoreMediaService, FIRESTORE_MEDIA_LIMITS) : storageService,
+  notifications: createNotificationService(env.backend === 'firebase' && env.pushKey ? lazyPush(async () => (await import('./notifications/push')).firebasePush) : noPush),
+  geolocation: geolocationService,
 }
 
 export const ServicesContext = createContext<Services>(defaultServices)
