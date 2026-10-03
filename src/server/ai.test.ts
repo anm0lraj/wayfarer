@@ -196,6 +196,18 @@ describe('the provider connection', () => {
     expect(JSON.parse(String(init.body))).toMatchObject({ model: 'm', stream: true, max_tokens: 100 })
   })
 
+  it('keeps several whole function calls apart even when they all claim the same index', async () => {
+    const call = (name: string, args: string) => ({ choices: [{ delta: { tool_calls: [{ index: 0, function: { name, arguments: args } }] } }] })
+    vi.stubGlobal('fetch', vi.fn(async () => sse([call('remove_activity', '{"itemId":"i1"}'), call('remove_activity', '{"itemId":"i2"}'), call('add_activity', '{"dayNumber":2}')])))
+    const events = []
+    for await (const ev of streamCompletion(cfg, { messages: [], maxTokens: 10 })) events.push(ev)
+    expect(events).toEqual([
+      { type: 'tool', name: 'remove_activity', args: { itemId: 'i1' } },
+      { type: 'tool', name: 'remove_activity', args: { itemId: 'i2' } },
+      { type: 'tool', name: 'add_activity', args: { dayNumber: 2 } },
+    ])
+  })
+
   it('survives a provider that sends a whole function call at once, and junk lines', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('event: ping\n: comment\ndata: not json\n\ndata: ' + JSON.stringify({ choices: [{ delta: { tool_calls: [{ function: { name: 'remove_activity', arguments: '{"itemId":"i1"}' } }] } }] }) + '\n\n', { headers: {} })))
     const events = []

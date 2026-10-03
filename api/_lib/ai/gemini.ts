@@ -85,7 +85,10 @@ export async function* streamCompletion(
   if (!res.body) throw new ProviderError(502, 'Empty response')
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
-  const calls = new Map<number, { name: string; args: string }>()
+  // Function calls in the order they began. OpenAI sends a name once, then argument fragments under one index; Gemini's
+  // endpoint sends several whole calls that all claim index 0. A chunk with a name therefore always starts a new call.
+  const calls: Array<{ name: string; args: string }> = []
+  const open = new Map<number, number>() // stream index -> position in `calls` of the call it is currently filling
   let buffer = ''
   try {
     for (;;) {
@@ -105,17 +108,19 @@ export async function* streamCompletion(
         if (delta?.content) yield { type: 'text', text: delta.content }
         for (const [n, tc] of (delta?.tool_calls ?? []).entries()) {
           const idx = tc.index ?? n
-          const cur = calls.get(idx) ?? { name: '', args: '' }
-          if (tc.function?.name) cur.name = tc.function.name
-          if (tc.function?.arguments) cur.args += tc.function.arguments
-          calls.set(idx, cur)
+          if (tc.function?.name) {
+            calls.push({ name: tc.function.name, args: '' })
+            open.set(idx, calls.length - 1)
+          }
+          const cur = calls[open.get(idx) ?? -1]
+          if (cur && tc.function?.arguments) cur.args += tc.function.arguments
         }
       }
     }
   } finally {
     reader.releaseLock()
   }
-  for (const c of [...calls.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v)) if (c.name) yield { type: 'tool', name: c.name, args: parseArgs(c.args) }
+  for (const c of calls) yield { type: 'tool', name: c.name, args: parseArgs(c.args) }
 }
 
 /** One non-streamed call that must answer through `tool` (used for itineraries). Returns the function's arguments. */
