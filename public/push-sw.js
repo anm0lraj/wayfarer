@@ -13,7 +13,7 @@ function parsePush(event) {
   try { p = event.data ? event.data.json() : {} } catch (e) { p = {} }
   var d = p && typeof p.data === 'object' && p.data ? p.data : p && typeof p.notification === 'object' && p.notification ? p.notification : p || {}
   var title = typeof d.title === 'string' && d.title ? d.title.slice(0, 120) : 'Wayfarer'
-  return { title: title, options: { body: typeof d.body === 'string' ? d.body.slice(0, 300) : '', tag: typeof d.tag === 'string' ? d.tag.slice(0, 80) : undefined, data: { link: safeLink(d.link) } } }
+  return { title: title, always: d.always === '1', options: { body: typeof d.body === 'string' ? d.body.slice(0, 300) : '', tag: typeof d.tag === 'string' ? d.tag.slice(0, 80) : undefined, data: { link: safeLink(d.link) } } }
 }
 
 if (typeof self !== 'undefined' && self.addEventListener) {
@@ -22,7 +22,7 @@ if (typeof self !== 'undefined' && self.addEventListener) {
     event.waitUntil(
       self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (windows) {
         // The app is open and in view: the reminder is already in its notification centre, so don't buzz twice.
-        if (windows.some(function (w) { return w.visibilityState === 'visible' })) return
+        if (!n.always && windows.some(function (w) { return w.visibilityState === 'visible' })) return
         return self.registration.showNotification(n.title, n.options)
       })
     )

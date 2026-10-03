@@ -91,7 +91,7 @@ export async function sendTest(uid: string, now = new Date()): Promise<{ devices
   const devices = (await listCollection(`users/${uid}/devices`)).filter((d) => deviceToken(d))
   let sent = 0
   for (const d of devices) {
-    const r = await sendPush(deviceToken(d)!, { title: 'Reminders are on', body: 'This is a test. Wayfarer will nudge you like this about your trips.', link: '/settings#notifications', tag: 'wayfarer-test' })
+    const r = await sendPush(deviceToken(d)!, { title: 'Reminders are on', body: 'This is a test. Wayfarer will nudge you like this about your trips.', link: '/settings#notifications', tag: 'wayfarer-test', always: true })
     if (r === 'sent') sent++
     else if (r === 'gone') await deleteDocument(d.path)
   }

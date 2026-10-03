@@ -174,14 +174,15 @@ describe('push-sw.js (the worker’s push handling)', () => {
   const sandbox = { exports: {} as Record<string, unknown> }
   new Function('module', readFileSync(path.resolve(__dirname, '../../public/push-sw.js'), 'utf8'))(sandbox)
   const { parsePush, safeLink } = sandbox.exports as {
-    parsePush(e: { data?: { json(): unknown } }): { title: string; options: { body: string; tag?: string; data: { link: string } } }
+    parsePush(e: { data?: { json(): unknown } }): { title: string; always: boolean; options: { body: string; tag?: string; data: { link: string } } }
     safeLink(l: unknown): string
   }
   const event = (payload: unknown) => ({ data: { json: () => payload } })
 
   it('reads the fields from Firebase’s wrapper or a bare message', () => {
     const wrapped = parsePush(event({ data: { title: 'Trip soon', body: 'Pack up', link: '/trips/t1', tag: 'k1' }, from: '123' }))
-    expect(wrapped).toEqual({ title: 'Trip soon', options: { body: 'Pack up', tag: 'k1', data: { link: '/trips/t1' } } })
+    expect(wrapped).toEqual({ title: 'Trip soon', always: false, options: { body: 'Pack up', tag: 'k1', data: { link: '/trips/t1' } } })
+    expect(parsePush(event({ data: { title: 'Test', always: '1' } })).always).toBe(true) // the test button shows even when the app is open
     expect(parsePush(event({ title: 'Bare', body: 'b', link: '/live' })).title).toBe('Bare')
     expect(parsePush(event({ notification: { title: 'Shown by Firebase', body: 'x' } })).title).toBe('Shown by Firebase')
   })

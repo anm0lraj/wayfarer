@@ -180,7 +180,7 @@ describe('the test notification', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ devices: 1, sent: 1 })
     expect(sent.map((m) => m.token)).toEqual([TOKEN_A])
-    expect(sent[0]!.data.link).toBe('/settings#notifications')
+    expect(sent[0]!.data).toMatchObject({ link: '/settings#notifications', always: '1' })
   })
 
   it('reports no devices, and allows one a minute', async () => {

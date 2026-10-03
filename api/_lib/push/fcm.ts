@@ -4,7 +4,8 @@ import { accessToken } from './google.js'
 const sendUrl = (project: string) => process.env.FCM_SEND_URL ?? `https://fcm.googleapis.com/v1/projects/${project}/messages:send`
 const projectId = () => process.env.VITE_FIREBASE_PROJECT_ID ?? process.env.FIREBASE_PROJECT_ID
 
-export interface PushMessage { title: string; body: string; link: string; tag: string }
+/** `always`: show even if the app is open and in view (the test button, so it never looks like nothing happened). */
+export interface PushMessage { title: string; body: string; link: string; tag: string; always?: boolean }
 /** `gone`: the device unregistered (remove it). `retry`: Google had a problem, try again later. */
 export type SendResult = 'sent' | 'gone' | 'retry'
 
@@ -23,7 +24,7 @@ export async function sendPush(token: string, m: PushMessage): Promise<SendResul
       body: JSON.stringify({
         message: {
           token,
-          data: { title: m.title, body: m.body, link: m.link, tag: m.tag },
+          data: { title: m.title, body: m.body, link: m.link, tag: m.tag, ...(m.always ? { always: '1' } : {}) },
           webpush: { headers: { Urgency: 'high', TTL: '3600' } }, // a reminder that arrives hours late is worse than none
         },
       }),
