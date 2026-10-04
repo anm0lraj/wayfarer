@@ -1,6 +1,7 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom'
 import { AppShell } from './layouts/AppShell'
 import { AuthGuard } from './layouts/AuthGuard'
+import { HydrateFallback } from './layouts/HydrateFallback'
 import { PublicLayout } from './layouts/PublicLayout'
 import { RouteError } from './layouts/RouteError'
 import { TripWorkspaceLayout } from './layouts/TripWorkspaceLayout'
@@ -27,6 +28,7 @@ const legal = () => import('@/features/legal/routes')
 export const routes: RouteObject[] = [
   {
     errorElement: <RouteError />,
+    HydrateFallback,
     children: [
       // Visible without signing in. No app shell, no app-state dependencies (SSR-friendly).
       {
