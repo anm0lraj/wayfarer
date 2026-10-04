@@ -1,5 +1,7 @@
 import { Bytes, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/data/db'
+import { getBlob, putBlob } from '@/data/blobStore'
+import { plainBlob } from '@/lib/media/plainBlob'
 import { placeholderImage } from '@/lib/placeholder'
 import { getDb } from '@/services/firebase/firestore'
 import { FIRESTORE_MEDIA_LIMITS } from './limits'
@@ -32,9 +34,10 @@ export const firestoreMediaService: StorageService = {
     if (blob.size > FIRESTORE_MEDIA_LIMITS.maxBytes) throw new Error('That file is too large to store.')
     onProgress?.(0.4)
     const key = `${path}/${crypto.randomUUID()}`
-    await db.blobs.put({ key, blob, createdAt: Date.now() })
+    const stored = await plainBlob(blob) // see plainBlob: file-backed blobs can't always be stored in IndexedDB
+    await putBlob(key, stored)
     onProgress?.(1)
-    const url = URL.createObjectURL(blob)
+    const url = URL.createObjectURL(stored)
     urlCache.set(key, url)
     return { key, url }
   },
@@ -44,7 +47,7 @@ export const firestoreMediaService: StorageService = {
     const cached = urlCache.get(key)
     if (cached) return cached
     const pub = /^public\/([^/]+)\/([^/]+)$/.exec(key)
-    let blob = pub ? undefined : (await db.blobs.get(key))?.blob
+    let blob = pub ? undefined : await getBlob(key)
     if (!blob) {
       // Not on this device (someone else's photo, or a new device): fetch it, and keep a copy for next time.
       try {
@@ -52,7 +55,7 @@ export const firestoreMediaService: StorageService = {
         if (!snap.exists()) return undefined
         const data = snap.data() as { data: Bytes; mime: string }
         blob = new Blob([data.data.toUint8Array()], { type: data.mime })
-        if (!pub) await db.blobs.put({ key, blob, createdAt: Date.now() }) // someone else's published photos are not kept
+        if (!pub) await putBlob(key, blob) // someone else's published photos are not kept
       } catch {
         return undefined // offline, or not a member of the trip
       }
@@ -65,9 +68,8 @@ export const firestoreMediaService: StorageService = {
   async publish(key, signal) {
     if (key.startsWith('seed:')) return
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-    const local = await db.blobs.get(key)
-    if (!local) throw new Error('The file is no longer on this device')
-    const { blob } = local
+    const blob = await getBlob(key)
+    if (!blob) throw new Error('The file is no longer on this device')
     if (blob.size > FIRESTORE_MEDIA_LIMITS.maxBytes) throw new Error('That file is too large to store.')
     const mime = blob.type || 'application/octet-stream'
     if (!/^(image|audio)\//.test(mime)) throw new Error('Only photos and voice notes can be stored.')
@@ -98,10 +100,10 @@ export const firestoreMediaService: StorageService = {
 export async function copyToPublic(mediaKey: string, pubId: string, memoryId: string): Promise<void> {
   let bytes: Uint8Array | undefined
   let mime = 'application/octet-stream'
-  const local = await db.blobs.get(mediaKey)
+  const local = await getBlob(mediaKey)
   if (local) {
-    bytes = new Uint8Array(await local.blob.arrayBuffer())
-    mime = local.blob.type || mime
+    bytes = new Uint8Array(await local.arrayBuffer())
+    mime = local.type || mime
   } else {
     const snap = await getDoc(doc(getDb(), mediaPath(mediaKey)))
     if (!snap.exists()) throw new Error('The photo is not available to publish')

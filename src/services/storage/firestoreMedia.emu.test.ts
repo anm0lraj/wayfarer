@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'firebase/auth'
 import { connectFirestoreEmulator, doc, getDoc, initializeFirestore, setDoc, updateDoc, type Firestore } from 'firebase/firestore'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getBlob } from '@/data/blobStore'
 import { db } from '@/data/db'
 
 const current = vi.hoisted(() => ({ db: undefined as unknown }))
@@ -50,7 +51,7 @@ describe('Firestore media adapter', () => {
     const stored = await firestoreMediaService.upload(jpeg(), { path: 'trips/t1/memories' })
     expect(stored.key).toMatch(/^trips\/t1\/memories\/[0-9a-f-]{36}$/)
     expect(stored.url.startsWith('blob:')).toBe(true)
-    expect((await db.blobs.get(stored.key))?.blob.size).toBe(7)
+    expect((await getBlob(stored.key))?.size).toBe(7)
     expect((await getDoc(doc(people.owner.fs, `trips/t1/media/${stored.key.split('/').pop()}`))).exists()).toBe(false) // not sent yet
   })
 
@@ -87,7 +88,7 @@ describe('Firestore media adapter', () => {
     as('editor')
     const url = await otherDevice.getUrl(key)
     expect(url?.startsWith('blob:')).toBe(true)
-    expect((await db.blobs.get(key))?.blob.type).toBe('image/jpeg') // kept for next time
+    expect((await getBlob(key))?.type).toBe('image/jpeg') // kept for next time
 
     await db.blobs.clear()
     vi.resetModules()

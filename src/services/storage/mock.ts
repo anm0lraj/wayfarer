@@ -1,4 +1,6 @@
 import { db } from '@/data/db'
+import { getBlob, putBlob } from '@/data/blobStore'
+import { plainBlob } from '@/lib/media/plainBlob'
 import { placeholderImage } from '@/lib/placeholder'
 import { LOCAL_MEDIA_LIMITS } from './limits'
 import type { StorageService } from './types'
@@ -13,9 +15,10 @@ export const storageService: StorageService = {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     onProgress?.(0.4)
     const key = `${path}/${crypto.randomUUID()}`
-    await db.blobs.put({ key, blob, createdAt: Date.now() })
+    const stored = await plainBlob(blob) // see plainBlob: file-backed blobs can't always be stored in IndexedDB
+    await putBlob(key, stored)
     onProgress?.(1)
-    const url = URL.createObjectURL(blob)
+    const url = URL.createObjectURL(stored)
     urlCache.set(key, url)
     return { key, url }
   },
@@ -27,9 +30,9 @@ export const storageService: StorageService = {
     }
     const cached = urlCache.get(key)
     if (cached) return cached
-    const rec = await db.blobs.get(key)
-    if (!rec) return undefined
-    const url = URL.createObjectURL(rec.blob)
+    const blob = await getBlob(key)
+    if (!blob) return undefined
+    const url = URL.createObjectURL(blob)
     urlCache.set(key, url)
     return url
   },
@@ -37,7 +40,7 @@ export const storageService: StorageService = {
   async publish(key, signal) {
     if (key.startsWith('seed:')) return
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-    if (!(await db.blobs.get(key))) throw new Error('The file is no longer on this device')
+    if (!(await getBlob(key))) throw new Error('The file is no longer on this device')
     await new Promise((r) => setTimeout(r, 120)) // stands in for the network round trip
   },
 

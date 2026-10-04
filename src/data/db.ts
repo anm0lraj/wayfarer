@@ -18,7 +18,10 @@ export interface SyncOp {
 
 export interface BlobRecord {
   key: string
-  blob: Blob
+  /** The file. Absent when the browser refused to store a Blob (see `data/blobStore.ts`): then `bytes` + `type` hold it. */
+  blob?: Blob
+  bytes?: ArrayBuffer
+  type?: string
   createdAt: number
 }
 
