@@ -5,6 +5,11 @@ updates:
     directory: /
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    # Major versions (for example Vite 5 to 8, which also needs a newer Node) are upgraded by hand, one at a time, with a
+    # test pass; minor and patch updates still arrive weekly.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       # Related packages move together, so one pull request each instead of a dozen.
       firebase: { patterns: ['firebase*', '@firebase/*'] }

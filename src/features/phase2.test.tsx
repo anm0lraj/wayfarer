@@ -104,7 +104,9 @@ describe('Trips list', () => {
 })
 
 describe('Create trip', () => {
-  const next = () => userEvent.click(screen.getByRole('button', { name: 'Next' }))
+  // The dialog is still opening for a moment (its content ignores pointer events until it is in place), so on a slow machine
+  // the first click can arrive too early. Retry until the button can really be clicked.
+  const next = () => waitFor(() => userEvent.click(screen.getByRole('button', { name: 'Next' })))
 
   it('walks the six steps, validates, drafts an itinerary and opens the new trip', async () => {
     const router = renderApp('/trips/new/destination')

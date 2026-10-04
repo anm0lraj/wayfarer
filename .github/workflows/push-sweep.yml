@@ -25,4 +25,6 @@ jobs:
         env:
           SWEEP_URL: ${{ vars.PUSH_SWEEP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SWEEP_URL"
+        # A block scalar: the colon in the header would otherwise end a plain YAML value.
+        run: |
+          curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SWEEP_URL"

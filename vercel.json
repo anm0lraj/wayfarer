@@ -102,5 +102,6 @@
       "path": "/api/push/sweep",
       "schedule": "30 2 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "bash -c '[[ \"$VERCEL_GIT_COMMIT_REF\" == dependabot/* ]]'"
 }
