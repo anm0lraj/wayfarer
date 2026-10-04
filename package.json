@@ -34,7 +34,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dexie": "^4.4.6",
-    "firebase": "^11.10.0",
+    "firebase": "^12.19.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^1.49.0",
     "maplibre-gl": "^6.11.2",
@@ -48,7 +48,7 @@
     "zustand": "^4.5.7"
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^4.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "1.49",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
@@ -64,7 +64,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.26",
     "fake-indexeddb": "^6.2.5",
-    "firebase-tools": "^13.35.1",
+    "firebase-tools": "^15.32.1",
     "jsdom": "^25.0.1",
     "msw": "^2.15.0",
     "postcss": "^8.5.28",
