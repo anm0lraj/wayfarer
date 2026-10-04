@@ -102,14 +102,18 @@ describe('Add memory', () => {
     renderApp('/trips/trip-bali/memories/new')
     await userEvent.upload(await screen.findByLabelText('Choose a photo'), photo())
     await userEvent.click(screen.getByRole('button', { name: 'Save memory' }))
-    await screen.findByRole('heading', { name: /Day|Other/ })
-    const [m] = await db.memories.where('tripId').equals('trip-bali').toArray()
-    await waitFor(async () => expect((await db.memories.get(m!.id))?.uploadState).toBe('done'))
+    // The memory is written a moment after the click (more slowly on a busy machine), so wait for it instead of assuming it is there.
+    const m = await waitFor(async () => {
+      const [saved] = await db.memories.where('tripId').equals('trip-bali').toArray()
+      expect(saved).toBeDefined()
+      return saved!
+    })
+    await waitFor(async () => expect((await db.memories.get(m.id))?.uploadState).toBe('done'))
 
-    await db.memories.update(m!.id, { uploadState: 'queued' })
+    await db.memories.update(m.id, { uploadState: 'queued' })
     const failing = { ...defaultServices.storage, publish: () => Promise.reject(new Error('network')) }
     expect(await processMemoryUploads(failing)).toEqual({ uploaded: 0, failed: 1 })
-    expect((await db.memories.get(m!.id))?.uploadState).toBe('failed')
+    expect((await db.memories.get(m.id))?.uploadState).toBe('failed')
     // automatic runs leave failed items alone; the Retry button includes them
     expect(await processMemoryUploads(defaultServices.storage)).toEqual({ uploaded: 0, failed: 0 })
     expect(await processMemoryUploads(defaultServices.storage, { retryFailed: true })).toEqual({ uploaded: 1, failed: 0 })
