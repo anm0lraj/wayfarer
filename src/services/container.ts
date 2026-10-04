@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react'
 import type { AIService } from './ai/types'
 import type { AuthService } from './auth/types'
 import type { BookingService } from './bookings/types'
+import type { FeedbackService } from './feedback/types'
 import type { GeolocationService } from './geolocation/geolocation'
 import type { MapService } from './maps/types'
 import type { NotificationService } from './notifications/types'
@@ -14,6 +15,7 @@ import { env } from '@/config/env'
 import { lazyAuthService } from './auth/lazy'
 import { authService } from './auth/mock'
 import { bookingService } from './bookings/mock'
+import { feedbackService } from './feedback/mock'
 import { geolocationService } from './geolocation/geolocation'
 import { mapService } from './maps/mock'
 import { osrmRouting } from './maps/osrm'
@@ -34,6 +36,7 @@ export interface Services {
   storage: StorageService
   notifications: NotificationService
   geolocation: GeolocationService
+  feedback: FeedbackService
 }
 
 /** Default wiring. To use a real vendor, replace the adapter here — screens only see the interfaces. */
@@ -48,6 +51,7 @@ export const defaultServices: Services = {
   storage: env.backend === 'firebase' ? lazyStorageService(async () => (await import('./storage/firestoreMedia')).firestoreMediaService, FIRESTORE_MEDIA_LIMITS) : storageService,
   notifications: createNotificationService(env.backend === 'firebase' && env.pushKey ? lazyPush(async () => (await import('./notifications/push')).firebasePush) : noPush),
   geolocation: geolocationService,
+  feedback: env.backend === 'firebase' ? { send: async (input) => (await import('./feedback/firestore')).firestoreFeedback.send(input) } : feedbackService,
 }
 
 export const ServicesContext = createContext<Services>(defaultServices)

@@ -61,6 +61,8 @@ async function seed() {
   // invitations: one A sent, one sent to A, one unrelated
   await put('invites/tA__friend@example.com', { tripId: 'tA', invitedBy: A, email: 'friend@example.com', status: 'pending' })
   await put('invites/tB__amy@example.com', { tripId: 'tB', invitedBy: B, email: 'amy@example.com', status: 'pending' })
+  await put('feedback/fA', { uid: A, message: 'my feedback' })
+  await put('feedback/fB', { uid: B, message: 'their feedback' })
   await put('invites/tB__zed@example.com', { tripId: 'tB', invitedBy: B, email: 'zed@example.com', status: 'pending' })
 }
 
@@ -120,6 +122,13 @@ describe('deleting an account’s data', () => {
     expect(await exists('invites/tA__friend@example.com')).toBe(false)
     expect(await exists('invites/tB__amy@example.com')).toBe(false)
     expect(await exists('invites/tB__zed@example.com')).toBe(true)
+  })
+
+  it('removes the feedback they sent, and only theirs', async () => {
+    await seed()
+    await deleteAccountData(a.uid)
+    expect(await exists('feedback/fA')).toBe(false)
+    expect(await exists('feedback/fB')).toBe(true)
   })
 
   it('leaves everyone else’s data alone', async () => {

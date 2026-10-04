@@ -1,4 +1,5 @@
 import { env } from '@/config/env'
+import { APP_VERSION } from '@/config/version'
 
 /**
  * Crash reporting without a vendor: an uncaught error or a screen that fails to load sends one small report to
@@ -18,7 +19,7 @@ export function buildReport(error: unknown, location: Pick<Location, 'pathname'>
   const e = error instanceof Error ? error : new Error(typeof error === 'string' ? error : 'Unknown error')
   const message = (e.message || e.name).slice(0, 300)
   if (IGNORED.test(message)) return undefined
-  return { kind: 'error', message, stack: e.stack?.slice(0, 800), route: location.pathname.slice(0, 200), build: env.appEnv, agent: navigator.userAgent.slice(0, 160) }
+  return { kind: 'error', message, stack: e.stack?.slice(0, 800), route: location.pathname.slice(0, 200), build: `${env.appEnv === 'production' ? 'prod' : 'dev'}@${APP_VERSION}`, agent: navigator.userAgent.slice(0, 160) }
 }
 
 export function reportError(error: unknown): void {

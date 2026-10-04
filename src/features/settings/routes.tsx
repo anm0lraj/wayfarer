@@ -10,9 +10,11 @@ import { NotificationSettings } from '@/features/notifications/NotificationSetti
 import { PushDeviceStatus } from '@/features/notifications/PushDeviceStatus'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
 import { useSession } from '@/app/providers/session'
+import { FeedbackSheet } from '@/features/feedback/FeedbackSheet'
 import { useSignOut } from '@/features/account/useSignOut'
 import { usePendingChanges, useSyncState } from '@/features/sync/useSyncStatus'
 import { env } from '@/config/env'
+import { APP_VERSION } from '@/config/version'
 import { resetDemoData } from '@/data/seed'
 import { promptInstall, usePwa } from '@/lib/pwa'
 import { useTheme, type ThemePreference } from '@/lib/theme'
@@ -64,6 +66,7 @@ export default function SettingsRoute() {
   const navigate = useNavigate()
   const signingOut = useSignOut()
   const { installed, installEvent } = usePwa()
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [aiDown, setAiDown] = useState(() => {
     try { return localStorage.getItem('mock-ai-unavailable') === '1' } catch { return false }
   })
@@ -148,6 +151,9 @@ export default function SettingsRoute() {
         <Section title="About" description="How Wayfarer handles your data, and the rules of use.">
           <Button asChild variant="secondary"><Link to="/privacy">Privacy notice</Link></Button>
           <Button asChild variant="secondary"><Link to="/terms">Terms of use</Link></Button>
+          <Button variant="secondary" onClick={() => setFeedbackOpen(true)}>Send feedback</Button>
+          <Badge>Version {APP_VERSION}</Badge>
+          <FeedbackSheet open={feedbackOpen} onOpenChange={setFeedbackOpen} />
         </Section>
 
         <Section title="Account" description={env.backend === 'firebase' ? `You’re signed in as ${session?.user.email ?? session?.user.name ?? 'a traveller'}.` : 'You’re signed in as the demo traveller.'}>

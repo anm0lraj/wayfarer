@@ -39,6 +39,7 @@ export function PrivacyPage() {
         <><strong>What you create</strong>: trips, itineraries, saved places, bookings you note down (these are plans, not purchases), checklists, memories (photos, voice notes, text), stories, and your settings and travel preferences.</>,
         <><strong>Your assistant chats</strong> with the travel assistant, and a daily count of how much you have used it.</>,
         <><strong>A device record</strong> if you turn on reminders: a token that lets our server send notifications to that browser, and its time zone.</>,
+        <><strong>Feedback</strong> you choose to send from Settings: your message with your account id, the page you were on and the app version.</>,
         <><strong>People you share with</strong>: the email addresses you invite, and the role you give them.</>,
       ]} />
       <p>We do not use advertising or tracking cookies, and we do not run analytics on what you do in the app. If the app crashes it sends one small report to our server log: the error message, the page path (without any details after it), and your browser type. It contains no account details.</p>
@@ -66,7 +67,7 @@ export function PrivacyPage() {
       <H>Your choices</H>
       <List items={[
         <><strong>Download your data</strong> from Settings → Account.</>,
-        <><strong>Delete your account</strong> from Settings → Account. This removes, from our servers, your trips and their photos, pages you published, saves and likes, settings, assistant chats and devices, and then your sign-in. People you shared a trip with lose access to trips you owned. It cannot be undone.</>,
+        <><strong>Delete your account</strong> from Settings → Account. This removes, from our servers, your trips and their photos, pages you published, saves and likes, settings, assistant chats, feedback and devices, and then your sign-in. People you shared a trip with lose access to trips you owned. It cannot be undone.</>,
         <><strong>Reminders and location</strong> are off until you turn them on, and you can turn them off again in Settings or your browser.</>,
         <>For anything else about your data, {contact()}.</>,
       ]} />

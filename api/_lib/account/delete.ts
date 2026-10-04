@@ -28,7 +28,7 @@ async function deletePublicPage(path: string): Promise<number> {
  *   - trips shared with them: they are taken off the trip, the trip stays for the others
  *   - pages they published (with photos and links), and their likes and saves (the page counters go back down)
  *   - their profile, settings, notifications, assistant chats and registered devices
- *   - invitations they sent, and ones sent to their verified email
+ *   - invitations they sent, ones sent to their verified email, and the feedback they left
  */
 export async function deleteAccountData(uid: string, email?: string): Promise<DeletionReport> {
   const report: DeletionReport = { ownedTrips: 0, leftTrips: 0, publishedPages: 0, documents: 0 }
@@ -65,6 +65,7 @@ export async function deleteAccountData(uid: string, email?: string): Promise<De
   }
   for (const part of USER_PARTS) await remove(await listPaths(`users/${uid}/${part}`))
 
+  await remove(await pathsWhere('feedback', 'uid', uid))
   await remove(await pathsWhere('invites', 'invitedBy', uid))
   if (email) await remove(await pathsWhere('invites', 'email', email))
   if (await getDocument(`users/${uid}`)) await remove([`users/${uid}`])

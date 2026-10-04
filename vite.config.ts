@@ -7,6 +7,8 @@ import { securityHeaders } from './scripts/security-headers.mjs'
 import { localApi } from './scripts/local-api'
 
 export default defineConfig({
+  // The short commit id Vercel builds from (shown in Settings, stamped into crash reports and feedback).
+  define: { __APP_VERSION__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'dev') },
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   preview: { headers: securityHeaders },
   worker: { format: 'es' }, // maplibre-gl's worker is an ES module with imports

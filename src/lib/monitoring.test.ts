@@ -22,7 +22,7 @@ describe('crash reports', () => {
     reportError(new Error('Cannot read properties of undefined'))
     const [r] = await sent()
     expect(beacon.mock.calls[0]![0]).toBe('/api/report')
-    expect(r).toMatchObject({ kind: 'error', message: 'Cannot read properties of undefined', route: '/trips/t1', build: 'production' })
+    expect(r).toMatchObject({ kind: 'error', message: 'Cannot read properties of undefined', route: '/trips/t1', build: 'prod@dev' })
     expect(JSON.stringify(r)).not.toContain('secret')
   })
 

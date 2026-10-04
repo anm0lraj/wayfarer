@@ -17,7 +17,7 @@ describe('privacy notice', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Privacy notice' })).toBeInTheDocument()
     const text = document.body.textContent ?? ''
     // The things a person would want to know before using the app (keep these true when the app changes).
-    for (const fact of ['Google Firebase', 'Mumbai', 'Vercel', 'Gemini', 'OpenStreetMap', 'Open-Meteo', 'Download your data', 'Delete your account', 'aged 18']) {
+    for (const fact of ['Google Firebase', 'Mumbai', 'Vercel', 'Gemini', 'OpenStreetMap', 'Open-Meteo', 'Download your data', 'Delete your account', 'Feedback', 'aged 18']) {
       expect(text, fact).toContain(fact)
     }
     expect(text).toMatch(/Last updated \d{1,2} \w+ \d{4}/)

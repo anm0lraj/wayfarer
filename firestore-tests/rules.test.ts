@@ -377,6 +377,26 @@ describe('push devices', () => {
   })
 })
 
+describe('feedback', () => {
+  const note = { uid: 'amy', message: 'The map is blank on my phone', route: '/trips/t1/map', version: 'abc1234', agent: 'Chrome', createdAt: '2026-10-05T10:00:00.000Z' }
+
+  it('lets a signed-in person leave their own message, and no one read it back', async () => {
+    await assertSucceeds(as('amy').collection('feedback').add(note))
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc('feedback/f1').set(note) })
+    await assertFails(as('amy').doc('feedback/f1').get())
+    await assertFails(as('amy').doc('feedback/f1').update({ message: 'changed' }))
+    await assertFails(as('amy').doc('feedback/f1').delete())
+  })
+
+  it('refuses messages left in someone else’s name, signed out, empty, oversized or with extra fields', async () => {
+    await assertFails(as('bob').collection('feedback').add(note))
+    await assertFails(env.unauthenticatedContext().firestore().collection('feedback').add(note))
+    await assertFails(as('amy').collection('feedback').add({ ...note, message: '' }))
+    await assertFails(as('amy').collection('feedback').add({ ...note, message: 'x'.repeat(2001) }))
+    await assertFails(as('amy').collection('feedback').add({ ...note, extra: 1 }))
+  })
+})
+
 describe('everything else', () => {
   it('is closed', async () => {
     await assertFails(as('owner').doc('admin/config').get())

@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "smoke": "node scripts/smoke.mjs",
     "test:rules": "node scripts/with-emulators.mjs firestore vitest.rules.config.ts",
     "test:sync": "node scripts/with-emulators.mjs auth,firestore vitest.sync.config.ts"
   },
