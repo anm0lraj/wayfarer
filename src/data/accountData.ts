@@ -52,14 +52,21 @@ export async function exportLocalAccountData(now = new Date()): Promise<DataExpo
 }
 
 const OWNER_KEY = 'accountUid'
+/** Written only when the demo backend seeds its fake traveller and trips. A real account never writes it. */
+const DEMO_SEED_KEY = 'seedVersion'
 
 /**
  * Records whose data this device holds. If a different account signs in (the previous one closed the tab, lost its
  * session, or was never signed out), the old account's data is removed first rather than shown to, or synced as, the new one.
+ *
+ * The same goes for a browser that was used in demo mode (the site's earlier demo version, or a local demo run): its fake
+ * traveller, trips and public pages have no owner on record, but they are not this person's, so they are cleared too.
  */
 export async function claimDevice(uid: string): Promise<void> {
   const current = (await db.meta.get(OWNER_KEY))?.value
-  if (current && current !== uid) await wipeLocalAccountData()
+  const demoLeftovers = !current && !!(await db.meta.get(DEMO_SEED_KEY))
+  if ((current && current !== uid) || demoLeftovers) await wipeLocalAccountData()
+  if (demoLeftovers) await db.meta.delete(DEMO_SEED_KEY) // so this clean-up happens once
   if (current !== uid) await db.meta.put({ key: OWNER_KEY, value: uid })
 }
 

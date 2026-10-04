@@ -27,6 +27,31 @@ describe('wiping an account from the device', () => {
   })
 })
 
+describe('a browser that was used in demo mode', () => {
+  it('has its demo traveller, trips and public pages cleared when a real account signs in, once', async () => {
+    // beforeEach left exactly that: the demo seed (with its marker) and no owner on record.
+    expect(await db.meta.get('seedVersion')).toBeDefined()
+    expect(await db.trips.count()).toBeGreaterThan(0)
+    expect(await db.publicTrips.count()).toBeGreaterThan(0)
+    const catalogue = await db.places.count()
+
+    await claimDevice('uid-real')
+
+    expect(await db.trips.count()).toBe(0)
+    expect(await db.items.count()).toBe(0)
+    expect(await db.publicTrips.count()).toBe(0)
+    expect(await db.users.count()).toBe(0)
+    expect(await db.places.count()).toBe(catalogue) // the shared catalogue stays
+    expect(await db.meta.get('seedVersion')).toBeUndefined()
+    expect((await db.meta.get('accountUid'))?.value).toBe('uid-real')
+
+    // The next sign-in must not wipe what the real account has stored since.
+    await db.trips.put({ id: 't-real', ownerId: 'uid-real', title: 'Mine' } as never)
+    await claimDevice('uid-real')
+    expect(await db.trips.get('t-real')).toBeDefined()
+  })
+})
+
 describe('exporting an account’s data', () => {
   it('has the traveller’s records as plain JSON, without queued changes, photo bytes or the shared catalogue', async () => {
     await db.blobs.put({ key: 'media/1', blob: new Blob(['x']), createdAt: 1 })
@@ -59,6 +84,9 @@ describe('work that would be lost', () => {
 })
 
 describe('whose data this device holds', () => {
+  // These two start from a device that holds a real account's data (not the demo seed, which has its own test above).
+  beforeEach(async () => { await db.meta.delete('seedVersion') })
+
   it('leaves the same account’s data alone', async () => {
     await claimDevice('uid-a')
     await claimDevice('uid-a')
@@ -73,6 +101,7 @@ describe('whose data this device holds', () => {
   })
 
   it('claims an unclaimed device without wiping it, and can let go again', async () => {
+    await db.meta.delete('seedVersion') // a device holding real data that simply has no owner on record (not demo-mode data)
     await claimDevice('uid-a')
     expect(await db.trips.count()).toBeGreaterThan(0)
     await releaseDevice()
