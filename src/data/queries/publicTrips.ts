@@ -55,9 +55,16 @@ export const usePublicTrip = (slug: string | undefined) =>
     retry: false,
     queryFn: async ({ signal }) => {
       if (live) {
-        const trip = await (await remote()).getPublicTripBySlug(slug!)
-        if (trip) await keepLocally([trip])
-        return trip ?? null
+        try {
+          const trip = await (await remote()).getPublicTripBySlug(slug!)
+          if (trip) await keepLocally([trip])
+          return trip ?? null // the server answered: no page means it was never published, or was unpublished
+        } catch (e) {
+          // The server could not be reached (offline): a page this device has already opened is still readable.
+          const seen = await db.publicTrips.where('slug').equals(slug!).first()
+          if (seen) return seen
+          throw e
+        }
       }
       try {
         return await api<PublicTrip>(`/api/public-trips/${encodeURIComponent(slug!)}`, { signal })

@@ -112,7 +112,10 @@ export default function HomeRoute() {
           <Section title="Inspiration" description="Itineraries from other travellers" to="/explore/itineraries">
             {publicTrips.isPending && <SkeletonGroup label="Loading itineraries" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="h-60" /><Skeleton className="h-60" /></SkeletonGroup>}
             {publicTrips.isError && <ErrorState title="Couldn’t load itineraries" onRetry={() => void publicTrips.refetch()} />}
-            {publicTrips.data && <CardRow>{publicTrips.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</CardRow>}
+            {publicTrips.data && publicTrips.data.length > 0 && <CardRow>{publicTrips.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</CardRow>}
+            {publicTrips.data?.length === 0 && (
+              <EmptyState title="No shared itineraries yet" description="When travellers publish their trips they appear here. Publish one of yours to be the first." action={<Button asChild variant="secondary"><Link to="/trips">Your trips</Link></Button>} />
+            )}
           </Section>
         </div>
 

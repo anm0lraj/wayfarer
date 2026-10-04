@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { EmptyState, ErrorState } from '@/components/feedback/States'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -79,11 +79,19 @@ export function PublicFeed() {
       )}
       {feed.isError && <ErrorState title="Couldn’t load itineraries" onRetry={() => void feed.refetch()} />}
       {feed.isSuccess && trips.length === 0 && (
-        <EmptyState
-          title="No itineraries match"
-          description={q ? `Nothing for “${q}”. Try a different place or clear the filters.` : 'Nothing has been shared here yet.'}
-          action={<Button variant="secondary" onClick={() => { setDraft(''); setParams({}, { replace: true }) }}>Clear filters</Button>}
-        />
+        q || destinationId ? (
+          <EmptyState
+            title="No itineraries match"
+            description={q ? `Nothing for “${q}”. Try a different place or clear the filters.` : 'Nothing has been shared for that place yet. Try another, or clear the filter.'}
+            action={<Button variant="secondary" onClick={() => { setDraft(''); setParams({}, { replace: true }) }}>Clear filters</Button>}
+          />
+        ) : (
+          <EmptyState
+            title="Nothing shared yet"
+            description="When travellers publish their trips they show up here. Publish one of yours to be the first."
+            action={<Button asChild variant="secondary"><Link to="/trips">Your trips</Link></Button>}
+          />
+        )
       )}
 
       {trips.length > 0 && (
