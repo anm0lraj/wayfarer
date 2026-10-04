@@ -45,7 +45,7 @@ function MemoryThumb({ memory }: { memory: Memory }) {
   const url = useMediaUrl(memory.mediaKey)
   return (
     <Link to={`/trips/${memory.tripId}/memories`} className="group relative block aspect-square overflow-hidden rounded-lg bg-surface-2">
-      {url && <img src={url} alt={memory.caption ?? 'Trip photo'} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />}
+      {url && <img src={url} alt={memory.caption ? '' : 'Trip photo'} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />}
       {memory.caption && <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-2 py-1 text-xs font-medium text-white">{memory.caption}</span>}
     </Link>
   )
@@ -94,9 +94,9 @@ export default function HomeRoute() {
             )}
             {upcoming.length > 0 && (
               <ul className="grid gap-3 sm:grid-cols-2">
-                {upcoming.map((t) => (
+                {upcoming.map((t, i) => (
                   <li key={t.id}>
-                    <TripCard trip={t} state={t.effectiveState} progress={plans[t.id]?.progress.percent} countdown={countdownLabel(t.startDate, dateInTimezone(now, t.timezone))} />
+                    <TripCard priority={i === 0} trip={t} state={t.effectiveState} progress={plans[t.id]?.progress.percent} countdown={countdownLabel(t.startDate, dateInTimezone(now, t.timezone))} />
                   </li>
                 ))}
               </ul>
@@ -106,7 +106,7 @@ export default function HomeRoute() {
           <Section title="Explore" description="Destinations travellers love right now" to="/explore">
             {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}
             {destinations.isError && <ErrorState onRetry={() => void destinations.refetch()} />}
-            {destinations.data && <CardRow>{destinations.data.slice(0, 6).map((d) => <li key={d.id}><DestinationCard destination={d} /></li>)}</CardRow>}
+            {destinations.data && <CardRow>{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
           </Section>
 
           <Section title="Inspiration" description="Itineraries from other travellers" to="/explore/itineraries">

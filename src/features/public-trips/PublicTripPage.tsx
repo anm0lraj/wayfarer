@@ -10,6 +10,7 @@ import { useDestination } from '@/data/queries/catalog'
 import { useMediaUrl } from '@/data/queries/media'
 import { usePublicTrip, useSignInGate } from '@/data/queries/publicTrips'
 import { CATEGORY_META } from '@/features/itinerary/categoryMeta'
+import { WhenVisible } from '@/components/layout/WhenVisible'
 import { TripMap } from '@/features/map/TripMap'
 import { useDocumentMeta } from '@/lib/hooks/useDocumentMeta'
 import { formatMoney } from '@/lib/money'
@@ -105,7 +106,7 @@ function Loaded({ trip }: { trip: PublicTrip }) {
   return (
     <article className="space-y-8">
       <div className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-xl">
-        <img src={trip.coverImage} alt="" className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
+        <img src={trip.coverImage} alt="" fetchPriority="high" className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
       </div>
 
       <header className="space-y-3">
@@ -139,7 +140,10 @@ function Loaded({ trip }: { trip: PublicTrip }) {
               {snap.days.map((d) => <Chip key={d.id} selected={mapDay === d.dayNumber} onClick={() => setMapDay(d.dayNumber)}>Day {d.dayNumber}</Chip>)}
             </div>
             <div className="relative h-72 overflow-hidden rounded-lg border border-border lg:h-80">
-              <TripMap className="absolute inset-0" markers={map.markers} route={map.route} fallbackCenter={center} fitKey={`${trip.id}-${mapDay}`} />
+              {/* Below the fold: the map library loads when the visitor scrolls near it, not while the cover is still arriving. */}
+              <WhenVisible className="absolute inset-0" fallback={<Skeleton className="size-full" />}>
+                <TripMap className="absolute inset-0" markers={map.markers} route={map.route} fallbackCenter={center} fitKey={`${trip.id}-${mapDay}`} />
+              </WhenVisible>
             </div>
           </section>
 

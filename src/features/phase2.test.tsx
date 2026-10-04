@@ -28,7 +28,7 @@ describe('Home', () => {
     expect(await within(cont).findByText('Add accommodation')).toBeInTheDocument()
     expect(await within(screen.getByRole('region', { name: 'Explore' })).findByText('Bali')).toBeInTheDocument()
     expect(await within(screen.getByRole('region', { name: 'Inspiration' })).findByText('7 Days in Japan — Food & Culture')).toBeInTheDocument()
-    expect(await within(screen.getByRole('region', { name: 'Memories' })).findByAltText('Sunset at Baga Beach')).toBeInTheDocument()
+    expect(await within(screen.getByRole('region', { name: 'Memories' })).findByText('Sunset at Baga Beach')).toBeInTheDocument()
   })
 
   it('shows a live banner while a trip is active', async () => {

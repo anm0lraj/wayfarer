@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { RouteEffects } from './RouteEffects'
 import { OfflineBanner } from '@/components/feedback/States'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -8,6 +8,8 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
  * dependencies so these routes can later be server-rendered or pre-rendered for SEO and link previews.
  */
 export function PublicLayout() {
+  // A shared trip page fills in as its data arrives; a full-screen minimum keeps the footer below the fold meanwhile, so it never jumps.
+  const tall = useLocation().pathname.startsWith('/t/')
   return (
     <div className="min-h-dvh">
       <RouteEffects />
@@ -21,7 +23,7 @@ export function PublicLayout() {
           <Link to="/explore" className="min-h-touch content-center rounded-md px-3 font-medium text-fg-muted hover:text-fg">Explore</Link>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 pb-12 outline-none"><Outlet /></main>
+      <main id="main" tabIndex={-1} className={`mx-auto max-w-5xl px-4 pb-12 outline-none ${tall ? 'min-h-dvh' : ''}`}><Outlet /></main>
       <footer className="mx-auto flex max-w-5xl flex-wrap gap-x-5 border-t border-border px-4 py-4 pb-[calc(var(--safe-bottom,0px)+1rem)] text-sm text-fg-muted">
         <Link to="/privacy" className="min-h-touch content-center underline-offset-2 hover:underline">Privacy</Link>
         <Link to="/terms" className="min-h-touch content-center underline-offset-2 hover:underline">Terms</Link>

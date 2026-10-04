@@ -15,8 +15,8 @@ export const csp = [
   "default-src 'self'",
   `script-src 'self' ${GOOGLE_SCRIPT}`,
   // Tailwind/MapLibre/Framer Motion set inline styles; scripts stay strict.
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
   `img-src 'self' data: blob: ${OSM}`,
   // The service worker caches images by fetching them itself, and a worker's fetches are governed by connect-src, not
   // img-src. Every host allowed in img-src must also be here or images load on the first visit and fail after the

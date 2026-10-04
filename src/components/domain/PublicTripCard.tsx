@@ -4,12 +4,12 @@ import { formatMoney } from '@/lib/money'
 import type { PublicTrip } from '@/types'
 
 /** Another traveller's published itinerary: cover, title, creator, length, budget and saves. */
-export function PublicTripCard({ trip }: { trip: PublicTrip }) {
+export function PublicTripCard({ trip, priority }: { trip: PublicTrip; priority?: boolean }) {
   const [low, high] = trip.budgetRange
   return (
     <Link to={`/t/${trip.slug}`} className="group block overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md">
       <div className="aspect-[16/10] overflow-hidden bg-surface-2">
-        <img src={trip.coverImage} alt="" loading="lazy" decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
+        <img src={trip.coverImage} alt="" loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
       </div>
       <div className="space-y-1.5 p-3.5">
         <h3 className="line-clamp-2 text-base font-semibold leading-snug">{trip.title}</h3>
