@@ -47,7 +47,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -71,7 +71,7 @@ jobs:
       # The github reporter turns every failing test into a readable annotation on the run (the logs themselves need a login).
       - run: npx playwright test --project=firefox --project=webkit-iphone --project=webkit-desktop --reporter=github,list
         env: { PW_ALL_BROWSERS: '1' }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report-other-browsers
