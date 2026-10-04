@@ -6,6 +6,11 @@ test.describe('itinerary and map', () => {
     // Regression: MapLibre 6 looks for its worker next to its own script; the build didn't ship it, the request got the
     // app's HTML, and the map drew pins but never a tile. The worker file must be served, as real JavaScript (checked on the
     // response rather than a "worker" event, which Playwright's Firefox does not emit; real Firefox runs this fine).
+    // The map needs WebGL. Some headless builds (Firefox on a CI machine) have none; the app then shows the stop list instead,
+    // so there is nothing to draw. Real browsers have it (verified in desktop Firefox and WebKit).
+    await page.goto('about:blank')
+    const hasWebGL = await page.evaluate(() => { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')) })
+    test.skip(!hasWebGL, 'This browser build has no WebGL, so the map cannot draw')
     const workerFailed = page.waitForEvent('console', { predicate: (m) => /worker|Failed to fetch/i.test(m.text()) && m.type() === 'error', timeout: 6000 }).then(() => true, () => false)
     const workerFile = page.waitForResponse((r) => /maplibre-gl-worker.*\.js$/.test(r.url()), { timeout: 15_000 })
     await page.goto('/trips/trip-bali/map?day=1')
