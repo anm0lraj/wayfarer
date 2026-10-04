@@ -4,11 +4,14 @@ import { expect, test } from '@playwright/test'
 test.describe('itinerary and map', () => {
   test('the map renders with a real size and one numbered pin per located stop', async ({ page }, info) => {
     // Regression: MapLibre 6 looks for its worker next to its own script; the build didn't ship it, the request got the
-    // app's HTML, and the map drew pins but never a tile. The worker must actually start and be real JavaScript.
+    // app's HTML, and the map drew pins but never a tile. The worker file must be served, as real JavaScript (checked on the
+    // response rather than a "worker" event, which Playwright's Firefox does not emit; real Firefox runs this fine).
     const workerFailed = page.waitForEvent('console', { predicate: (m) => /worker|Failed to fetch/i.test(m.text()) && m.type() === 'error', timeout: 6000 }).then(() => true, () => false)
-    const worker = page.waitForEvent('worker', { timeout: 15_000 })
+    const workerFile = page.waitForResponse((r) => /maplibre-gl-worker.*\.js$/.test(r.url()), { timeout: 15_000 })
     await page.goto('/trips/trip-bali/map?day=1')
-    expect((await worker).url()).toMatch(/maplibre-gl-worker.*\.js$/)
+    const served = await workerFile
+    expect(served.status()).toBe(200)
+    expect(served.headers()['content-type']).toMatch(/javascript/) // the SPA's HTML answer is what the original bug returned
     expect(await workerFailed).toBe(false)
     const map = page.getByRole('application', { name: 'Map of your stops' })
     await expect(map).toBeVisible()
@@ -36,7 +39,7 @@ test.describe('itinerary and map', () => {
 
   test('drag and drop reorders and persists across reload', async ({ page }, info) => {
     // On a phone the third card is below the fold and a mouse can't drag to it; keep the width, make it taller.
-    if (info.project.name === 'phone') await page.setViewportSize({ width: page.viewportSize()!.width, height: 1800 })
+    if (/phone/.test(info.project.name)) await page.setViewportSize({ width: page.viewportSize()!.width, height: 1800 })
     await page.goto('/trips/trip-bali/itinerary/day/1')
     const list = page.getByRole('list', { name: 'Day 1 activities' })
     const first = list.getByRole('button', { name: /^Reorder Arrive at Ngurah Rai Airport/ })

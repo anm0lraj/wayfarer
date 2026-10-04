@@ -4,6 +4,7 @@ import { itineraryRepo } from './repositories'
 import { resetDemoData } from './seed'
 import { setActorId, DEMO_USER_ID } from './actor'
 import { syncNow, type SendBatch } from './syncEngine'
+import type { SyncOp } from './db'
 
 const ack: SendBatch = async (ops) => ops.map((o) => ({ id: o.id!, status: 'ok' as const }))
 const setOnline = (on: boolean) => Object.defineProperty(navigator, 'onLine', { value: on, configurable: true })
@@ -73,5 +74,50 @@ describe('syncNow', () => {
     const send = vi.fn(ack)
     expect((await syncNow(send)).sent).toBe(120)
     expect(send.mock.calls.map((c) => c[0].length)).toEqual([50, 50, 20])
+  })
+})
+
+/**
+ * WebKit's private browsing can store a queued change that it then reads back as `undefined` (even though the count says it
+ * is there). Reading must not choke on it: it can never be sent, and it must not block the changes behind it.
+ */
+describe('a queued change the browser cannot read back', () => {
+  /** Makes the queue read return `undefined` in place of the entry with this key, like that browser does. */
+  function unreadable(key: number) {
+    const real = db.syncQueue.orderBy.bind(db.syncQueue)
+    vi.spyOn(db.syncQueue, 'orderBy').mockImplementation(((index: string) => {
+      const wrap = (c: ReturnType<typeof real>): unknown => ({
+        clone: () => wrap(c.clone()),
+        limit: (n: number) => wrap(c.limit(n)),
+        toArray: async () => (await c.toArray()).map((o: SyncOp) => (o.id === key ? undefined : o)),
+        primaryKeys: () => c.primaryKeys(),
+      })
+      return wrap(real(index))
+    }) as never)
+  }
+
+  it('is dropped, and everything behind it still syncs', async () => {
+    await makeEdits(3)
+    const [first] = await db.syncQueue.orderBy('id').primaryKeys()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    unreadable(first as number)
+    const send = vi.fn(ack)
+    expect(await syncNow(send)).toEqual({ sent: 2, conflicts: 0, failed: false })
+    expect(send.mock.calls.flatMap((c) => c[0]).map((o) => o.id)).not.toContain(first)
+    expect(await db.syncQueue.count()).toBe(0)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('unreadable'))
+    vi.restoreAllMocks()
+  })
+
+  it('does not loop or fail when it is the only thing in the queue', async () => {
+    await makeEdits(1)
+    const [only] = await db.syncQueue.orderBy('id').primaryKeys()
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    unreadable(only as number)
+    const send = vi.fn(ack)
+    expect(await syncNow(send)).toEqual({ sent: 0, conflicts: 0, failed: false })
+    expect(send).not.toHaveBeenCalled()
+    expect(await db.syncQueue.count()).toBe(0)
+    vi.restoreAllMocks()
   })
 })

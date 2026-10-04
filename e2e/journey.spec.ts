@@ -96,7 +96,8 @@ test.describe('Bali journey', () => {
     const dialog = page.getByRole('dialog', { name: 'Use this itinerary' })
     await dialog.locator('input[type=date]').fill('2027-02-01')
     await dialog.getByRole('button', { name: 'Copy to my trips' }).click()
-    await expect(page).toHaveURL(/\/trips\/[^/]+\/itinerary(\/day\/1)?$/) // the itinerary opens on its first day
+    // Copying writes every day and activity to the device; Playwright's WebKit (in-memory IndexedDB) takes ~8 s for it, real browsers far less.
+    await expect(page).toHaveURL(/\/trips\/[^/]+\/itinerary(\/day\/1)?$/, { timeout: 30_000 }) // the itinerary opens on its first day
     await expect(page.getByRole('heading', { level: 1, name: /\(copy\)/ })).toBeVisible()
 
     // Nothing the journey did was blocked by the content security policy.
@@ -116,7 +117,11 @@ test.describe('Bali journey', () => {
     await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible()
   })
 
-  test('works offline: edits are kept on the device and sync when the connection returns', async ({ page, context }) => {
+  test('works offline: edits are kept on the device and sync when the connection returns', async ({ page, context, browserName }) => {
+    // The offline banner follows `navigator.onLine`. In Firefox under automation that value stays true whatever the offline
+    // switch says (checked: it stays true even with Firefox's own offline preference set), so this cannot be driven here.
+    // Not covered for Firefox: check by hand (Firefox menu → Work Offline, or airplane mode) before relying on it.
+    test.skip(browserName === 'firefox', 'navigator.onLine cannot be driven in Firefox under automation')
     await page.goto('/trips/trip-bali/memories/new')
     await page.getByRole('button', { name: /Note/ }).click()
     await expect(page.getByLabel('Your note')).toBeVisible()

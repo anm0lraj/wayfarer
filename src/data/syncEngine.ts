@@ -32,6 +32,22 @@ async function applyConflict(op: SyncOp, current: NonNullable<SyncResult['curren
   if (!local?.updatedAt || !current.updatedAt || current.updatedAt >= local.updatedAt) await table(op.entity)?.put(current)
 }
 
+/**
+ * The next changes to send, oldest first. A queued change that the browser cannot read back (it answers `undefined`;
+ * seen in WebKit's private browsing, where a record can be stored yet unreadable) can never be sent, and left in place
+ * it would stop every change behind it from ever syncing, so it is removed (by its key, which is still readable).
+ */
+export async function nextBatch(): Promise<{ ops: SyncOp[]; dropped: number }> {
+  const ordered = db.syncQueue.orderBy('id')
+  const [values, keys] = await Promise.all([ordered.clone().limit(BATCH).toArray(), ordered.clone().limit(BATCH).primaryKeys()])
+  const unreadable = keys.filter((_, i) => !values[i])
+  if (unreadable.length) {
+    console.warn(`Dropped ${unreadable.length} unreadable queued change(s) so the rest can sync`)
+    await db.syncQueue.bulkDelete(unreadable)
+  }
+  return { ops: values.filter((v): v is SyncOp => !!v), dropped: unreadable.length }
+}
+
 /** Sends the queue in order, in batches. Safe to call repeatedly; does nothing while offline or already running. */
 export async function syncNow(send: SendBatch = sendBatchToApi): Promise<SyncSummary> {
   const summary: SyncSummary = { sent: 0, conflicts: 0, failed: false }
@@ -39,8 +55,11 @@ export async function syncNow(send: SendBatch = sendBatchToApi): Promise<SyncSum
   running = true
   try {
     for (;;) {
-      const ops = await db.syncQueue.orderBy('id').limit(BATCH).toArray()
-      if (ops.length === 0) break
+      const { ops, dropped } = await nextBatch()
+      if (ops.length === 0) {
+        if (dropped) continue // there may be readable changes behind the ones just removed
+        break
+      }
       let results: SyncResult[]
       try {
         results = await send(ops)
