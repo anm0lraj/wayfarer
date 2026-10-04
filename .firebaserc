@@ -2,6 +2,6 @@
   "projects": {
     "default": "wayfarer-dev-c2efe",
     "dev": "wayfarer-dev-c2efe",
-    "prod": "wayfarer-prod"
+    "prod": "wayfarer-prod-bec1a"
   }
 }
