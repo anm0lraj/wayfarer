@@ -71,6 +71,7 @@ export function TransitSearch({ mode }: { mode: TransitMode }) {
   const save = useSaveBooking()
   const remove = useRemoveBooking()
   const copy = MODE_COPY[mode]
+  const Noun = copy.noun[0]!.toUpperCase() + copy.noun.slice(1)
   const q = useMemo(() => parseTransitParams(params, trip), [params, trip])
   const results = useTransit(mode, { from: q.from, to: q.to, date: q.date, travellers: q.travellers })
   const sorted = useMemo(() => sortServices(results.data ?? [], q.sort), [results.data, q.sort])
@@ -96,7 +97,7 @@ export function TransitSearch({ mode }: { mode: TransitMode }) {
     })
 
   const filters = (
-    <form onSubmit={(e) => e.preventDefault()} aria-label={`${copy.noun[0]!.toUpperCase()}${copy.noun.slice(1)} search`} className="grid grid-cols-2 gap-3 rounded-lg bg-surface-2 p-4 sm:grid-cols-4 lg:grid-cols-1">
+    <form onSubmit={(e) => e.preventDefault()} aria-label={`${Noun} search`} className="grid grid-cols-2 gap-3 rounded-lg bg-surface-2 p-4 sm:grid-cols-4 lg:grid-cols-1">
       {(['from', 'to'] as const).map((field) => (
         <div key={field} className="flex flex-col gap-1.5">
           <label htmlFor={`tr-${field}`} className="text-sm font-medium">{field === 'from' ? 'From' : 'To'}</label>
@@ -128,7 +129,7 @@ export function TransitSearch({ mode }: { mode: TransitMode }) {
   else if (results.isError) content = online ? <ErrorState title={`Couldn’t load ${copy.plural}`} description="Try again in a moment." onRetry={() => void results.refetch()} /> : <OfflineState description={`Searching ${copy.plural} needs a connection. Your saved trip is still available.`} />
   else if (sorted.length === 0) content = noService
   else content = (
-    <section aria-label={`${copy.title} results`} className="space-y-3">
+    <section aria-label={`${Noun} results`} className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p role="status" className="flex items-center gap-1 text-sm text-fg-muted">{sorted.length} {sorted.length === 1 ? copy.noun : copy.plural} · {cityName(q.from)} <ArrowRight aria-hidden className="size-3.5" /> {cityName(q.to)}</p>
         <div role="group" aria-label="Sort by" className="flex gap-2">

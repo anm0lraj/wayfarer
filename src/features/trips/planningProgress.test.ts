@@ -21,6 +21,16 @@ describe('computePlanningProgress', () => {
     expect(computePlanningProgress(trip, days, items, [booking('hotel'), booking('flight')]).percent).toBe(75)
   })
 
+  it('counts a saved train or bus like a flight', () => {
+    const items = [item('d1', 1), item('d1', 2), item('d1', 3)]
+    for (const type of ['train', 'bus'] as const) {
+      const p = computePlanningProgress(trip, days, items, [booking('hotel'), booking(type)])
+      expect(p.percent).toBe(75)
+      expect(p.tasks.map((t) => t.label)).not.toContain('Add flights')
+    }
+    expect(computePlanningProgress(trip, days, items, [booking('hotel'), booking('train', 'cancelled')]).percent).toBe(50)
+  })
+
   it('ignores cancelled bookings and points at unfinished days', () => {
     const p = computePlanningProgress(trip, days, [item('d1', 1)], [booking('hotel', 'cancelled')])
     expect(p.tasks.map((t) => t.label)).toContain('Complete Day 1')
