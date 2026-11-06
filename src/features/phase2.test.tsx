@@ -198,6 +198,26 @@ describe('Trip overview', () => {
     expect(await screen.findByText('Turn your memories into a shareable trip?')).toBeInTheDocument()
   })
 
+  it('marks a trip as ready (it then counts down as Upcoming), with undo, and back to planning', async () => {
+    renderApp('/trips/trip-bali') // planning; 1 Oct is 11 days before departure
+    const mark = await screen.findByRole('button', { name: 'Mark as ready' })
+    expect(screen.queryByText('Upcoming')).not.toBeInTheDocument()
+    await userEvent.click(mark)
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('ready'))
+    expect(await screen.findByRole('button', { name: 'Back to planning' })).toBeInTheDocument()
+    expect(screen.getAllByText('Upcoming').length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: 'Open trip checklist' })).toBeInTheDocument()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'))
+    expect(await screen.findByRole('button', { name: 'Mark as ready' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Mark as ready' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to planning' }))
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'))
+    expect(await screen.findByRole('button', { name: 'Mark as ready' })).toBeInTheDocument()
+  })
+
   it('archives with undo and deletes only after confirmation', async () => {
     const router = renderApp('/trips/trip-bali')
     await userEvent.click(await screen.findByRole('button', { name: 'Archive trip' }))

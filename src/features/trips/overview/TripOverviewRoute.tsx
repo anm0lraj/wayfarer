@@ -16,6 +16,7 @@ import { useNow } from '@/lib/hooks/useNow'
 import { formatMoney } from '@/lib/money'
 import { OfflineCard } from '@/features/offline/OfflineCard'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
+import { ReadyToggle } from './ReadyToggle'
 import { TripActions } from './TripActions'
 
 function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
@@ -45,6 +46,10 @@ function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
           </div>
           <ProgressBar value={plan.progress.percent} label={`Planning ${plan.progress.percent}% complete`} />
           <TaskList tasks={plan.progress.tasks} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <ReadyToggle trip={trip} />
+            <p className="text-sm text-fg-muted">Done planning? Your trip then counts down as Upcoming.</p>
+          </div>
         </Card>
       )
     case 'ready':
@@ -57,7 +62,10 @@ function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
           </div>
           <p className="text-fg-muted">Get ready: check your documents, packing and anything still missing.</p>
           <TaskList tasks={plan.progress.tasks} />
-          <Button asChild variant="secondary"><Link to={`${base}/checklist`}>Open trip checklist</Link></Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary"><Link to={`${base}/checklist`}>Open trip checklist</Link></Button>
+            <ReadyToggle trip={trip} />
+          </div>
         </Card>
       )
     case 'active':
