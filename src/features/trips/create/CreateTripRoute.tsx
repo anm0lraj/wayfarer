@@ -110,7 +110,7 @@ export function CreateTrip() {
 
   return (
     <FormProvider {...methods}>
-      <ResponsiveSheet open onOpenChange={(o) => !o && close()} title="Plan a trip" wide="dialog" phone="full">
+      <ResponsiveSheet open onOpenChange={(o) => !o && close()} title="Plan a trip" wide="dialog" phone="full" headingLevel={1}>
         <div className="flex min-h-full flex-col">
           <Stepper steps={STEPS.map((s) => s.label)} current={index} className="mb-6" />
           <form noValidate onSubmit={(e) => { e.preventDefault(); void (last ? create() : next()) }} className="flex flex-1 flex-col">

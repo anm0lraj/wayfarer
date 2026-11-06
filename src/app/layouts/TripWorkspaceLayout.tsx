@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Link, Outlet, useParams } from 'react-router-dom'
+import { Link, Outlet, useMatch, useParams } from 'react-router-dom'
 import { ChevronLeft, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
@@ -52,6 +52,24 @@ function TripHeaderMeta({ trip }: { trip: TripWithState }) {
   )
 }
 
+/** Phone header for every tab but Overview: back, title with dates and state, assistant — one row. */
+function CompactTripHeader({ trip, base }: { trip: TripWithState; base: string }) {
+  return (
+    <header className="-mt-2 flex items-center gap-1 pb-2">
+      <Link to="/trips" aria-label="All trips" className="-ml-3 inline-flex size-11 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2 hover:text-fg">
+        <ChevronLeft aria-hidden className="size-5" />
+      </Link>
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate text-lg font-bold leading-snug">{trip.title}</h1>
+        <p className="truncate text-sm text-fg-muted">{formatDateRange(trip.startDate, trip.endDate)} · {stateLabel[trip.effectiveState]}</p>
+      </div>
+      <Button asChild variant="secondary" size="icon" className="shrink-0">
+        <Link to={`${base}/ai`} aria-label="Assistant"><Sparkles aria-hidden className="size-5" /></Link>
+      </Button>
+    </header>
+  )
+}
+
 /** `/trips/:tripId/*` — header (destination, dates, weather, progress, state) plus URL-reflected tabs. */
 export function TripWorkspaceLayout() {
   const { tripId } = useParams()
@@ -84,26 +102,33 @@ function Workspace({ trip }: { trip: TripWithState }) {
   const desktop = useMediaQuery('(min-width: 1024px)')
   const { open, setOpen } = useAIPanel()
   const docked = desktop && open
+  // Phones keep the full header for Overview only; on the working tabs it shrinks to one row so the content starts
+  // near the top of the screen (destination, weather and progress are a tap away on Overview).
+  const phone = !useMediaQuery('(min-width: 640px)')
+  const onOverview = useMatch({ path: '/trips/:tripId', end: true }) !== null
+  const compact = phone && !onOverview
   return (
     <div className={docked ? 'flex items-start gap-3' : undefined}>
       <div className="min-w-0 flex-1">
-        <header className="pb-3">
-          <Link to="/trips" className="inline-flex min-h-touch items-center gap-1 text-sm text-fg-muted hover:text-fg">
-            <ChevronLeft aria-hidden className="size-4" /> Trips
-          </Link>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold sm:text-3xl">{trip.title}</h1>
-              <Badge tone={stateTone[trip.effectiveState]}>{stateLabel[trip.effectiveState]}</Badge>
+        {compact ? <CompactTripHeader trip={trip} base={base} /> : (
+          <header className="pb-3">
+            <Link to="/trips" className="inline-flex min-h-touch items-center gap-1 text-sm text-fg-muted hover:text-fg">
+              <ChevronLeft aria-hidden className="size-4" /> Trips
+            </Link>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-bold sm:text-3xl">{trip.title}</h1>
+                <Badge tone={stateTone[trip.effectiveState]}>{stateLabel[trip.effectiveState]}</Badge>
+              </div>
+              {desktop ? (
+                <Button variant={open ? 'primary' : 'secondary'} size="sm" aria-pressed={open} onClick={() => setOpen(!open)}><Sparkles aria-hidden className="size-4" /> Assistant</Button>
+              ) : (
+                <Button asChild variant="secondary" size="sm"><Link to={`${base}/ai`}><Sparkles aria-hidden className="size-4" /> Assistant</Link></Button>
+              )}
             </div>
-            {desktop ? (
-              <Button variant={open ? 'primary' : 'secondary'} size="sm" aria-pressed={open} onClick={() => setOpen(!open)}><Sparkles aria-hidden className="size-4" /> Assistant</Button>
-            ) : (
-              <Button asChild variant="secondary" size="sm"><Link to={`${base}/ai`}><Sparkles aria-hidden className="size-4" /> Assistant</Link></Button>
-            )}
-          </div>
-          <TripHeaderMeta trip={trip} />
-        </header>
+            <TripHeaderMeta trip={trip} />
+          </header>
+        )}
         <TabNav label="Trip sections" className="mb-5">
           <TabLink to={base} end>Overview</TabLink>
           <TabLink to={`${base}/itinerary`}>Itinerary</TabLink>

@@ -32,7 +32,7 @@ export function DateRangeField({ start, end, onChange, min, errors }: DateRangeF
           <button
             key={n} type="button" disabled={!start}
             onClick={() => onChange({ start, end: addDays(start, n - 1) })}
-            className="min-h-touch rounded-full border border-border px-3 font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-50"
+            className="min-h-touch rounded-full border border-border-strong bg-surface px-4 font-medium text-fg hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {n} days
           </button>

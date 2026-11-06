@@ -25,8 +25,8 @@ export const storageService: StorageService = {
 
   async getUrl(key) {
     if (key.startsWith('seed:')) {
-      const [, id = key] = key.split(':')
-      return placeholderImage(id)
+      // `seed:<id>:<caption>`: the caption steers the scene ("Fish thali" draws food, "Painted houses" a town).
+      return placeholderImage(key.slice('seed:'.length))
     }
     const cached = urlCache.get(key)
     if (cached) return cached

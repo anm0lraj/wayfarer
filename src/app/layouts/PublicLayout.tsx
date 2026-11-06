@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { RouteEffects } from './RouteEffects'
 import { OfflineBanner } from '@/components/feedback/States'
+import { SkipLink } from '@/components/layout/SkipLink'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 /**
@@ -12,6 +13,7 @@ export function PublicLayout() {
   const tall = useLocation().pathname.startsWith('/t/')
   return (
     <div className="min-h-dvh">
+      <SkipLink />
       <RouteEffects />
       <OfflineBanner />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 pt-[calc(var(--safe-top)+0.75rem)]">

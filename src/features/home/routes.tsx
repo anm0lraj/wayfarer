@@ -51,6 +51,25 @@ function MemoryThumb({ memory }: { memory: Memory }) {
   )
 }
 
+interface PromptRow { id: string; label: string; to: string; trip: TripWithState }
+
+/** A short list of next steps, each naming its trip. */
+function PromptList({ rows }: { rows: PromptRow[] }) {
+  return (
+    <Card className="divide-y divide-border">
+      {rows.map((t) => (
+        <Link key={`${t.trip.id}-${t.id}`} to={t.to} className="flex min-h-touch items-center gap-3 px-4 py-3 hover:bg-surface-2">
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">{t.label}</span>
+            <span className="block truncate text-sm text-fg-muted">{t.trip.title}</span>
+          </span>
+          <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-muted" />
+        </Link>
+      ))}
+    </Card>
+  )
+}
+
 export default function HomeRoute() {
   const now = useNow()
   const session = useSession()
@@ -62,7 +81,13 @@ export default function HomeRoute() {
 
   const active = trips.data?.find((t) => t.effectiveState === 'active')
   const upcoming = (trips.data ?? []).filter((t) => PLANNING_STATES.has(t.effectiveState))
-  const tasks = upcoming.flatMap((t) => (plans[t.id]?.progress.tasks ?? []).map((task) => ({ ...task, trip: t }))).slice(0, 6)
+  const tasks: PromptRow[] = upcoming.flatMap((t) => (plans[t.id]?.progress.tasks ?? []).map((task) => ({ ...task, trip: t }))).slice(0, 6)
+  // A finished trip has nothing left to plan: offer what comes next instead (spec §39 step 16).
+  const finished = (trips.data ?? []).filter((t) => t.effectiveState === 'completed').sort((a, b) => b.endDate.localeCompare(a.endDate)).slice(0, 2)
+  const afterTrip: PromptRow[] = finished.flatMap((t) => [
+    { id: 'memories', label: 'Add memories', to: `/trips/${t.id}/memories/new`, trip: t },
+    { id: 'share', label: 'Share this trip', to: `/trips/${t.id}/share`, trip: t },
+  ])
 
   return (
     <div className="space-y-8">
@@ -106,7 +131,7 @@ export default function HomeRoute() {
           <Section title="Explore" description="Destinations travellers love right now" to="/explore">
             {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}
             {destinations.isError && <ErrorState onRetry={() => void destinations.refetch()} />}
-            {destinations.data && <CardRow>{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
+            {destinations.data && <CardRow className="xl:grid-cols-3">{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
           </Section>
 
           <Section title="Inspiration" description="Itineraries from other travellers" to="/explore/itineraries">
@@ -120,25 +145,23 @@ export default function HomeRoute() {
         </div>
 
         <aside className="min-w-0 space-y-8 lg:col-span-4">
-          <Section title="Continue planning">
-            {trips.isPending ? (
-              <Skeleton className="h-40" />
-            ) : tasks.length === 0 ? (
-              <Card className="p-4 text-sm text-fg-muted">You’re all caught up. Nice work.</Card>
-            ) : (
-              <Card className="divide-y divide-border">
-                {tasks.map((t) => (
-                  <Link key={`${t.trip.id}-${t.id}`} to={t.to} className="flex min-h-touch items-center gap-3 px-4 py-3 hover:bg-surface-2">
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-medium">{t.label}</span>
-                      <span className="block truncate text-sm text-fg-muted">{t.trip.title}</span>
-                    </span>
-                    <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-muted" />
-                  </Link>
-                ))}
-              </Card>
-            )}
-          </Section>
+          {(trips.isPending || upcoming.length > 0) && (
+            <Section title="Continue planning">
+              {trips.isPending ? (
+                <Skeleton className="h-40" />
+              ) : tasks.length === 0 ? (
+                <Card className="p-4 text-sm text-fg-muted">You’re all caught up. Nice work.</Card>
+              ) : (
+                <PromptList rows={tasks} />
+              )}
+            </Section>
+          )}
+
+          {afterTrip.length > 0 && (
+            <Section title="After your trip" description="Keep the memories and share the plan">
+              <PromptList rows={afterTrip} />
+            </Section>
+          )}
 
           <Section title="Memories">
             {memories.isPending ? (

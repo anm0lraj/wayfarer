@@ -43,7 +43,7 @@ export const firestoreMediaService: StorageService = {
   },
 
   async getUrl(key) {
-    if (key.startsWith('seed:')) return placeholderImage(key.split(':')[1] ?? key)
+    if (key.startsWith('seed:')) return placeholderImage(key.slice('seed:'.length))
     const cached = urlCache.get(key)
     if (cached) return cached
     const pub = /^public\/([^/]+)\/([^/]+)$/.exec(key)

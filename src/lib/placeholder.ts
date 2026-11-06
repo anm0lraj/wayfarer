@@ -23,21 +23,29 @@ function rng(seed: number): () => number {
   }
 }
 
-type Scene = 'coast' | 'temple' | 'terraces' | 'mountains' | 'city' | 'food' | 'hotel'
+type Scene = 'coast' | 'temple' | 'shrine' | 'fort' | 'terraces' | 'mountains' | 'city' | 'food' | 'hotel'
 
+/**
+ * First match wins, so the more specific scenes come first. The seed is usually an id (`p-uluwatu-temple`, `delhi`,
+ * `h-coral-resort1`); seeded memories also pass their caption, so "Fish thali" draws food and "Painted houses" a town.
+ */
 const KEYWORDS: Array<[Scene, RegExp]> = [
-  ['food', /^(r-|g-shack|j-ramen|j-tsukiji|j-nishiki|j-kaiseki)|restaurant|cafe|warung/],
-  ['hotel', /^h-|hotel|villa|resort|homestay|stay/],
-  ['terraces', /tegallalang|sidemen|campuhan|monkey|tukad|ubud|terrace/],
-  ['temple', /temple|uluwatu|tirta|tanah|senso|fushimi|kinkaku|meiji|kecak|gion|fort/],
-  ['mountains', /japan|manali|mountain|arashiyama|pub-japan/],
-  ['city', /paris|jaipur|shibuya|market|village|fontainhas|yanaka|teamlab|city/],
-  ['coast', /bali|beach|bay|goa|sanur|seminyak|jimbaran|batu|palolem|baga|coast|cover/],
+  ['food', /^(r-|g-shack|j-ramen|j-tsukiji|j-nishiki|j-kaiseki)|restaurant|cafe|warung|thali|food|dinner|lunch|breakfast/],
+  ['hotel', /^h-|hotel|villa|resort|homestay/],
+  ['shrine', /senso|fushimi|meiji|kinkaku|gion|torii|shrine|kyoto|pagoda/],
+  ['coast', /aguada|lighthouse/],
+  ['fort', /delhi|jaipur|jodhpur|udaipur|agra|rajasthan|fort|palace/],
+  ['terraces', /tegallalang|sidemen|campuhan|monkey|tukad|ubud|terrace|rice/],
+  ['temple', /temple|uluwatu|tirta|tanah|kecak|pura/],
+  ['mountains', /^japan$|pub-japan|manali|himalaya|mountain|arashiyama|valley/],
+  ['city', /paris|tokyo|shibuya|market|village|fontainhas|yanaka|teamlab|city|houses|town|street/],
+  ['coast', /bali|beach|bay|goa|sanur|seminyak|jimbaran|batu|palolem|baga|coast|cover|sunset|lighthouse/],
 ]
 
-function sceneFor(seed: string, h: number): Scene {
-  for (const [scene, re] of KEYWORDS) if (re.test(seed)) return scene
-  return (['coast', 'mountains', 'city', 'temple'] as const)[h % 4]!
+export function sceneFor(seed: string, h = 0): Scene {
+  const s = seed.toLowerCase()
+  for (const [scene, re] of KEYWORDS) if (re.test(s)) return scene
+  return (['coast', 'mountains', 'city', 'terraces'] as const)[h % 4]!
 }
 
 // ---------- colour ----------
@@ -67,15 +75,19 @@ const DAWN: Palette = { sky: ['#1f5062', '#62b5aa', '#f7e4b5'], sun: '#fffbe6', 
 const BLUE: Palette = { sky: ['#0f1a3f', '#3d5ba8', '#f1aa8b'], sun: '#ffe9d0', ink: '#0b1230', accent: '#ffc46b' }
 const NOON: Palette = { sky: ['#1b6ca8', '#5bb8da', '#fde9c3'], sun: '#fffdf2', ink: '#0f3a4a', accent: '#ff9f68' }
 const SAGE: Palette = { sky: ['#47666a', '#a8c2a6', '#f6e9c9'], sun: '#fffaf0', ink: '#22382f', accent: '#e9b872' }
+const DUSK: Palette = { sky: ['#1d2b4f', '#7a5c8f', '#e9a17a'], sun: '#ffe2c4', ink: '#151a2e', accent: '#ffb86b' }
+const SAND: Palette = { sky: ['#5b7fa6', '#e9b98a', '#fbe6c2'], sun: '#fff6e0', ink: '#3a2a26', accent: '#e07a3f' }
 
 const PALETTES: Record<Scene, Palette[]> = {
-  coast: [GOLDEN, ROSE, NOON, DAWN],
-  temple: [GOLDEN, ROSE, BLUE],
-  terraces: [DAWN, SAGE, GOLDEN],
+  coast: [GOLDEN, ROSE, NOON, DAWN, DUSK],
+  temple: [GOLDEN, ROSE, BLUE, DUSK],
+  shrine: [DAWN, SAGE, ROSE, DUSK],
+  fort: [SAND, GOLDEN, DUSK, ROSE],
+  terraces: [DAWN, SAGE, GOLDEN, NOON],
   mountains: [BLUE, SAGE, DAWN, ROSE],
-  city: [ROSE, BLUE, GOLDEN],
-  food: [GOLDEN, ROSE, DAWN],
-  hotel: [BLUE, ROSE, GOLDEN],
+  city: [ROSE, BLUE, GOLDEN, DUSK],
+  food: [GOLDEN, ROSE, DAWN, SAGE],
+  hotel: [BLUE, ROSE, GOLDEN, NOON, DUSK],
 }
 
 // ---------- drawing helpers ----------
@@ -88,6 +100,8 @@ interface Ctx {
   h: number
   /** Sun x position. */
   sx: number
+  /** The lower-cased seed, for scenes with keyword-chosen variants. */
+  seed: string
 }
 
 /** Lamp-light yellow for windows and lanterns, whatever the sky palette. */
@@ -166,8 +180,18 @@ function windows(c: Ctx, x: number, y: number, bw: number, bh: number, cols: num
 
 // ---------- scenes ----------
 
+/** A Balinese-style outrigger boat pulled up on the sand. */
+function boat(x: number, y: number, s: number, hull: string, trim: string): string {
+  return `<path d="M${n(x - s)} ${n(y)} Q${n(x)} ${n(y + s * 0.28)} ${n(x + s)} ${n(y)} L${n(x + s * 1.15)} ${n(y - s * 0.12)} L${n(x + s * 0.85)} ${n(y - s * 0.02)} L${n(x - s * 0.85)} ${n(y - s * 0.02)} L${n(x - s * 1.15)} ${n(y - s * 0.12)}Z" fill="${hull}"/>` +
+    `<path d="M${n(x - s)} ${n(y - s * 0.02)} L${n(x + s)} ${n(y - s * 0.02)}" stroke="${trim}" stroke-width="${n(s * 0.05)}"/>` +
+    `<path d="M${n(x - s * 0.9)} ${n(y + s * 0.18)} L${n(x + s * 0.9)} ${n(y + s * 0.18)}" stroke="${hull}" stroke-width="${n(s * 0.03)}"/>`
+}
+
 function coast(c: Ctx): string {
-  const { w, ht, p, r, sx } = c
+  const { w, ht, p, r, sx, h, seed } = c
+  // Palm beaches and rocky headlands with boats; known places get the right one, others alternate by id.
+  const cliffs = /^goa$|uluwatu|nyang|cliff|aguada|lighthouse|jimbaran|batu/.test(seed) || (!/seminyak|sanur|palolem|baga|kuta|beach/.test(seed) && (h >> 6) % 2 === 1)
+  const lighthouse = /aguada|lighthouse/.test(seed)
   const hz = ht * 0.6
   const refl = Array.from({ length: 9 }, (_, i) => {
     const rw = w * (0.02 + i * 0.012 + r() * 0.01)
@@ -187,8 +211,15 @@ function coast(c: Ctx): string {
     `<rect y="${n(hz)}" width="${w}" height="${n(ht - hz)}" fill="url(#sea)"/>${refl}${swell}${sail}` +
     `<path d="M0 ${ht} L0 ${n(ht * 0.84)} Q${n(w * 0.3)} ${n(ht * 0.78)} ${n(w * 0.62)} ${n(ht * 0.86)} T${w} ${n(ht * 0.83)} L${w} ${ht}Z" fill="${mix('#f4dcb4', p.sky[2], 0.35)}"/>` +
     `<path d="M0 ${n(ht * 0.84)} Q${n(w * 0.3)} ${n(ht * 0.78)} ${n(w * 0.62)} ${n(ht * 0.86)} T${w} ${n(ht * 0.83)}" stroke="#fff" stroke-opacity=".7" stroke-width="${n(ht * 0.006)}" fill="none"/>` +
-    palm(px, ht * 1.02, ht * 0.62, side ? ht * 0.1 : -ht * 0.1, p.ink) +
-    palm(px + (side ? w * 0.07 : -w * 0.07), ht * 1.02, ht * 0.4, side ? ht * 0.05 : -ht * 0.05, mix(p.ink, p.sky[1], 0.15))
+    (cliffs
+      ? `<path d="M${side ? 0 : w} ${n(ht * 0.86)} L${side ? 0 : w} ${n(ht * 0.3)} Q${n(side ? w * 0.12 : w * 0.88)} ${n(ht * 0.26)} ${n(side ? w * 0.2 : w * 0.8)} ${n(ht * 0.42)} L${n(side ? w * 0.24 : w * 0.76)} ${n(ht * 0.6)} Q${n(side ? w * 0.3 : w * 0.7)} ${n(ht * 0.66)} ${n(side ? w * 0.27 : w * 0.73)} ${n(ht * 0.74)}Z" fill="${p.ink}"/>` +
+        `<path d="M${side ? 0 : w} ${n(ht * 0.3)} Q${n(side ? w * 0.12 : w * 0.88)} ${n(ht * 0.26)} ${n(side ? w * 0.2 : w * 0.8)} ${n(ht * 0.42)}" stroke="${mix(p.ink, '#4e8a46', 0.45)}" stroke-width="${n(ht * 0.03)}" fill="none"/>` +
+        (lighthouse
+          ? `<rect x="${n(side ? w * 0.1 : w * 0.87)}" y="${n(ht * 0.12)}" width="${n(w * 0.03)}" height="${n(ht * 0.16)}" fill="#f2ede4"/><rect x="${n(side ? w * 0.1 : w * 0.87)}" y="${n(ht * 0.17)}" width="${n(w * 0.03)}" height="${n(ht * 0.025)}" fill="${mix('#c0432e', p.ink, 0.2)}"/><rect x="${n(side ? w * 0.095 : w * 0.865)}" y="${n(ht * 0.095)}" width="${n(w * 0.04)}" height="${n(ht * 0.03)}" fill="${WARM}"/>`
+          : '') +
+        boat(w * 0.55, ht * 0.9, ht * 0.11, mix(p.ink, p.sky[1], 0.2), p.accent) + boat(w * 0.78, ht * 0.93, ht * 0.08, mix(p.ink, p.sky[0], 0.3), '#fff')
+      : palm(px, ht * 1.02, ht * 0.62, side ? ht * 0.1 : -ht * 0.1, p.ink) +
+        palm(px + (side ? w * 0.07 : -w * 0.07), ht * 1.02, ht * 0.4, side ? ht * 0.05 : -ht * 0.05, mix(p.ink, p.sky[1], 0.15)))
   )
 }
 
@@ -225,6 +256,87 @@ function temple(c: Ctx): string {
     gateHalf(-1) + gateHalf(1) +
     `<rect y="${n(base)}" width="${w}" height="${n(ht - base)}" fill="${mix(p.ink, p.sky[1], 0.12)}"/>${stairs}` +
     palm(w * 0.06, ht * 1.02, ht * 0.7, ht * 0.08, p.ink) + palm(w * 0.95, ht * 1.02, ht * 0.5, -ht * 0.06, p.ink)
+  )
+}
+
+/** Japanese shrine: layered hills, a pagoda and a vermilion torii in front. */
+function shrine(c: Ctx): string {
+  const { w, ht, p, r } = c
+  const red = mix('#c8402a', p.ink, 0.12)
+  const tx = w * (0.62 + r() * 0.12)
+  const tw = ht * 0.42
+  const top = ht * 0.42
+  const base = ht * 0.86
+  const torii =
+    `<path d="M${n(tx - tw * 0.72)} ${n(top + ht * 0.02)} Q${n(tx)} ${n(top - ht * 0.03)} ${n(tx + tw * 0.72)} ${n(top + ht * 0.02)} L${n(tx + tw * 0.68)} ${n(top + ht * 0.055)} Q${n(tx)} ${n(top + ht * 0.02)} ${n(tx - tw * 0.68)} ${n(top + ht * 0.055)}Z" fill="${p.ink}"/>` +
+    `<rect x="${n(tx - tw * 0.6)}" y="${n(top + ht * 0.05)}" width="${n(tw * 1.2)}" height="${n(ht * 0.03)}" fill="${red}"/>` +
+    `<rect x="${n(tx - tw * 0.56)}" y="${n(top + ht * 0.13)}" width="${n(tw * 1.12)}" height="${n(ht * 0.025)}" fill="${red}"/>` +
+    [-1, 1].map((d) => `<rect x="${n(tx + d * tw * 0.4 - ht * 0.018)}" y="${n(top + ht * 0.05)}" width="${n(ht * 0.036)}" height="${n(base - top - ht * 0.05)}" fill="${red}"/><rect x="${n(tx + d * tw * 0.4 - ht * 0.025)}" y="${n(base - ht * 0.03)}" width="${n(ht * 0.05)}" height="${n(ht * 0.03)}" fill="${p.ink}"/>`).join('')
+  const px = w * (0.2 + r() * 0.1)
+  const tiers = 5
+  const col = layerColor(c, 1, 3, p.sky[0])
+  const pagoda = Array.from({ length: tiers }, (_, i) => {
+    const y = ht * 0.74 - i * ht * 0.085
+    const half = ht * (0.13 - i * 0.017)
+    return `<rect x="${n(px - half * 0.55)}" y="${n(y - ht * 0.05)}" width="${n(half * 1.1)}" height="${n(ht * 0.05)}" fill="${col}"/>` +
+      `<path d="M${n(px - half * 1.15)} ${n(y - ht * 0.045)} Q${n(px - half * 0.6)} ${n(y - ht * 0.06)} ${n(px)} ${n(y - ht * 0.085)} Q${n(px + half * 0.6)} ${n(y - ht * 0.06)} ${n(px + half * 1.15)} ${n(y - ht * 0.045)}Z" fill="${col}"/>`
+  }).join('') + `<rect x="${n(px - ht * 0.004)}" y="${n(ht * 0.74 - tiers * ht * 0.085 - ht * 0.09)}" width="${n(ht * 0.008)}" height="${n(ht * 0.1)}" fill="${col}"/>`
+  const blossom = Array.from({ length: 14 }, () => `<circle cx="${n(w * (0.02 + r() * 0.14))}" cy="${n(ht * (0.1 + r() * 0.3))}" r="${n(ht * (0.025 + r() * 0.03))}" fill="${mix('#f6b8c8', p.sky[2], 0.3)}" opacity=".85"/>`).join('')
+  return (
+    mistDef(c) + sky(c, ht * 0.36) +
+    hills(c, 0.6, 0.12, 4, layerColor(c, 0, 3), 0.9) + mist(c, 0.5, 0.2, 0.5) + pagoda +
+    hills(c, 0.84, 0.05, 6, layerColor(c, 2, 3)) +
+    `<rect y="${n(base)}" width="${w}" height="${n(ht - base)}" fill="${p.ink}"/>` + torii +
+    `<path d="M0 0 Q${n(w * 0.08)} ${n(ht * 0.2)} ${n(w * 0.16)} ${n(ht * 0.32)}" stroke="${p.ink}" stroke-width="${n(ht * 0.02)}" fill="none"/>` + blossom
+  )
+}
+
+/** Rajput fort or palace: crenellated walls and bastions, a palace block with domed chhatris; some stand on a lake. */
+function fort(c: Ctx): string {
+  const { w, ht, p, r, seed, h } = c
+  const lake = /udaipur|lake|palace/.test(seed)
+  // Delhi and Agra's red sandstone, Jaipur's pink; Amber and Mehrangarh sit high on rock, Jodhpur's above blue houses.
+  const tint = /delhi|agra|red/.test(seed) ? '#b4523a' : /jaipur|pink/.test(seed) ? '#e0927a' : p.accent
+  const stone = mix(tint, p.ink, 0.35)
+  const hill = /jodhpur|jaipur|amber|mehrangarh|hill/.test(seed) || (!lake && h % 3 === 1)
+  const shade = mix(stone, p.ink, 0.35)
+  const base = lake ? ht * 0.72 : hill ? ht * 0.6 : ht * 0.78
+  const wallTop = base - ht * 0.16
+  const x0 = w * (0.12 + r() * 0.08)
+  const x1 = w * (0.82 + r() * 0.06)
+  const merlons = (a: number, b: number, y: number) => {
+    let out = ''
+    for (let x = a; x < b; x += ht * 0.035) out += `<rect x="${n(x)}" y="${n(y - ht * 0.02)}" width="${n(ht * 0.02)}" height="${n(ht * 0.02)}" fill="${shade}"/>`
+    return out
+  }
+  const bastion = (x: number) => `<path d="M${n(x - ht * 0.06)} ${n(base)} L${n(x - ht * 0.05)} ${n(wallTop - ht * 0.03)} L${n(x + ht * 0.05)} ${n(wallTop - ht * 0.03)} L${n(x + ht * 0.06)} ${n(base)}Z" fill="${shade}"/>` + merlons(x - ht * 0.05, x + ht * 0.05, wallTop - ht * 0.03)
+  const dome = (x: number, y: number, s: number) =>
+    `<rect x="${n(x - s)}" y="${n(y)}" width="${n(s * 2)}" height="${n(s * 0.9)}" fill="${stone}"/><rect x="${n(x - s * 0.7)}" y="${n(y + s * 0.2)}" width="${n(s * 0.35)}" height="${n(s * 0.7)}" fill="${shade}"/><rect x="${n(x + s * 0.35)}" y="${n(y + s * 0.2)}" width="${n(s * 0.35)}" height="${n(s * 0.7)}" fill="${shade}"/>` +
+    `<path d="M${n(x - s * 1.1)} ${n(y)} Q${n(x - s * 1.05)} ${n(y - s * 1.2)} ${n(x)} ${n(y - s * 1.35)} Q${n(x + s * 1.05)} ${n(y - s * 1.2)} ${n(x + s * 1.1)} ${n(y)}Z" fill="${stone}"/><rect x="${n(x - s * 0.06)}" y="${n(y - s * 1.7)}" width="${n(s * 0.12)}" height="${n(s * 0.4)}" fill="${stone}"/>`
+  const px = w * (0.38 + r() * 0.12)
+  const pw = w * 0.3
+  const pTop = wallTop - ht * 0.2
+  const arches = Array.from({ length: 6 }, (_, i) => {
+    const ax = px + pw * (0.08 + i * 0.15)
+    return `<path d="M${n(ax)} ${n(pTop + ht * 0.13)} L${n(ax)} ${n(pTop + ht * 0.08)} Q${n(ax + pw * 0.04)} ${n(pTop + ht * 0.045)} ${n(ax + pw * 0.08)} ${n(pTop + ht * 0.08)} L${n(ax + pw * 0.08)} ${n(pTop + ht * 0.13)}Z" fill="${WARM}" opacity="${n(0.55 + r() * 0.4)}"/>`
+  }).join('')
+  const water = lake
+    ? `<defs><linearGradient id="lk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(p.sky[2], p.sky[1], 0.4)}"/><stop offset="1" stop-color="${mix(p.sky[0], p.ink, 0.5)}"/></linearGradient></defs><rect y="${n(base)}" width="${w}" height="${n(ht - base)}" fill="url(#lk)"/>` +
+      `<rect x="${n(px)}" y="${n(base)}" width="${n(pw)}" height="${n((base - pTop) * 0.6)}" fill="${stone}" opacity=".22"/>` +
+      Array.from({ length: 6 }, (_, i) => `<rect x="${n(w * (0.1 + r() * 0.7))}" y="${n(base + ht * (0.04 + i * 0.035))}" width="${n(w * (0.05 + r() * 0.12))}" height="${n(ht * 0.005)}" fill="#fff" opacity=".3"/>`).join('')
+    : hill
+      ? `<path d="M0 ${ht} L0 ${n(base + ht * 0.12)} Q${n(w * 0.1)} ${n(base + ht * 0.02)} ${n(w * 0.25)} ${n(base)} L${n(w * 0.8)} ${n(base - ht * 0.01)} Q${n(w * 0.92)} ${n(base + ht * 0.04)} ${w} ${n(base + ht * 0.14)} L${w} ${ht}Z" fill="${mix(p.ink, stone, 0.3)}"/>` +
+        Array.from({ length: /jodhpur|blue/.test(seed) ? 26 : 0 }, () => { const bx = r() * w; const bw = w * (0.025 + r() * 0.03); const bh = ht * (0.04 + r() * 0.05); return `<rect x="${n(bx)}" y="${n(ht - ht * 0.16 - bh + r() * ht * 0.1)}" width="${n(bw)}" height="${n(bh + ht * 0.2)}" fill="${mix('#4f86c6', p.ink, 0.25 + r() * 0.3)}"/>` }).join('')
+      : `<path d="M0 ${ht} L0 ${n(base + ht * 0.02)} Q${n(w * 0.3)} ${n(base - ht * 0.03)} ${n(w * 0.55)} ${n(base + ht * 0.01)} T${w} ${n(base)} L${w} ${ht}Z" fill="${mix(p.ink, stone, 0.25)}"/>` +
+        // A gateway arch in the wall for forts on flat ground.
+        `<path d="M${n(x0 + (x1 - x0) * 0.22)} ${n(base)} L${n(x0 + (x1 - x0) * 0.22)} ${n(wallTop + ht * 0.06)} Q${n(x0 + (x1 - x0) * 0.25)} ${n(wallTop + ht * 0.01)} ${n(x0 + (x1 - x0) * 0.28)} ${n(wallTop + ht * 0.06)} L${n(x0 + (x1 - x0) * 0.28)} ${n(base)}Z" fill="${mix(p.ink, '#000000', 0.2)}"/>`
+  return (
+    sky(c, ht * 0.42) + hills(c, 0.66, 0.08, 5, layerColor(c, 0, 3), 0.85) +
+    `<rect x="${n(x0)}" y="${n(wallTop)}" width="${n(x1 - x0)}" height="${n(base - wallTop)}" fill="${shade}"/>` + merlons(x0, x1, wallTop) +
+    bastion(x0) + bastion(x1) + bastion((x0 + x1) / 2 + w * 0.17) +
+    `<rect x="${n(px)}" y="${n(pTop)}" width="${n(pw)}" height="${n(wallTop - pTop + ht * 0.02)}" fill="${stone}"/>` + arches +
+    dome(px + pw * 0.12, pTop - ht * 0.03, ht * 0.035) + dome(px + pw * 0.5, pTop - ht * 0.045, ht * 0.05) + dome(px + pw * 0.88, pTop - ht * 0.03, ht * 0.035) +
+    water
   )
 }
 
@@ -338,7 +450,7 @@ function food(c: Ctx): string {
   )
 }
 
-function hotel(c: Ctx): string {
+function villa(c: Ctx): string {
   const { w, ht, p, r } = c
   const bx = w * (0.14 + r() * 0.1)
   const bw = w * 0.52
@@ -364,7 +476,103 @@ function hotel(c: Ctx): string {
   )
 }
 
-const SCENES: Record<Scene, (c: Ctx) => string> = { coast, temple, terraces, mountains, city, food, hotel }
+/** A modern block of rooms with lit balconies, above a long pool. */
+function tower(c: Ctx): string {
+  const { w, ht, p, r } = c
+  const bx = w * (0.3 + r() * 0.2)
+  const bw = w * 0.34
+  const top = ht * 0.16
+  const floors = 7
+  const fh = (ht * 0.6 - top) / floors
+  const rows = Array.from({ length: floors }, (_, i) => {
+    const y = top + i * fh
+    return `<rect x="${n(bx - w * 0.01)}" y="${n(y + fh * 0.82)}" width="${n(bw + w * 0.02)}" height="${n(fh * 0.12)}" fill="${mix(p.sky[2], p.ink, 0.35)}"/>` +
+      Array.from({ length: 5 }, (_, k) => (r() > 0.35 ? `<rect x="${n(bx + bw * (0.05 + k * 0.19))}" y="${n(y + fh * 0.2)}" width="${n(bw * 0.13)}" height="${n(fh * 0.55)}" fill="${WARM}" opacity="${n(0.5 + r() * 0.45)}"/>` : '')).join('')
+  }).join('')
+  return (
+    sky(c, ht * 0.3) + hills(c, 0.64, 0.06, 6, layerColor(c, 0, 3)) +
+    `<rect x="${n(bx)}" y="${n(top)}" width="${n(bw)}" height="${n(ht * 0.62 - top)}" fill="${p.ink}"/>` + rows +
+    `<rect x="${n(bx - w * 0.015)}" y="${n(top - ht * 0.02)}" width="${n(bw + w * 0.03)}" height="${n(ht * 0.02)}" fill="${mix(p.ink, '#000000', 0.3)}"/>` +
+    `<rect y="${n(ht * 0.62)}" width="${w}" height="${n(ht * 0.38)}" fill="${mix(p.ink, p.sky[1], 0.18)}"/>` +
+    `<defs><linearGradient id="pl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix('#38b6c9', p.sky[2], 0.2)}"/><stop offset="1" stop-color="${mix('#126a86', p.ink, 0.3)}"/></linearGradient></defs>` +
+    `<path d="M0 ${n(ht * 0.72)} L${w} ${n(ht * 0.68)} L${w} ${n(ht * 0.9)} L0 ${n(ht * 0.95)}Z" fill="url(#pl)"/>` +
+    `<path d="M0 ${n(ht * 0.72)} L${w} ${n(ht * 0.68)}" stroke="#fff" stroke-opacity=".45" stroke-width="${n(ht * 0.008)}"/>` +
+    palm(w * 0.12, ht * 0.72, ht * 0.52, ht * 0.06, p.ink) + palm(w * 0.9, ht * 0.7, ht * 0.46, -ht * 0.05, p.ink)
+  )
+}
+
+/** Thatched bungalows on short stilts among palms: homestays and small lodges. */
+function huts(c: Ctx): string {
+  const { w, ht, p, r } = c
+  const thatch = mix(p.accent, p.ink, 0.55)
+  const hut = (x: number, s: number) =>
+    `<rect x="${n(x - s * 0.55)}" y="${n(ht * 0.66 - s * 0.5)}" width="${n(s * 1.1)}" height="${n(s * 0.5)}" fill="${mix(p.ink, p.sky[1], 0.12)}"/>` +
+    `<rect x="${n(x - s * 0.2)}" y="${n(ht * 0.66 - s * 0.38)}" width="${n(s * 0.4)}" height="${n(s * 0.26)}" fill="${WARM}" opacity=".85"/>` +
+    `<path d="M${n(x - s * 0.85)} ${n(ht * 0.66 - s * 0.42)} L${n(x)} ${n(ht * 0.66 - s * 1.25)} L${n(x + s * 0.85)} ${n(ht * 0.66 - s * 0.42)}Z" fill="${thatch}"/>` +
+    `<path d="M${n(x - s * 0.85)} ${n(ht * 0.66 - s * 0.42)} L${n(x + s * 0.85)} ${n(ht * 0.66 - s * 0.42)}" stroke="${mix(thatch, '#000000', 0.3)}" stroke-width="${n(s * 0.04)}"/>` +
+    [-0.45, 0.45].map((d) => `<rect x="${n(x + d * s - s * 0.03)}" y="${n(ht * 0.66)}" width="${n(s * 0.06)}" height="${n(ht * 0.05)}" fill="${p.ink}"/>`).join('')
+  const xs = [0.2, 0.42, 0.66, 0.86].map((x) => w * (x + (r() - 0.5) * 0.04))
+  return (
+    mistDef(c) + sky(c, ht * 0.4) + hills(c, 0.6, 0.1, 5, layerColor(c, 0, 3), 0.9) + mist(c, 0.5, 0.15, 0.4) +
+    hills(c, 0.7, 0.04, 6, mix('#2f5f3d', p.ink, 0.35)) +
+    palm(w * 0.32, ht * 0.72, ht * 0.62, ht * 0.05, p.ink) + palm(w * 0.56, ht * 0.72, ht * 0.5, -ht * 0.06, mix(p.ink, '#2f5f3d', 0.3)) +
+    xs.map((x, i) => hut(x, ht * (0.16 - i * 0.01))).join('') +
+    `<rect y="${n(ht * 0.71)}" width="${w}" height="${n(ht * 0.29)}" fill="${mix(p.ink, '#2f5f3d', 0.25)}"/>` +
+    Array.from({ length: 7 }, (_, i) => `<circle cx="${n(w * (0.08 + i * 0.14))}" cy="${n(ht * 0.79)}" r="${n(ht * 0.012)}" fill="${WARM}" opacity=".7"/>`).join('') +
+    palm(w * 0.04, ht * 1.02, ht * 0.7, ht * 0.08, p.ink) + palm(w * 0.97, ht * 1.02, ht * 0.56, -ht * 0.06, p.ink)
+  )
+}
+
+/** A beach resort: sea behind, a long low wing of rooms, umbrellas on the sand. */
+function resort(c: Ctx): string {
+  const { w, ht, p, r } = c
+  const hz = ht * 0.5
+  const wing = Array.from({ length: 2 }, (_, f) =>
+    Array.from({ length: 9 }, (_, k) => (r() > 0.3 ? `<rect x="${n(w * (0.1 + k * 0.088))}" y="${n(ht * (0.55 + f * 0.07))}" width="${n(w * 0.05)}" height="${n(ht * 0.04)}" fill="${WARM}" opacity="${n(0.5 + r() * 0.45)}"/>` : '')).join('')).join('')
+  const umbrella = (x: number, col: string) => `<path d="M${n(x - w * 0.045)} ${n(ht * 0.8)} Q${n(x)} ${n(ht * 0.73)} ${n(x + w * 0.045)} ${n(ht * 0.8)}Z" fill="${col}"/><rect x="${n(x - ht * 0.003)}" y="${n(ht * 0.79)}" width="${n(ht * 0.006)}" height="${n(ht * 0.09)}" fill="${p.ink}"/>`
+  return (
+    sky(c, hz - ht * 0.03) +
+    `<rect y="${n(hz)}" width="${w}" height="${n(ht * 0.1)}" fill="${mix(p.sky[2], p.sky[1], 0.5)}"/>` +
+    `<rect x="${n(w * 0.07)}" y="${n(ht * 0.52)}" width="${n(w * 0.84)}" height="${n(ht * 0.18)}" fill="${p.ink}"/>` +
+    `<rect x="${n(w * 0.05)}" y="${n(ht * 0.5)}" width="${n(w * 0.88)}" height="${n(ht * 0.025)}" fill="${mix(p.ink, '#000000', 0.25)}"/>` + wing +
+    `<rect y="${n(ht * 0.7)}" width="${w}" height="${n(ht * 0.3)}" fill="${mix('#f4dcb4', p.sky[2], 0.3)}"/>` +
+    umbrella(w * 0.25, p.accent) + umbrella(w * 0.5, mix(p.accent, '#ffffff', 0.4)) + umbrella(w * 0.75, p.accent) +
+    palm(w * 0.04, ht * 1.02, ht * 0.66, ht * 0.07, p.ink) + palm(w * 0.96, ht * 1.02, ht * 0.5, -ht * 0.06, p.ink)
+  )
+}
+
+/** A room: bed, lamp, and a window onto the sky (the second photo in a hotel's gallery). */
+function room(c: Ctx): string {
+  const { w, ht, p } = c
+  const wall = mix(p.sky[2], '#d9cbb3', 0.55)
+  const wx = w * 0.52
+  const ww = w * 0.38
+  return (
+    `<rect width="${w}" height="${ht}" fill="${wall}"/>` +
+    `<svg x="${n(wx)}" y="${n(ht * 0.1)}" width="${n(ww)}" height="${n(ht * 0.48)}" viewBox="0 0 ${w} ${ht}" preserveAspectRatio="xMidYMid slice">${sky(c, ht * 0.62)}${hills(c, 0.75, 0.08, 4, layerColor(c, 1, 3))}</svg>` +
+    `<rect x="${n(wx)}" y="${n(ht * 0.1)}" width="${n(ww)}" height="${n(ht * 0.48)}" fill="none" stroke="${mix(wall, p.ink, 0.45)}" stroke-width="${n(ht * 0.015)}"/>` +
+    `<rect x="${n(wx + ww / 2 - ht * 0.004)}" y="${n(ht * 0.1)}" width="${n(ht * 0.008)}" height="${n(ht * 0.48)}" fill="${mix(wall, p.ink, 0.45)}"/>` +
+    `<rect y="${n(ht * 0.7)}" width="${w}" height="${n(ht * 0.3)}" fill="${mix(wall, p.ink, 0.35)}"/>` +
+    `<rect x="${n(w * 0.06)}" y="${n(ht * 0.36)}" width="${n(w * 0.36)}" height="${n(ht * 0.26)}" rx="${n(ht * 0.02)}" fill="${mix(p.ink, wall, 0.25)}"/>` +
+    `<rect x="${n(w * 0.04)}" y="${n(ht * 0.58)}" width="${n(w * 0.42)}" height="${n(ht * 0.2)}" rx="${n(ht * 0.02)}" fill="#f6f1e7"/>` +
+    `<rect x="${n(w * 0.04)}" y="${n(ht * 0.66)}" width="${n(w * 0.42)}" height="${n(ht * 0.12)}" fill="${p.accent}" opacity=".75"/>` +
+    `<rect x="${n(w * 0.08)}" y="${n(ht * 0.52)}" width="${n(w * 0.14)}" height="${n(ht * 0.08)}" rx="${n(ht * 0.03)}" fill="#fffaf0"/><rect x="${n(w * 0.27)}" y="${n(ht * 0.52)}" width="${n(w * 0.14)}" height="${n(ht * 0.08)}" rx="${n(ht * 0.03)}" fill="#fffaf0"/>` +
+    `<circle cx="${n(w * 0.47)}" cy="${n(ht * 0.4)}" r="${n(ht * 0.12)}" fill="${WARM}" opacity=".25"/><path d="M${n(w * 0.45)} ${n(ht * 0.44)} L${n(w * 0.49)} ${n(ht * 0.44)} L${n(w * 0.485)} ${n(ht * 0.37)} L${n(w * 0.455)} ${n(ht * 0.37)}Z" fill="${WARM}"/>`
+  )
+}
+
+/**
+ * Hotels: the building follows the name (homestay → bungalows, resort → beach resort, boutique/hotel → a block,
+ * villa/garden → a villa). A hotel's second gallery image (`…2`) is a room.
+ */
+function hotel(c: Ctx): string {
+  const s = c.seed
+  if (/^h-.*2$/.test(s)) return room(c)
+  const draw = /homestay|bungalow|hut|lodge/.test(s) ? huts : /resort/.test(s) ? resort : /boutique|hotel|tower|inn/.test(s) ? tower : /villa|garden/.test(s) ? villa : [villa, tower, huts, resort][c.h % 4]!
+  return draw(c)
+}
+
+const SCENES: Record<Scene, (c: Ctx) => string> = { coast, temple, shrine, fort, terraces, mountains, city, food, hotel }
 
 export function placeholderImage(seed: string, label = '', ratio: [number, number] = [16, 9]): string {
   const h = hash(seed)
@@ -373,11 +581,14 @@ export function placeholderImage(seed: string, label = '', ratio: [number, numbe
   const kind = sceneFor(seed, h)
   const list = PALETTES[kind]
   const r = rng(Math.imul(h, 2654435761) ^ 0x9e3779b9)
-  const c: Ctx = { w, ht, r, p: list[Math.floor(r() * list.length)]!, h, sx: w * (0.3 + r() * 0.4) }
+  // The palette follows the hash (not the shared random stream) so ids that differ by one letter still land apart.
+  const c: Ctx = { w, ht, r, p: list[(h >> 5) % list.length]!, h, sx: w * (0.3 + r() * 0.4), seed: seed.toLowerCase() }
+  // Half the scenes are mirrored, so two of a kind next to each other don't line up the same way.
+  const mirror = (h >> 2) % 2 === 1
   const text = label.replace(/[<>&"]/g, '')
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${ht}" preserveAspectRatio="xMidYMid slice">` +
-    SCENES[kind](c) +
+    (mirror ? `<g transform="translate(${w} 0) scale(-1 1)">${SCENES[kind](c)}</g>` : SCENES[kind](c)) +
     // A faint vignette keeps edges calm and gives text laid over the image something to sit on.
     `<defs><radialGradient id="vg" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></radialGradient></defs><rect width="${w}" height="${ht}" fill="url(#vg)"/>` +
     (text ? `<text x="${w * 0.06}" y="${ht * 0.92}" font-family="system-ui,sans-serif" font-size="${ht * 0.07}" font-weight="600" fill="white">${text}</text>` : '') +

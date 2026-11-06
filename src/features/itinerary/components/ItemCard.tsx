@@ -63,7 +63,7 @@ export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?
           </p>
         )}
         <div className="flex gap-2">
-          <div className="w-14 shrink-0 pt-3 text-right">
+          <div className="w-12 shrink-0 pt-3 text-right">
             <p className="text-sm font-semibold tabular-nums">{item.startTime}</p>
             <p className="text-xs tabular-nums text-fg-muted">{endTime(item)}</p>
           </div>
@@ -72,7 +72,7 @@ export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?
               type="button"
               {...handle}
               aria-label={`Reorder ${item.title}. Press space to pick up, arrow keys to move.`}
-              className="grid w-9 shrink-0 cursor-grab touch-none place-items-center rounded-l-lg text-fg-muted hover:bg-surface-2 active:cursor-grabbing"
+              className="grid w-11 shrink-0 cursor-grab touch-none place-items-center rounded-l-lg text-fg-muted hover:bg-surface-2 active:cursor-grabbing"
             >
               <GripVertical aria-hidden className="size-4" />
             </button>

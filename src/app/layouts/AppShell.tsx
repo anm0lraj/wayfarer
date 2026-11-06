@@ -10,6 +10,7 @@ import { NotificationEngine } from '@/features/notifications/NotificationEngine'
 import { SyncRunner } from '@/features/sync/SyncRunner'
 import { UploadRunner } from '@/features/memories/UploadRunner'
 import { OfflineBanner } from '@/components/feedback/States'
+import { SkipLink } from '@/components/layout/SkipLink'
 import { cn } from '@/lib/cn'
 
 /**
@@ -21,9 +22,7 @@ export function AppShell() {
   const { pathname } = useLocation()
   return (
     <div className="min-h-dvh">
-      <a href="#main" className="sr-only-focusable fixed left-2 top-2 z-[70] rounded-md bg-primary px-4 py-2 font-semibold text-primary-fg">
-        Skip to content
-      </a>
+      <SkipLink />
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <NavRail />
       <div className={cn('sm:pl-rail', collapsed ? 'lg:pl-sidebar-c' : 'lg:pl-sidebar')}>
