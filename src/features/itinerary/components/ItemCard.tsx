@@ -1,4 +1,5 @@
 import { forwardRef, type HTMLAttributes } from 'react'
+import { Link } from 'react-router-dom'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { AlertTriangle, ArrowDown, ArrowUp, CalendarPlus, ChevronRight, Copy, GripVertical, MoreVertical, Navigation, Trash2 } from 'lucide-react'
@@ -28,11 +29,13 @@ interface ItemCardProps extends ItemCardActions {
   /** When the map is beside the list, tapping selects (and highlights the pin); otherwise it opens details. */
   splitView: boolean
   directionsHref?: string
+  /** The stop before this one: the leg between them can offer local transport options. */
+  prevItemId?: string
 }
 
 /** Presentational card; draggable behaviour comes from the wrappers below. */
 export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?: HTMLAttributes<HTMLButtonElement>; dragging?: boolean; style?: React.CSSProperties }>(
-  ({ item, index, count, days, selected, splitView, warning, directionsHref, handle, dragging, style, ...a }, ref) => {
+  ({ item, index, count, days, selected, splitView, warning, directionsHref, prevItemId, handle, dragging, style, ...a }, ref) => {
     const meta = CATEGORY_META[item.category]
     const Icon = meta.icon
     const others = days.filter((d) => d.id !== item.dayId)
@@ -43,6 +46,14 @@ export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?
           <div className="ml-[3.75rem] flex items-center gap-1.5 py-1.5 text-xs text-fg-muted">
             <Navigation aria-hidden className="size-3.5" />
             <span>{item.travelTimeFromPrevMin} min · {item.distanceFromPrevKm} km</span>
+            {prevItemId && (
+              <Link
+                to={`/trips/${item.tripId}/bookings/local?fromItem=${prevItemId}&toItem=${item.id}`}
+                className="-my-2 ml-1 inline-flex min-h-touch items-center font-semibold text-primary hover:underline"
+              >
+                Local options<span className="sr-only"> for the leg to {item.title}</span>
+              </Link>
+            )}
           </div>
         )}
         {warning && (

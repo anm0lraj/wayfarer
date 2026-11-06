@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { bookingRepo, checklistRepo } from '../repositories'
 import type { NewBookingInput } from '../repositories/bookingRepo'
 import { useServices } from '@/services'
-import type { FlightQuery, HotelQuery } from '@/services/bookings/types'
-import type { Booking } from '@/types'
+import type { FlightQuery, HotelQuery, TransitQuery } from '@/services/bookings/types'
+import type { Booking, TransitMode } from '@/types'
 
 const checklistKey = (tripId: string) => ['trips', tripId, 'checklist'] as const
 
@@ -20,6 +20,11 @@ export const useHotel = (id: string | undefined) => {
 export const useFlights = (q: FlightQuery) => {
   const { bookings } = useServices()
   return useQuery({ queryKey: ['flights', q], queryFn: ({ signal }) => bookings.searchFlights(q, signal) })
+}
+
+export const useTransit = (mode: TransitMode, q: TransitQuery) => {
+  const { bookings } = useServices()
+  return useQuery({ queryKey: ['transit', mode, q], queryFn: ({ signal }) => (mode === 'train' ? bookings.searchTrains(q, signal) : bookings.searchBuses(q, signal)) })
 }
 
 /**

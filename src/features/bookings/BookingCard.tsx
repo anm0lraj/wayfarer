@@ -1,11 +1,11 @@
-import { Bed, Car, Plane, Ticket, Trash2, type LucideIcon } from 'lucide-react'
+import { Bed, Bus, Car, Plane, Ticket, TrainFront, Trash2, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/money'
 import type { Booking } from '@/types'
 import { bookingWhen } from './bookingWhen'
 
-const icons: Record<Booking['type'], LucideIcon> = { flight: Plane, hotel: Bed, activity: Ticket, transport: Car }
+const icons: Record<Booking['type'], LucideIcon> = { flight: Plane, hotel: Bed, activity: Ticket, transport: Car, train: TrainFront, bus: Bus }
 
 /** The label every demo booking must carry (spec §15): it was saved to the trip, nothing was purchased. */
 export function DemoBadge({ className }: { className?: string }) {

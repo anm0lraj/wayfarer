@@ -40,7 +40,49 @@ export const flightSchema = z.object({
 })
 export type Flight = z.infer<typeof flightSchema>
 
-export const bookingTypeSchema = z.enum(['flight', 'hotel', 'activity', 'transport'])
+/** A station or bus stand. Codes are short and local (NDLS, JP, UBG); the city id matches `data/transitCities`. */
+export const transitStopSchema = z.object({ code: z.string().min(2).max(8), city: z.string(), name: z.string() })
+export const transitModeSchema = z.enum(['train', 'bus'])
+export type TransitMode = z.infer<typeof transitModeSchema>
+
+/** One direct train or bus on one date, as a search result. Prices are per person, in INR like the rest of the trip. */
+export const transitServiceSchema = z.object({
+  id: idSchema,
+  mode: transitModeSchema,
+  operator: z.string(),
+  number: z.string(),
+  name: z.string(),
+  from: transitStopSchema,
+  to: transitStopSchema,
+  /** Both carry their stop's own UTC offset, like flights, so the wall clock reads straight off the string. */
+  departAt: isoDateTimeSchema,
+  arriveAt: isoDateTimeSchema,
+  durationMin: z.number().int().positive(),
+  seatClass: z.string(),
+  price: moneySchema,
+  /** e.g. "Includes the Gilimanuk–Ketapang ferry". */
+  note: z.string().optional(),
+})
+export type TransitService = z.infer<typeof transitServiceSchema>
+
+/** What a saved train or bus keeps in `Booking.details`. */
+export const transitDetailsSchema = z.object({
+  serviceId: idSchema,
+  operator: z.string(),
+  number: z.string(),
+  from: transitStopSchema,
+  to: transitStopSchema,
+  departAt: isoDateTimeSchema,
+  arriveAt: isoDateTimeSchema,
+  durationMin: z.number().int().positive(),
+  seatClass: z.string(),
+  pricePerPerson: moneySchema,
+  travellers: z.number().int().positive(),
+  note: z.string().optional(),
+})
+export type TransitDetails = z.infer<typeof transitDetailsSchema>
+
+export const bookingTypeSchema = z.enum(['flight', 'hotel', 'activity', 'transport', 'train', 'bus'])
 export const bookingStatusSchema = z.enum(['saved', 'pending', 'confirmed', 'cancelled'])
 /** `demo` bookings are never real. Only a real provider adapter may emit `live`. */
 export const bookingModeSchema = z.enum(['demo', 'live'])
@@ -64,5 +106,11 @@ export const bookingSchema = z
   .merge(timestampsSchema)
   .refine((b) => !(b.mode === 'demo' && b.status === 'confirmed'), {
     message: 'A demo booking can never be confirmed',
+  })
+  .superRefine((b, ctx) => {
+    // Trains and buses carry typed details; the other types keep their free-form ones.
+    if (b.type !== 'train' && b.type !== 'bus') return
+    const r = transitDetailsSchema.safeParse(b.details)
+    if (!r.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['details'], message: `Details don’t match a ${b.type} booking` })
   })
 export type Booking = z.infer<typeof bookingSchema>

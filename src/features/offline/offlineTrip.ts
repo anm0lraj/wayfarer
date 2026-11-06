@@ -7,6 +7,8 @@ export interface OfflineSummary {
   stops: number
   stays: number
   flights: number
+  /** Saved trains and buses. */
+  transit: number
   memories: number
   /** The browser agreed to keep this data even under storage pressure. */
   persistent: boolean
@@ -20,7 +22,7 @@ export async function summariseOffline(tripId: string): Promise<Omit<OfflineSumm
     db.bookings.where('tripId').equals(tripId).toArray(),
     db.memories.where('tripId').equals(tripId).count(),
   ])
-  return { days, stops, stays: bookings.filter((b) => b.type === 'hotel').length, flights: bookings.filter((b) => b.type === 'flight').length, memories }
+  return { days, stops, stays: bookings.filter((b) => b.type === 'hotel').length, flights: bookings.filter((b) => b.type === 'flight').length, transit: bookings.filter((b) => b.type === 'train' || b.type === 'bus').length, memories }
 }
 
 /** Remote images used by the trip. Fetching them lets the service worker's image cache keep them for offline use. */

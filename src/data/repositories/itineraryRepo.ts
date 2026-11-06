@@ -69,14 +69,17 @@ export const itineraryRepo = {
     )
   },
 
-  async addItem(tripId: string, dayId: string, input: NewItemInput & Partial<Pick<ItineraryItem, 'source' | 'image' | 'notes'>>): Promise<ItineraryItem> {
+  /** Appends to the day, or inserts at `atIndex` (clamped) and shifts the stops after it down. */
+  async addItem(tripId: string, dayId: string, input: NewItemInput & Partial<Pick<ItineraryItem, 'source' | 'image' | 'notes'>>, atIndex?: number): Promise<ItineraryItem> {
     await requireTripAccess(tripId, 'edit')
     const existing = await dayItems(dayId)
+    const index = atIndex === undefined ? existing.length : Math.max(0, Math.min(Math.floor(atIndex), existing.length))
     const now = nowIso()
     const item = itineraryItemSchema.parse({
-      source: 'user', ...input, id: newId('item'), tripId, dayId, position: existing.length, status: 'upcoming', createdAt: now, updatedAt: now,
+      source: 'user', ...input, id: newId('item'), tripId, dayId, position: index, status: 'upcoming', createdAt: now, updatedAt: now,
     })
     await put('items', db.items, item)
+    if (index < existing.length) await writeOrder([...existing.slice(0, index), item, ...existing.slice(index)])
     await refreshLegs(dayId)
     await promoteFromDraft(tripId)
     return (await db.items.get(item.id)) ?? item

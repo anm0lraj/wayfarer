@@ -112,9 +112,10 @@ function Costs({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
   const activities = sum(plan.items.map((i) => i.estimatedCost?.amount ?? 0))
   const hotels = sum(plan.bookings.filter((b) => b.type === 'hotel' && b.status !== 'cancelled').map((b) => b.price.amount))
   const flights = sum(plan.bookings.filter((b) => b.type === 'flight' && b.status !== 'cancelled').map((b) => b.price.amount))
-  const total = activities + hotels + flights
+  const overland = sum(plan.bookings.filter((b) => (b.type === 'train' || b.type === 'bus') && b.status !== 'cancelled').map((b) => b.price.amount))
+  const total = activities + hotels + flights + overland
   const budget = trip.budget.total?.amount
-  const rows: Array<[string, number]> = [['Activities & food', activities], ['Stays', hotels], ['Flights', flights]]
+  const rows: Array<[string, number]> = [['Activities & food', activities], ['Stays', hotels], ['Flights', flights], ['Trains & buses', overland]]
   return (
     <Card className="space-y-3 p-4">
       <div className="flex items-baseline justify-between"><h3 className="font-semibold">Estimated cost</h3><span className="text-lg font-semibold">{formatMoney({ amount: total, currency: 'INR' })}</span></div>
@@ -129,7 +130,7 @@ function Costs({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
       <dl className="space-y-1 text-sm">
         {rows.map(([label, amount]) => <div key={label} className="flex justify-between"><dt className="text-fg-muted">{label}</dt><dd>{formatMoney({ amount, currency: 'INR' })}</dd></div>)}
       </dl>
-      <p className="text-xs text-fg-muted">Flights and stays are saved to the trip as demo entries — nothing is booked.</p>
+      <p className="text-xs text-fg-muted">Flights, trains, buses and stays are saved to the trip as demo entries — nothing is booked.</p>
     </Card>
   )
 }
@@ -145,6 +146,7 @@ export function TripOverview() {
   const { days, items, bookings } = plan.data
   const hotel = bookings.find((b) => b.type === 'hotel' && b.status !== 'cancelled')
   const flights = bookings.filter((b) => b.type === 'flight' && b.status !== 'cancelled')
+  const overland = bookings.filter((b) => (b.type === 'train' || b.type === 'bus') && b.status !== 'cancelled')
 
   return (
     <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
@@ -188,8 +190,9 @@ export function TripOverview() {
           <ul className="space-y-2 text-sm">
             <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Stay</span>{hotel ? <span className="truncate font-medium">{hotel.title}</span> : <Link className="font-semibold text-primary" to={`${base}/bookings/hotels`}>Add accommodation</Link>}</li>
             <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Flights</span>{flights.length ? <span className="font-medium">{flights.length} saved</span> : <Link className="font-semibold text-primary" to={`${base}/bookings/flights`}>Add flights</Link>}</li>
+            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Trains & buses</span>{overland.length ? <span className="font-medium">{overland.length} saved</span> : <Link className="font-semibold text-primary" to={`${base}/bookings/trains`}>Find a train or bus</Link>}</li>
           </ul>
-          {(hotel || flights.length > 0) && <Badge tone="warning">Saved to trip — not booked</Badge>}
+          {(hotel || flights.length > 0 || overland.length > 0) && <Badge tone="warning">Saved to trip — not booked</Badge>}
           <Link to={`${base}/bookings`} className="inline-flex min-h-touch items-center gap-1 text-sm font-semibold text-primary">All bookings <ChevronRight aria-hidden className="size-4" /></Link>
         </Card>
 

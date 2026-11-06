@@ -216,6 +216,7 @@ export function ItineraryView() {
                       item={item} index={index} count={items.length} days={days} selected={item.id === currentSelected} splitView={split}
                       warning={warnings.find((w) => w.itemId === item.id)}
                       directionsHref={point ? maps.links.deepLink(point, 'directions', item.title) : undefined}
+                      prevItemId={items[index - 1]?.id}
                       onOpen={openItem} onSelect={(i) => setSelectedId(i.id)} onMove={move}
                       onMoveToDay={(i, d) => void actions.moveToDay(i, d.id, d.dayNumber)}
                       onDuplicate={(i) => void actions.duplicate(i)} onDelete={(i) => void actions.remove(i)}

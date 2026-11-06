@@ -1,4 +1,4 @@
-import { Bed, Car, Plane, Plus, Ticket } from 'lucide-react'
+import { Bed, Bus, Car, MapPinned, Plane, Plus, Ticket, TrainFront } from 'lucide-react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { toast } from '@/components/feedback/toast'
 import { ErrorState } from '@/components/feedback/States'
@@ -82,6 +82,16 @@ export function BookingOverview() {
         <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/flights`}><Plus aria-hidden className="size-4" /> Find flights</Link></Button>
       </Section>
 
+      <Section title="Trains" description="Direct trains from a sample timetable">
+        {ofType('train').length ? <ul className="space-y-2">{ofType('train').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul> : <Empty icon={TrainFront} text="No trains saved yet." />}
+        <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/trains`}><Plus aria-hidden className="size-4" /> Find trains</Link></Button>
+      </Section>
+
+      <Section title="Buses" description="Direct buses from a sample timetable">
+        {ofType('bus').length ? <ul className="space-y-2">{ofType('bus').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul> : <Empty icon={Bus} text="No buses saved yet." />}
+        <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/buses`}><Plus aria-hidden className="size-4" /> Find buses</Link></Button>
+      </Section>
+
       <Section title="Hotels">
         {ofType('hotel').length ? <ul className="space-y-2">{ofType('hotel').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul> : <Empty icon={Bed} text="No stay saved yet." />}
         <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/hotels`}><Plus aria-hidden className="size-4" /> Find a hotel</Link></Button>
@@ -93,6 +103,7 @@ export function BookingOverview() {
       </Section>
 
       <Section title="Transport" description="Transfers and rides from your itinerary">
+        <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/local`}><MapPinned aria-hidden className="size-4" /> Local options between stops</Link></Button>
         {ofType('transport').length > 0 && <ul className="space-y-2">{ofType('transport').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul>}
         <Suggestions label="Transport from your itinerary" items={suggestions.filter((i) => i.category === 'transport')} dayOf={dayOf} onSave={saveItem} busy={save.isPending} empty={ofType('transport').length === 0 ? { icon: Car, text: 'No paid transport in your itinerary yet.' } : undefined} />
       </Section>

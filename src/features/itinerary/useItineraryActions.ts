@@ -55,9 +55,10 @@ export function useItineraryActions(tripId: string) {
           toast({ title: 'Activity duplicated', description: copy.title, action: { label: 'Undo', onClick: () => void itineraryRepo.removeItem(copy.id).then(refresh) } })
         }),
 
-      add: (dayId: string, dayNumber: number, input: NewItemInput & Partial<Pick<ItineraryItem, 'image' | 'notes'>>) =>
+      /** Appends to the day, or inserts at `atIndex` between two stops. */
+      add: (dayId: string, dayNumber: number, input: NewItemInput & Partial<Pick<ItineraryItem, 'image' | 'notes'>>, atIndex?: number) =>
         run('Couldn’t add that', async () => {
-          const item = await itineraryRepo.addItem(tripId, dayId, input)
+          const item = await itineraryRepo.addItem(tripId, dayId, input, atIndex)
           toast({ title: `Added to Day ${dayNumber}`, description: item.title, action: { label: 'Undo', onClick: () => void itineraryRepo.removeItem(item.id).then(refresh) } })
           return item
         }),

@@ -39,7 +39,7 @@ export function OfflineCard({ trip }: { trip: TripWithState }) {
           ? 'Your plan, bookings and memories are saved on this device. You can read and edit them with no signal; changes sync when you’re back online.'
           : 'Keep this trip usable with no signal. Everything is stored on this device — nothing extra to download.'}
       </p>
-      {s && <p className="text-sm">{plural(s.days, 'day')} · {plural(s.stops, 'stop')} · {plural(s.stays, 'stay')} · {plural(s.flights, 'flight')} · {plural(s.memories, 'memory')}</p>}
+      {s && <p className="text-sm">{plural(s.days, 'day')} · {plural(s.stops, 'stop')} · {plural(s.stays, 'stay')} · {plural(s.flights, 'flight')} · {s.transit > 0 && `${s.transit} train/bus · `}{plural(s.memories, 'memory')}</p>}
       {on && persistent === false && <p className="text-sm text-warning">Your browser may clear this data if the device runs low on space. Installing the app helps keep it.</p>}
       <p className="text-sm text-fg-muted">Map tiles are cached as you view them; areas you haven’t opened won’t show offline.</p>
       {on ? (
