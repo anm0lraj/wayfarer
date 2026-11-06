@@ -72,6 +72,17 @@ describe('app shell', () => {
     expect(await screen.findByRole('heading', { name: 'Day 1 · Arrival & Seminyak' })).toBeInTheDocument()
   })
 
+  it('keeps the full trip header for Overview and a one-row header on other tabs (phone)', async () => {
+    const router = renderAt('/trips/trip-bali')
+    await screen.findByRole('heading', { name: '5 Days in Bali', level: 1 })
+    expect(await screen.findByText(/2 travellers/)).toBeInTheDocument()
+    await router.navigate('/trips/trip-bali/memories')
+    expect(await screen.findByRole('link', { name: 'All trips' })).toHaveAttribute('href', '/trips')
+    expect(screen.getByRole('heading', { name: '5 Days in Bali', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Assistant' })).toHaveAttribute('href', '/trips/trip-bali/ai')
+    expect(screen.queryByText(/2 travellers/)).not.toBeInTheDocument()
+  })
+
   it('shows a not-found state for an unknown trip and for unknown URLs', async () => {
     renderAt('/trips/nope')
     expect(await screen.findByText('Couldn’t load this trip').catch(() => screen.findByText('Trip not found'))).toBeInTheDocument()
