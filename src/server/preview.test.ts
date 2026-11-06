@@ -66,6 +66,16 @@ describe('link preview tags', () => {
     expect(out).toContain('id="root"')
   })
 
+  it('keep dollar signs a person wrote as they are, with no replacement patterns', () => {
+    const title = 'Trip for $$ and $& $1 $` $\''
+    const description = 'Budget $$$ under $500'
+    const head = buildHead(trip({ title, description }), 'x', 'https://w.test')
+    const out = injectHead(indexHtml, head)
+    expect(out).toContain(`<title>${escapeHtml(head.title)}</title>`)
+    expect(out).toContain(escapeHtml(description))
+    expect(out).toContain('id="root"')
+  })
+
   it('read the fields from a Firestore REST document', () => {
     expect(parseTrip('pub_1', restDoc(trip({ visibility: 'link' })))).toMatchObject({ title: '5 Days in Bali', durationDays: 5, visibility: 'link' })
     expect(parseTrip('pub_1', {})).toBeUndefined()
