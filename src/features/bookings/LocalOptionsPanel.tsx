@@ -7,6 +7,7 @@ import type { LocalMode } from '@/data/fares'
 import { useTripPlan } from '@/data/queries/plan'
 import type { TripWithState } from '@/data/queries/trips'
 import { useItineraryActions } from '@/features/itinerary/useItineraryActions'
+import { cn } from '@/lib/cn'
 import { formatMoney } from '@/lib/money'
 import type { GeoPoint } from '@/types'
 import { fareRangeText, insertStartTime, localOptions, localOptionStop, minutesText, type LocalOption } from './localTransport'
@@ -110,7 +111,7 @@ export function LocalOptionsPanel({ trip, from, to, placeId, insert }: PanelProp
               </select>
             </div>
           )}
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className={cn('grid gap-3', estimate.options.length > 1 && 'sm:grid-cols-2 xl:grid-cols-3')}>
             {estimate.options.map((o) => (
               <OptionRow key={o.mode} option={o} added={added.has(o.mode)} busy={busy || !chosenDay}
                 addLabel={chosenDay ? `Add to Day ${chosenDay.dayNumber}` : 'Add to itinerary'} onAdd={() => void add(o)} />
