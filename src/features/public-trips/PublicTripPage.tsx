@@ -13,6 +13,7 @@ import { CATEGORY_META } from '@/features/itinerary/categoryMeta'
 import { WhenVisible } from '@/components/layout/WhenVisible'
 import { TripMap } from '@/features/map/TripMap'
 import { useDocumentMeta } from '@/lib/hooks/useDocumentMeta'
+import { fetchPriority } from '@/lib/fetchPriority'
 import { formatMoney } from '@/lib/money'
 import type { MapMarker } from '@/services/maps/types'
 import type { GeoPoint, PublicTrip } from '@/types'
@@ -106,7 +107,7 @@ function Loaded({ trip }: { trip: PublicTrip }) {
   return (
     <article className="space-y-8">
       <div className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-xl">
-        <img src={trip.coverImage} alt="" fetchPriority="high" className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
+        <img src={trip.coverImage} alt="" {...fetchPriority('high')} className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
       </div>
 
       <header className="space-y-3">

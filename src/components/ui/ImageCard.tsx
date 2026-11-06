@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { fetchPriority } from '@/lib/fetchPriority'
 
 interface ImageCardProps {
   src: string
@@ -20,7 +21,7 @@ const ratios = { '16/9': 'aspect-[16/9]', '4/3': 'aspect-[4/3]', '3/4': 'aspect-
 export function ImageCard({ src, alt, title, subtitle, badge, ratio = '4/3', className, priority }: ImageCardProps) {
   return (
     <div className={cn('relative overflow-hidden rounded-lg bg-surface-2', ratios[ratio], className)}>
-      <img src={src} alt={alt} loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} decoding="async" className="size-full object-cover" />
+      <img src={src} alt={alt} loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover" />
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 to-transparent" />
       {badge && <div className="absolute left-3 top-3">{badge}</div>}
       <div className="absolute inset-x-0 bottom-0 p-4 text-white">
