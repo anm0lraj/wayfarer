@@ -99,7 +99,7 @@ export function MapPickerSheet({ open, onClose, onConfirm, initial, near, sugges
     >
       <div className="space-y-4">
         <TripMap
-          className="h-[44dvh] min-h-64 w-full" markers={[]} fallbackCenter={initial?.point ?? near} fitKey="picker"
+          className="h-[44dvh] min-h-64 w-full sm:h-[34dvh] sm:min-h-56" markers={[]} fallbackCenter={initial?.point ?? near} fitKey="picker"
           picker={{ point, onPick: pick, onHandle: (h) => { handle.current = h; setHasHandle(!!h) } }}
         />
         <div className="space-y-1">
