@@ -75,7 +75,8 @@ describe('Nominatim adapter', () => {
   }
   const nominatim = () => createNominatim({ language: () => 'en-IN' })
 
-  beforeEach(() => { vi.useFakeTimers(); stub() })
+  // The shared setup pins `Date` with fake timers; drop that first or this second install is ignored.
+  beforeEach(() => { vi.useRealTimers(); vi.useFakeTimers(); stub() })
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
   it('asks for five results in the browser language with a soft viewbox, and nothing identifying', async () => {
