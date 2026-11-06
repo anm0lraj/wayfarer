@@ -31,6 +31,16 @@ describe('Home', () => {
     expect(await within(screen.getByRole('region', { name: 'Memories' })).findByText('Sunset at Baga Beach')).toBeInTheDocument()
   })
 
+  it('offers post-trip steps, not planning prompts, for finished trips', async () => {
+    useClockStore.setState({ simulatedNow: '2026-10-20T10:00:00+08:00' }) // after Bali; Goa ended earlier
+    renderApp('/')
+    const after = await screen.findByRole('region', { name: 'After your trip' })
+    expect(await within(after).findAllByText('5 Days in Bali')).toHaveLength(2)
+    expect(within(after).getAllByRole('link', { name: /Share this trip/ })[0]).toHaveAttribute('href', '/trips/trip-bali/share')
+    expect(within(after).getAllByRole('link', { name: /Add memories/ })[0]).toHaveAttribute('href', '/trips/trip-bali/memories/new')
+    expect(screen.queryByRole('region', { name: 'Continue planning' })).not.toBeInTheDocument()
+  })
+
   it('shows a live banner while a trip is active', async () => {
     useClockStore.setState({ simulatedNow: '2026-10-13T10:00:00+08:00' })
     renderApp('/')

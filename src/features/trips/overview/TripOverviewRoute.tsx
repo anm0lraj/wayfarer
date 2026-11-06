@@ -145,6 +145,8 @@ export function TripOverview() {
   const { days, items, bookings } = plan.data
   const hotel = bookings.find((b) => b.type === 'hotel' && b.status !== 'cancelled')
   const flights = bookings.filter((b) => b.type === 'flight' && b.status !== 'cancelled')
+  // Once the trip is over, booking prompts and offline prep no longer help.
+  const finished = trip.effectiveState === 'completed' || trip.effectiveState === 'archived'
 
   return (
     <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
@@ -181,13 +183,13 @@ export function TripOverview() {
 
       <aside className="min-w-0 space-y-6 lg:col-span-4">
         <Costs trip={trip} plan={plan.data} />
-        <OfflineCard trip={trip} />
+        {!finished && <OfflineCard trip={trip} />}
 
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold">Bookings</h3>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Stay</span>{hotel ? <span className="truncate font-medium">{hotel.title}</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/hotels`}>Add accommodation</Link>}</li>
-            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Flights</span>{flights.length ? <span className="font-medium">{flights.length} saved</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/flights`}>Add flights</Link>}</li>
+            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Stay</span>{hotel ? <span className="truncate font-medium">{hotel.title}</span> : (finished ? <span className="text-fg-muted">None saved</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/hotels`}>Add accommodation</Link>)}</li>
+            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Flights</span>{flights.length ? <span className="font-medium">{flights.length} saved</span> : (finished ? <span className="text-fg-muted">None saved</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/flights`}>Add flights</Link>)}</li>
           </ul>
           {(hotel || flights.length > 0) && <Badge tone="warning">Saved to trip — not booked</Badge>}
           <Link to={`${base}/bookings`} className="inline-flex min-h-touch items-center gap-1 text-sm font-semibold text-primary">All bookings <ChevronRight aria-hidden className="size-4" /></Link>

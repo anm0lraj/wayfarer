@@ -13,7 +13,8 @@ export function DestinationCard({ destination, ratio = '4/3', priority }: { dest
         ratio={ratio}
         priority={priority}
         title={destination.name}
-        subtitle={`${destination.region ?? destination.country} · from ${formatMoney(destination.estimatedDailyBudget)}/day`}
+        subtitle={destination.region ?? destination.country}
+        meta={`from ${formatMoney(destination.estimatedDailyBudget)}/day`}
         className="shadow-sm"
       />
     </Link>
