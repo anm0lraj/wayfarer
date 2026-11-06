@@ -132,4 +132,33 @@ describe('trips & public trips', () => {
     expect(await db.items.where('tripId').equals('trip-goa').count()).toBe(0)
     expect(await db.memories.where('tripId').equals('trip-goa').count()).toBe(0)
   })
+  it('deleting a trip unpublishes its pages and short links, through the sync queue', async () => {
+    const pub = await publicTripRepo.publish('trip-bali', { description: 'Test', visibility: 'link' })
+    // An older page of the same trip that the trip no longer points to (e.g. left by an earlier publish) goes too.
+    const stale = { ...pub, id: 'pub-stale', slug: 'old-bali-zz99', visibility: 'public' as const }
+    await db.publicTrips.put(stale)
+    const others = (await db.publicTrips.toArray()).filter((p) => p.tripId !== 'trip-bali').map((p) => p.id)
+    await db.syncQueue.clear()
+
+    await tripRepo.remove('trip-bali')
+
+    expect(await db.publicTrips.filter((p) => p.tripId === 'trip-bali').count()).toBe(0)
+    expect(await db.publicTrips.where('slug').anyOf(pub.slug, stale.slug).count()).toBe(0)
+    expect((await db.publicTrips.toArray()).map((p) => p.id).sort()).toEqual(others.sort())
+    const queued = (await db.syncQueue.toArray()).map(({ entity, entityId, op }) => ({ entity, entityId, op }))
+    expect(queued).toEqual(expect.arrayContaining([
+      { entity: 'publicTrips', entityId: pub.id, op: 'delete' },
+      { entity: 'publicSlugs', entityId: pub.slug, op: 'delete' },
+      { entity: 'publicTrips', entityId: stale.id, op: 'delete' },
+      { entity: 'publicSlugs', entityId: stale.slug, op: 'delete' },
+      { entity: 'trips', entityId: 'trip-bali', op: 'delete' },
+    ]))
+  })
+  it('deleting a trip whose page is not cached on this device still queues the page delete', async () => {
+    await db.trips.update('trip-goa', { publicTripId: 'pub-not-here' })
+    await db.syncQueue.clear()
+    await tripRepo.remove('trip-goa')
+    expect((await db.syncQueue.toArray()).map(({ entity, entityId, op }) => ({ entity, entityId, op })))
+      .toContainEqual({ entity: 'publicTrips', entityId: 'pub-not-here', op: 'delete' })
+  })
 })

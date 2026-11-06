@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { enqueue } from '../syncQueue'
 import { del, getRole, newId, nowIso, put, requireActor, requireTripAccess } from './shared'
 import { addDays, tripLengthDays } from '@/lib/dates'
 import { canTransition } from '@/features/trips/tripState'
@@ -86,9 +87,20 @@ export const tripRepo = {
     return tripRepo.update(id, { state: to, archivedAt: to === 'archived' ? nowIso() : undefined })
   },
 
+  /** Deletes the trip and everything in it, and unpublishes its pages (page and short link, queued like an unpublish). */
   async remove(id: string): Promise<void> {
     await requireTripAccess(id, 'delete')
-    await db.transaction('rw', [db.trips, db.days, db.items, db.bookings, db.memories, db.stories, db.checklist, db.collaborators, db.syncQueue], async () => {
+    const tables = [db.trips, db.days, db.items, db.bookings, db.memories, db.stories, db.checklist, db.collaborators, db.publicTrips, db.syncQueue]
+    await db.transaction('rw', tables, async () => {
+      // Any page made from this trip, not just the one it points to now; `publicTrips` has no tripId index (few rows).
+      const pages = await db.publicTrips.filter((p) => p.tripId === id).toArray()
+      for (const page of pages) {
+        await del('publicTrips', db.publicTrips, page.id)
+        await enqueue('publicSlugs', page.slug, 'delete')
+      }
+      // The current page may be missing from this device's cache; the server copy still has to go.
+      const current = (await db.trips.get(id))?.publicTripId
+      if (current && !pages.some((p) => p.id === current)) await del('publicTrips', db.publicTrips, current)
       await db.items.where('tripId').equals(id).delete()
       await db.days.where('tripId').equals(id).delete()
       await db.bookings.where('tripId').equals(id).delete()
