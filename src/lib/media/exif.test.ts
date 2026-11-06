@@ -64,6 +64,18 @@ describe('readExif', () => {
     expect(readExif(new Uint8Array([0xff, 0xd8, 0xff, 0xd9, 0, 0, 0, 0, 0, 0, 0, 0]).buffer)).toEqual({})
     expect(readExif(new ArrayBuffer(0))).toEqual({})
   })
+  it('treats a truncated file as having no EXIF instead of throwing', () => {
+    const full = jpegWith({ date: '2026:10:13 17:42:09', gps: { latRef: 'S', lat: [8, 41, 0], lngRef: 'E', lng: [115, 9, 0] } })
+    // Every cut, including inside the marker, the "Exif" signature, the TIFF header and the IFD values.
+    for (let n = 0; n < full.byteLength; n++) expect(() => readExif(full.slice(0, n)), `cut at ${n} bytes`).not.toThrow()
+    expect(readExif(full.slice(0, 14))).toEqual({}) // APP1 marker present, "Exif" signature cut short
+    expect(readExif(full.slice(0, 20))).toEqual({}) // TIFF header cut short
+  })
+  it('ignores IFD offsets that point past the end of the file', () => {
+    const bytes = new Uint8Array(jpegWith({ date: '2026:10:13 17:42:09' }))
+    bytes[19] = 0xff // first IFD offset (TIFF base 12 + 4) → far beyond the buffer
+    expect(readExif(bytes.buffer)).toEqual({})
+  })
 })
 
 describe('fitWithin', () => {
