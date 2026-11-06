@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/data/db'
@@ -179,24 +179,109 @@ describe('Add activity', () => {
     expect(within(dialog).queryByText('Sacred Monkey Forest Sanctuary')).not.toBeInTheDocument()
   })
 
-  it('adds a custom activity with its own location, and validates', async () => {
-    const r = renderApp('/trips/trip-bali/itinerary/day/1/add')
+  it('adds a custom activity by searching for its place, and the pin shows as the next numbered stop', async () => {
+    wide() // split view: the day's map sits beside the list
+    const fake = createFakeMap()
+    const r = renderApp('/trips/trip-bali/itinerary/day/1/add', { maps: fake.maps })
     const dialog = await screen.findByRole('dialog', { name: 'Add to Day 1' })
     await userEvent.click(within(dialog).getByRole('tab', { name: 'Custom' }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Add activity' }))
     expect(await within(dialog).findByText('Give it a name')).toBeInTheDocument()
 
     await userEvent.type(within(dialog).getByLabelText('Name'), 'Beach picnic')
-    fireEvent.change(within(dialog).getByLabelText('Latitude (optional)'), { target: { value: '-8.69' } })
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Add activity' }))
-    expect(await within(dialog).findByText('Enter both latitude and longitude')).toBeInTheDocument()
-    fireEvent.change(within(dialog).getByLabelText('Longitude (optional)'), { target: { value: '115.16' } })
+    await userEvent.type(within(dialog).getByRole('combobox', { name: 'Location' }), 'petitenget')
+    await userEvent.click(await within(dialog).findByRole('option', { name: /Petitenget Beach/ }))
+    expect(within(dialog).getByRole('group', { name: 'Chosen location' })).toHaveTextContent('Petitenget Beach')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Add activity' }))
 
     const find = async () => (await dayItems('day-1')).find((i) => i.title === 'Beach picnic')
     await waitFor(async () => expect((await find())?.travelTimeFromPrevMin).toBeDefined()) // legs are recomputed for the new stop
-    expect((await find())!.customLocation?.point).toEqual({ lat: -8.69, lng: 115.16 })
+    const saved = (await find())!
+    expect(saved.customLocation).toMatchObject({ name: 'Petitenget Beach', point: { lat: -8.6742, lng: 115.1566 } })
+    expect(saved.description).toBeUndefined()
     await waitFor(() => expect(r.state.location.pathname).toBe('/trips/trip-bali/itinerary/day/1'))
+    await waitFor(() => expect(fake.state.markers.find((m) => m.id === saved.id)).toMatchObject({ label: '7', ariaLabel: 'Stop 7: Beach picnic' }))
+    expect(fake.state.route).toHaveLength(7) // and the day's route runs through it
+  })
+
+  it('keeps a place that cannot be found as text only, with no pin', async () => {
+    renderApp('/trips/trip-bali/itinerary/day/1/add')
+    const dialog = await screen.findByRole('dialog', { name: 'Add to Day 1' })
+    await userEvent.click(within(dialog).getByRole('tab', { name: 'Custom' }))
+    await userEvent.type(within(dialog).getByLabelText('Name'), 'Dinner with Made')
+    await userEvent.type(within(dialog).getByRole('combobox', { name: 'Location' }), 'Made’s family compound')
+    await userEvent.click(await within(dialog).findByRole('button', { name: 'Use “Made’s family compound” as the name only' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add activity' }))
+    const find = async () => (await dayItems('day-1')).find((i) => i.title === 'Dinner with Made')
+    await waitFor(async () => expect(await find()).toBeDefined())
+    expect(await find()).toMatchObject({ description: 'Made’s family compound', customLocation: undefined })
+  })
+})
+
+describe('Edit activity: location', () => {
+  const addCustom = (title: string) => itineraryRepo.addItem('trip-bali', 'day-1', { title, startTime: '21:00', durationMin: 60, category: 'other' })
+
+  it('a custom stop can be given a place, and the pin and route follow', async () => {
+    wide()
+    const fake = createFakeMap()
+    const item = await addCustom('Night market')
+    renderApp(`/trips/trip-bali/itinerary/items/${item.id}`, { maps: fake.maps })
+    const dialog = await screen.findByRole('dialog', { name: 'Night market' })
+    expect(within(dialog).queryByRole('group', { name: 'Chosen location' })).not.toBeInTheDocument()
+    await waitFor(() => expect(fake.state.markers.length).toBeGreaterThan(0))
+    expect(fake.state.markers.map((m) => m.id)).not.toContain(item.id) // no location: no pin
+
+    await userEvent.type(within(dialog).getByRole('combobox', { name: 'Location' }), 'petitenget')
+    await userEvent.click(await within(dialog).findByRole('option', { name: /Petitenget Beach/ }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+    await waitFor(async () => expect((await db.items.get(item.id))?.customLocation?.name).toBe('Petitenget Beach'))
+    await waitFor(async () => expect((await db.items.get(item.id))?.travelTimeFromPrevMin).toBeDefined())
+    await waitFor(() => expect(fake.state.markers.find((m) => m.id === item.id)?.label).toBe('7'))
+    expect(fake.state.route).toHaveLength(7)
+  })
+
+  it('a custom stop with a place can be moved with the map', async () => {
+    wide()
+    const fake = createFakeMap()
+    const item = await addCustom('Night market')
+    await itineraryRepo.updateItem(item.id, { customLocation: { name: 'Petitenget Beach', point: { lat: -8.6742, lng: 115.1566 } } })
+    renderApp(`/trips/trip-bali/itinerary/items/${item.id}`, { maps: fake.maps })
+    const dialog = await screen.findByRole('dialog', { name: 'Night market' })
+    await userEvent.click(await within(dialog).findByRole('button', { name: 'Adjust on map' }))
+    const picker = await screen.findByRole('dialog', { name: 'Choose on map' })
+    await waitFor(() => expect(fake.state.picked).toEqual({ lat: -8.6742, lng: 115.1566 }))
+    act(() => fake.pick({ lat: -8.7, lng: 115.17 }))
+    await userEvent.clear(within(picker).getByLabelText('Place name'))
+    await userEvent.type(within(picker).getByLabelText('Place name'), 'Sunset spot')
+    await userEvent.click(within(picker).getByRole('button', { name: 'Use this location' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+    await waitFor(async () => expect((await db.items.get(item.id))?.customLocation).toMatchObject({ name: 'Sunset spot', point: { lat: -8.7, lng: 115.17 } }))
+    await waitFor(() => expect(fake.state.markers.find((m) => m.id === item.id)?.point).toEqual({ lat: -8.7, lng: 115.17 }))
+  })
+
+  it('clearing the location removes the pin and its legs', async () => {
+    wide()
+    const fake = createFakeMap()
+    const item = await addCustom('Night market')
+    await itineraryRepo.updateItem(item.id, { customLocation: { name: 'Petitenget Beach', point: { lat: -8.6742, lng: 115.1566 } } })
+    expect((await db.items.get(item.id))?.travelTimeFromPrevMin).toBeDefined()
+    renderApp(`/trips/trip-bali/itinerary/items/${item.id}`, { maps: fake.maps })
+    const dialog = await screen.findByRole('dialog', { name: 'Night market' })
+    await waitFor(() => expect(fake.state.markers.find((m) => m.id === item.id)).toBeDefined())
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Clear location' }))
+    await waitFor(() => expect(within(dialog).getByRole('combobox', { name: 'Location' })).toHaveFocus())
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+    await waitFor(async () => expect((await db.items.get(item.id))?.customLocation).toBeUndefined())
+    await waitFor(async () => expect((await db.items.get(item.id))?.travelTimeFromPrevMin).toBeUndefined()) // legs recomputed without it
+    await waitFor(() => expect(fake.state.markers.find((m) => m.id === item.id)).toBeUndefined())
+  })
+
+  it('a catalogue place stays read-only: its name and address, no picker', async () => {
+    renderApp('/trips/trip-bali/itinerary/items/item-d2-5')
+    const dialog = await screen.findByRole('dialog', { name: 'Kecak fire dance at Uluwatu' })
+    await within(dialog).findByText(/Uluwatu/, { selector: 'span.font-medium' })
+    expect(within(dialog).queryByRole('combobox', { name: 'Location' })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Choose on map' })).not.toBeInTheDocument()
   })
 })
 

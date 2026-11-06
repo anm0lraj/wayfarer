@@ -7,6 +7,15 @@ import { useServices } from '@/services'
 import type { MapHandle, MapMarker } from '@/services/maps/types'
 import type { GeoPoint } from '@/types'
 
+/** Turns the map into a place picker: a tap drops a pin, the pin can be dragged or nudged with the arrow keys. */
+export interface MapPicker {
+  /** The chosen point (controlled by the screen); null for none yet. */
+  point: GeoPoint | null
+  onPick: (point: GeoPoint) => void
+  /** Hands the screen the live map (for `getCenter`), and null again when it goes away. */
+  onHandle?: (handle: MapHandle | null) => void
+}
+
 interface TripMapProps {
   markers: MapMarker[]
   /** Points drawn as the route line, in order. */
@@ -18,13 +27,14 @@ interface TripMapProps {
   /** Changing this re-fits the view to the markers (e.g. when the day changes). */
   fitKey: string
   className?: string
+  picker?: MapPicker
 }
 
 /**
  * Map for a day or a whole trip. Talks only to the MapProvider interface, loads the vendor library lazily,
  * and keeps working as a list if tiles or the library can't load (offline, blocked).
  */
-export function TripMap({ markers, route, selectedId, onSelect, fallbackCenter, fitKey, className }: TripMapProps) {
+export function TripMap({ markers, route, selectedId, onSelect, fallbackCenter, fitKey, className, picker }: TripMapProps) {
   const { maps } = useServices()
   const online = useOnline()
   const el = useRef<HTMLDivElement>(null)
@@ -32,22 +42,27 @@ export function TripMap({ markers, route, selectedId, onSelect, fallbackCenter, 
   const [failed, setFailed] = useState<string | null>(null)
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
+  const pickerRef = useRef(picker)
+  pickerRef.current = picker
+  const picking = !!picker
 
   useEffect(() => {
     let cancelled = false
     let created: MapHandle | null = null
     maps.provider
-      .create(el.current!, { center: fallbackCenter, zoom: 11, onMarkerClick: (id) => onSelectRef.current?.(id), onError: (m) => !cancelled && setFailed(m) })
+      .create(el.current!, { center: fallbackCenter, zoom: 11, onMarkerClick: (id) => onSelectRef.current?.(id), onPointPick: picking ? (p) => pickerRef.current?.onPick(p) : undefined, onError: (m) => !cancelled && setFailed(m) })
       .then((h) => {
         if (cancelled) return h.destroy()
         created = h
         setHandle(h)
+        pickerRef.current?.onHandle?.(h)
       })
       .catch((e: unknown) => !cancelled && setFailed(e instanceof Error ? e.message : 'The map couldn’t load'))
     return () => {
       cancelled = true
       created?.destroy()
       setHandle(null)
+      pickerRef.current?.onHandle?.(null)
     }
     // The map is created once per mount; data flows in through the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,6 +71,19 @@ export function TripMap({ markers, route, selectedId, onSelect, fallbackCenter, 
   useEffect(() => {
     handle?.setMarkers(markers.map((m) => ({ ...m, selected: m.id === selectedId })))
   }, [handle, markers, selectedId])
+
+  const pickedLat = picker?.point?.lat
+  const pickedLng = picker?.point?.lng
+  useEffect(() => {
+    if (!handle || !picking) return
+    handle.setPickedPoint(pickedLat === undefined || pickedLng === undefined ? null : { lat: pickedLat, lng: pickedLng })
+  }, [handle, picking, pickedLat, pickedLng])
+
+  // When the picker opens on a place that is already chosen, start there, zoomed in.
+  useEffect(() => {
+    const p = pickerRef.current?.point
+    if (handle && p) handle.flyTo(p, 15)
+  }, [handle])
 
   useEffect(() => {
     if (!handle) return
@@ -89,7 +117,7 @@ export function TripMap({ markers, route, selectedId, onSelect, fallbackCenter, 
   return (
     <div className={cn('relative overflow-hidden rounded-lg border border-border bg-surface-2', className)}>
       {/* The vendor library forces `position: relative` on its container, so the container fills this absolutely positioned wrapper instead. */}
-      <div className="absolute inset-0"><div ref={el} role="application" aria-label="Map of your stops" className="size-full" /></div>
+      <div className="absolute inset-0"><div ref={el} role="application" aria-label={picking ? 'Map for choosing a location' : 'Map of your stops'} className="size-full" /></div>
       {!handle && !failed && <Skeleton className="absolute inset-0 rounded-none" />}
       {failed && (
         <div role="alert" className="absolute inset-0 grid place-items-center bg-surface-2 p-6 text-center">

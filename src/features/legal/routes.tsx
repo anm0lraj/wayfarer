@@ -7,7 +7,7 @@ import { env } from '@/config/env'
  * in step when a service, a stored field or a provider changes). They are a plain-language draft written for a small
  * beta, not legal advice: have them reviewed for the operator's own situation before a public launch.
  */
-export const LEGAL_UPDATED = '4 October 2026'
+export const LEGAL_UPDATED = '6 November 2026'
 
 function Doc({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -57,6 +57,7 @@ export function PrivacyPage() {
       <H>Maps, weather and routes</H>
       <List items={[
         'Map pictures are loaded from OpenStreetMap’s servers, which see your IP address and which area of the map you are looking at.',
+        'When you search for a place or address while adding an activity, the text you type and the approximate area of your trip are sent to OpenStreetMap’s Nominatim geocoder. Dropping a pin on the map sends that spot’s coordinates to the same service to find its name. It receives no name or account details, and we never ask for your device’s location here.',
         'Weather forecasts come from Open-Meteo, and road routes from the OSRM project. They receive the coordinates of the place or stops being looked up, not your name or account.',
         'Your position is used only on your device, when you press “Use my location”. We do not store it.',
       ]} />

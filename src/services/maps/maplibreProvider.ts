@@ -36,6 +36,15 @@ export const maplibreProvider: MapProvider = {
     })
     map.on('error', (e) => options.onError?.(e.error?.message ?? 'Map failed to load'))
     let markers: InstanceType<typeof maplibregl.Marker>[] = []
+    let picked: InstanceType<typeof maplibregl.Marker> | null = null
+    const lngLatToPoint = (p: { lat: number; lng: number }): GeoPoint => ({ lat: p.lat, lng: p.lng })
+    const report = (p: { lat: number; lng: number }) => options.onPointPick?.(lngLatToPoint(p))
+
+    // Picking mode: a tap drops (or moves) the pin; the pin can be dragged or nudged with the arrow keys.
+    if (options.onPointPick) {
+      map.getCanvas().style.cursor = 'crosshair'
+      map.on('click', (e) => report(e.lngLat))
+    }
 
     const toBounds = (points: GeoPoint[]) => points.reduce((b, p) => b.extend(lngLat(p)), new maplibregl.LngLatBounds(lngLat(points[0]!), lngLat(points[0]!)))
 
@@ -73,9 +82,42 @@ export const maplibreProvider: MapProvider = {
         if (points.length) map.fitBounds(toBounds(points), { padding, maxZoom: 15, duration: 0 })
       },
       flyTo: (p, zoom) => map.flyTo({ center: lngLat(p), zoom: zoom ?? map.getZoom() }),
+      setPickedPoint(point) {
+        if (!point) {
+          picked?.remove()
+          picked = null
+          return
+        }
+        if (picked) return void picked.setLngLat(lngLat(point))
+        const node = document.createElement('div')
+        node.tabIndex = 0
+        node.setAttribute('role', 'button')
+        node.style.cssText = 'width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;background:#0f766e;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:grab;'
+        const marker = new maplibregl.Marker({ element: node, draggable: true, anchor: 'bottom' }).setLngLat(lngLat(point)).addTo(map)
+        // As with the stop markers, MapLibre stamps its own label on the element when added; ours goes on afterwards.
+        node.setAttribute('aria-label', 'Chosen location. Drag it, or use the arrow keys to move it.')
+        marker.on('dragend', () => report(marker.getLngLat()))
+        // A tap on the pin itself must not count as a tap on the map underneath.
+        node.addEventListener('click', (e) => e.stopPropagation())
+        node.addEventListener('keydown', (e) => {
+          const step: Record<string, [number, number]> = { ArrowUp: [0, -12], ArrowDown: [0, 12], ArrowLeft: [-12, 0], ArrowRight: [12, 0] }
+          const delta = step[e.key]
+          if (!delta) return
+          e.preventDefault()
+          e.stopPropagation()
+          // ~12 px at the current zoom, so a nudge is fine when zoomed in and coarse when zoomed out.
+          const at = map.project(marker.getLngLat())
+          const next = map.unproject([at.x + delta[0], at.y + delta[1]])
+          marker.setLngLat(next)
+          report(next)
+        })
+        picked = marker
+      },
+      getCenter: () => lngLatToPoint(map.getCenter()),
       resize: () => map.resize(),
       destroy() {
         markers.forEach((m) => m.remove())
+        picked?.remove()
         map.remove()
       },
     }
