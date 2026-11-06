@@ -16,6 +16,8 @@ const schema = z
     VITE_WEATHER: z.enum(['mock', 'live']).default('mock'),
     /** Route lines on the map: straight lines, or real roads from OSRM. */
     VITE_ROUTING: z.enum(['mock', 'live']).default('mock'),
+    /** Place search in the location picker: a small demo catalogue, or OpenStreetMap's Nominatim. */
+    VITE_GEOCODING: z.enum(['mock', 'live']).default('mock'),
     /** The assistant: the in-page demo replies, or the real model through the serverless functions in `api/ai`. */
     VITE_AI: z.enum(['mock', 'live']).default('mock'),
     VITE_FIREBASE_API_KEY: z.string().optional(),
@@ -46,6 +48,7 @@ export interface AppEnv {
   backend: 'mock' | 'firebase'
   weather: 'mock' | 'live'
   routing: 'mock' | 'live'
+  geocoding: 'mock' | 'live'
   ai: 'mock' | 'live'
   /** Contact address shown in the privacy notice and terms, if configured. */
   contactEmail?: string
@@ -67,6 +70,7 @@ export function parseEnv(raw: Record<string, unknown>): AppEnv {
     backend: v.VITE_BACKEND,
     weather: v.VITE_WEATHER,
     routing: v.VITE_ROUTING,
+    geocoding: v.VITE_GEOCODING,
     ai: v.VITE_AI,
     contactEmail: v.VITE_CONTACT_EMAIL || undefined,
     pushKey: v.VITE_BACKEND === 'firebase' ? v.VITE_FIREBASE_VAPID_KEY || undefined : undefined,

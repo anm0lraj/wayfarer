@@ -106,6 +106,8 @@ export function ItineraryView() {
   }
 
   const dayPath = `${base}/day/${day.dayNumber}`
+  // Where the location picker searches around and opens its map: this day's first pinned stop, else the destination.
+  const near = route[0] ?? destination.data?.location ?? { lat: 0, lng: 0 }
   const openItem = (i: ItineraryItem) => navigate(`${base}/items/${i.id}`)
   const move = (item: ItineraryItem, by: -1 | 1) => {
     const from = items.findIndex((i) => i.id === item.id)
@@ -253,9 +255,9 @@ export function ItineraryView() {
         </div>
       )}
 
-      <AddActivitySheet trip={trip} day={day} dayItems={items} open={'dayNumber' in parsed && parsed.add} onClose={() => navigate(dayPath)} actions={actions} />
+      <AddActivitySheet trip={trip} day={day} dayItems={items} open={'dayNumber' in parsed && parsed.add} onClose={() => navigate(dayPath)} actions={actions} near={near} />
       <ActivitySheet
-        trip={trip} item={detailItem} day={day} open={!!detailItem} onClose={() => navigate(dayPath)} actions={actions}
+        trip={trip} item={detailItem} day={day} open={!!detailItem} onClose={() => navigate(dayPath)} actions={actions} near={near}
         booking={detailItem?.bookingId ? plan.data?.bookings.find((b) => b.id === detailItem.bookingId) : undefined}
         point={detailItem ? points.get(detailItem.id) : undefined}
       />

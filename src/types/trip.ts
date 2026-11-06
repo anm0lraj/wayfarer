@@ -53,6 +53,7 @@ export const itemStatusSchema = z.enum(['upcoming', 'on_the_way', 'in_progress',
 export type ItemStatus = z.infer<typeof itemStatusSchema>
 
 export const customLocationSchema = z.object({ name: z.string(), address: z.string().optional(), point: geoPointSchema })
+export type CustomLocation = z.infer<typeof customLocationSchema>
 
 export const itineraryItemSchema = z
   .object({

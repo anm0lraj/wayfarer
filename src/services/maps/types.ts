@@ -15,6 +15,8 @@ export interface MapOptions {
   center: GeoPoint
   zoom?: number
   onMarkerClick?: (id: string) => void
+  /** Picking mode: a tap on the map (or a drag/arrow-key nudge of the picked pin) reports the chosen point. */
+  onPointPick?: (point: GeoPoint) => void
   /** Called when the provider fails to load (offline, blocked tiles) so the screen can show a fallback. */
   onError?: (message: string) => void
 }
@@ -26,6 +28,10 @@ export interface MapHandle {
   clearRoute(): void
   fitBounds(points: GeoPoint[], paddingPx?: number): void
   flyTo(point: GeoPoint, zoom?: number): void
+  /** Shows (or with null, removes) the draggable picked pin. Only meaningful when `onPointPick` was given. */
+  setPickedPoint(point: GeoPoint | null): void
+  /** The point at the middle of the visible map. */
+  getCenter(): GeoPoint
   resize(): void
   destroy(): void
 }

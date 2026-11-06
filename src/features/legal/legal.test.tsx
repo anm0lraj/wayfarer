@@ -17,10 +17,17 @@ describe('privacy notice', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Privacy notice' })).toBeInTheDocument()
     const text = document.body.textContent ?? ''
     // The things a person would want to know before using the app (keep these true when the app changes).
-    for (const fact of ['Google Firebase', 'Mumbai', 'Vercel', 'Gemini', 'OpenStreetMap', 'Open-Meteo', 'Download your data', 'Delete your account', 'Feedback', 'aged 18']) {
+    for (const fact of ['Google Firebase', 'Mumbai', 'Vercel', 'Gemini', 'OpenStreetMap', 'Nominatim', 'Open-Meteo', 'Download your data', 'Delete your account', 'Feedback', 'aged 18']) {
       expect(text, fact).toContain(fact)
     }
     expect(text).toMatch(/Last updated \d{1,2} \w+ \d{4}/)
+  })
+
+  it('says what place searches send to the geocoder', async () => {
+    renderApp('/privacy')
+    await screen.findByRole('heading', { name: 'Maps, weather and routes' })
+    expect(document.body.textContent).toMatch(/text you type and the approximate area of your trip are sent to OpenStreetMap’s Nominatim geocoder/)
+    expect(document.body.textContent).toMatch(/never ask for your device’s location here/)
   })
 
   it('says what the assistant is sent and that notes are not', async () => {

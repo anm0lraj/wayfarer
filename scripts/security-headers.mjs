@@ -7,8 +7,9 @@ const FIREBASE_API = ['https://identitytoolkit.googleapis.com', 'https://securet
 // Web push: getting a token (Firebase Installations + FCM registration) happens from the page.
 const FCM = ['https://fcmregistrations.googleapis.com', 'https://firebaseinstallations.googleapis.com', 'https://fcm.googleapis.com']
 const GOOGLE_SCRIPT ='https://apis.google.com'
-// Free weather and road-route services called from the browser (no keys). See src/services/weather/openMeteo.ts and maps/osrm.ts.
-const LIVE_DATA = ['https://api.open-meteo.com', 'https://router.project-osrm.org']
+// Free weather, road-route and place-search services called from the browser (no keys). See src/services/weather/openMeteo.ts,
+// maps/osrm.ts and geocoding/nominatim.ts.
+const LIVE_DATA = ['https://api.open-meteo.com', 'https://router.project-osrm.org', 'https://nominatim.openstreetmap.org']
 const AUTH_FRAMES = ['https://*.firebaseapp.com', 'https://accounts.google.com']
 
 export const csp = [

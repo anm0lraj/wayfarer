@@ -88,6 +88,31 @@ test.describe('itinerary and map', () => {
     await expect(page.getByRole('list', { name: 'Day 1 activities' }).getByRole('listitem').first()).toContainText('Hotel check-in')
   })
 
+  test('a custom stop found by searching for its place shows up as the next pin on the day map', async ({ page }) => {
+    await page.goto('/trips/trip-bali/itinerary/day/1/add')
+    const dialog = page.getByRole('dialog', { name: 'Add to Day 1' })
+    await dialog.getByRole('tab', { name: 'Custom' }).click()
+    await dialog.getByLabel('Name', { exact: true }).fill('Beach picnic')
+    await dialog.getByRole('combobox', { name: 'Location' }).fill('petitenget') // the demo geocoder answers; no network
+    await dialog.getByRole('option', { name: /Petitenget Beach/ }).click()
+    await expect(dialog.getByRole('group', { name: 'Chosen location' })).toBeFocused()
+    // The map picker opens with a real map and a way to use the keyboard instead of a tap.
+    await dialog.getByRole('button', { name: 'Adjust on map' }).click()
+    const picker = page.getByRole('dialog', { name: 'Choose on map' })
+    await expect(picker.getByRole('button', { name: 'Pin the map centre' })).toBeVisible()
+    await picker.getByRole('button', { name: 'Cancel' }).click()
+    await dialog.getByRole('button', { name: 'Add activity' }).click()
+    await expect(page.getByRole('dialog', { name: 'Add to Day 1' })).toBeHidden()
+    await expect(page.getByRole('list', { name: 'Day 1 activities' })).toContainText('Beach picnic')
+
+    // On the map (needs WebGL; the list above is the part that works everywhere).
+    const hasWebGL = await page.evaluate(() => { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')) })
+    test.skip(!hasWebGL, 'This browser build has no WebGL, so the map cannot draw')
+    await page.goto('/trips/trip-bali/map?day=1')
+    await expect(page.locator('.maplibregl-marker')).toHaveCount(7)
+    await expect(page.getByRole('button', { name: 'Stop 7: Beach picnic' })).toBeVisible()
+  })
+
   test('assistant: ask, review a proposal, apply, undo', async ({ page }) => {
     await page.goto('/trips/trip-bali/ai')
     await page.getByRole('button', { name: 'Add a sunset viewpoint to Day 3' }).click()
