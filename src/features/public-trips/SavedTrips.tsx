@@ -27,7 +27,7 @@ export function SavedTrips() {
       )}
       {saved.data && saved.data.length > 0 && (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {saved.data.map((t) => <li key={t.id}><PublicFeedCard trip={t} /></li>)}
+          {saved.data.map((t) => <li key={t.id}><PublicFeedCard trip={t} headingLevel={2} /></li>)}
         </ul>
       )}
     </>

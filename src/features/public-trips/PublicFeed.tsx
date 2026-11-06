@@ -106,7 +106,7 @@ export function PublicFeed() {
                 className="absolute left-0 top-0 grid w-full gap-4 pb-4"
                 style={{ transform: `translateY(${row.start - virtual.options.scrollMargin}px)`, gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
               >
-                {rows[row.index]!.map((t) => <PublicFeedCard key={t.id} trip={t} />)}
+                {rows[row.index]!.map((t) => <PublicFeedCard key={t.id} trip={t} headingLevel={2} />)}
               </div>
             ))}
           </div>

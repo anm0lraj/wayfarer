@@ -114,4 +114,19 @@ describe('ResponsiveSheet', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await waitFor(() => expect(trigger).toHaveFocus()) // Radix restores focus on the next tick
   })
+
+  it('moves focus to the main content when a sheet opened from its URL closes', async () => {
+    function OpenedFromUrl() {
+      const [open, setOpen] = useState(true)
+      return (
+        <main id="main" tabIndex={-1}>
+          <ResponsiveSheet open={open} onOpenChange={setOpen} title="Lunch"><p>Body</p></ResponsiveSheet>
+        </main>
+      )
+    }
+    render(<OpenedFromUrl />)
+    expect(screen.getByRole('dialog', { name: 'Lunch' })).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(document.getElementById('main')).toHaveFocus())
+  })
 })

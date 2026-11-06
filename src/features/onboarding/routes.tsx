@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SkipLink } from '@/components/layout/SkipLink'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { RouteEffects } from '@/app/layouts/RouteEffects'
@@ -76,65 +77,68 @@ function Form({ user }: { user: User }) {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="mx-auto grid min-h-dvh max-w-xl place-items-center p-4 outline-none">
-      <section aria-labelledby="ob-h" className="w-full space-y-6 rounded-xl border border-border bg-surface p-6 shadow-md sm:p-8">
-        <Stepper steps={STEPS.map((s) => s.label)} current={index} />
-        <div>
-          <h1 id="ob-h" className="text-2xl font-bold">{['Welcome to Wayfarer', 'How do you like to travel?', 'What do you love?', 'Your usual trip'][index]}</h1>
-          <p className="mt-1 text-fg-muted">{['A few quick questions so we can suggest the right places. All optional.', 'This shapes budgets and suggestions.', 'Pick as many as you like.', 'Helps us size itineraries to fit you.'][index]}</p>
-        </div>
-
-        {index === 0 && (
-          <div className="space-y-4">
-            <Input label="What should we call you?" value={d.name} onChange={(e) => set('name', e.target.value)} autoComplete="given-name" error={error} />
-            <Input label="Where do you live?" hint="City or region — used to suggest nearby trips." value={d.homeLocation} onChange={(e) => set('homeLocation', e.target.value)} autoComplete="address-level2" />
+    <>
+      <SkipLink />
+      <main id="main" tabIndex={-1} className="mx-auto grid min-h-dvh max-w-xl place-items-center p-4 outline-none">
+        <section aria-labelledby="ob-h" className="w-full space-y-6 rounded-xl border border-border bg-surface p-6 shadow-md sm:p-8">
+          <Stepper steps={STEPS.map((s) => s.label)} current={index} />
+          <div>
+            <h1 id="ob-h" className="text-2xl font-bold">{['Welcome to Wayfarer', 'How do you like to travel?', 'What do you love?', 'Your usual trip'][index]}</h1>
+            <p className="mt-1 text-fg-muted">{['A few quick questions so we can suggest the right places. All optional.', 'This shapes budgets and suggestions.', 'Pick as many as you like.', 'Helps us size itineraries to fit you.'][index]}</p>
           </div>
-        )}
 
-        {index === 1 && (
-          <div className="space-y-5">
-            <div role="group" aria-label="Travel style" className="flex flex-wrap gap-2">
-              {STYLES.map((s) => <Chip key={s} selected={d.travelStyle === s} onClick={() => set('travelStyle', d.travelStyle === s ? undefined : s)}>{s}</Chip>)}
+          {index === 0 && (
+            <div className="space-y-4">
+              <Input label="What should we call you?" value={d.name} onChange={(e) => set('name', e.target.value)} autoComplete="given-name" error={error} />
+              <Input label="Where do you live?" hint="City or region — used to suggest nearby trips." value={d.homeLocation} onChange={(e) => set('homeLocation', e.target.value)} autoComplete="address-level2" />
             </div>
-            <div role="radiogroup" aria-label="Budget" className="grid gap-2 sm:grid-cols-2">
-              {BUDGETS.map((b) => <OptionCard key={b.value} selected={d.budgetRange === b.value} onSelect={() => set('budgetRange', b.value)} title={b.label} description={b.hint} />)}
+          )}
+
+          {index === 1 && (
+            <div className="space-y-5">
+              <div role="group" aria-label="Travel style" className="flex flex-wrap gap-2">
+                {STYLES.map((s) => <Chip key={s} selected={d.travelStyle === s} onClick={() => set('travelStyle', d.travelStyle === s ? undefined : s)}>{s}</Chip>)}
+              </div>
+              <div role="radiogroup" aria-label="Budget" className="grid gap-2 sm:grid-cols-2">
+                {BUDGETS.map((b) => <OptionCard key={b.value} selected={d.budgetRange === b.value} onSelect={() => set('budgetRange', b.value)} title={b.label} description={b.hint} />)}
+              </div>
+              <div role="group" aria-label="Who you usually travel with" className="flex flex-wrap gap-2">
+                {COMPANIONS.map((c) => <Chip key={c.value} selected={d.companions === c.value} onClick={() => set('companions', d.companions === c.value ? undefined : c.value)}>{c.label}</Chip>)}
+              </div>
             </div>
-            <div role="group" aria-label="Who you usually travel with" className="flex flex-wrap gap-2">
-              {COMPANIONS.map((c) => <Chip key={c.value} selected={d.companions === c.value} onClick={() => set('companions', d.companions === c.value ? undefined : c.value)}>{c.label}</Chip>)}
+          )}
+
+          {index === 2 && (
+            <div role="group" aria-label="Interests" className="flex flex-wrap gap-2">
+              {interestSchema.options.map((i) => (
+                <Chip key={i} selected={d.interests.includes(i)} onClick={() => set('interests', d.interests.includes(i) ? d.interests.filter((x) => x !== i) : [...d.interests, i])}>{INTEREST_LABELS[i]}</Chip>
+              ))}
+            </div>
+          )}
+
+          {index === 3 && (
+            <div className="space-y-5">
+              <div role="group" aria-label="Typical trip length" className="flex flex-wrap gap-2">
+                {DURATIONS.map((n) => <Chip key={n} selected={d.typicalDurationDays === n} onClick={() => set('typicalDurationDays', d.typicalDurationDays === n ? undefined : n)}>{n === 10 ? '10+ days' : `${n} days`}</Chip>)}
+              </div>
+              <div role="group" aria-label="Preferred stay" className="flex flex-wrap gap-2">
+                {accommodationTypeSchema.options.map((a) => <Chip key={a} selected={d.accommodation === a} onClick={() => set('accommodation', d.accommodation === a ? undefined : a)}>{STAY_LABEL[a]}</Chip>)}
+              </div>
+              <Input label="Places you’d love to visit" hint="Separate with commas, e.g. Japan, Bali, Goa." value={d.destinations} onChange={(e) => set('destinations', e.target.value)} />
+            </div>
+          )}
+
+          {index !== 0 && error && <p role="alert" className="text-error">{error}</p>}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Button variant="ghost" disabled={saving} onClick={() => void finish(true)}>Skip for now</Button>
+            <div className="flex gap-2">
+              {index > 0 && <Button variant="secondary" onClick={() => navigate(`/onboarding/${STEPS[index - 1]!.slug}`)}>Back</Button>}
+              <Button disabled={saving} onClick={next}>{last ? (saving ? 'Saving…' : 'Finish') : 'Continue'}</Button>
             </div>
           </div>
-        )}
-
-        {index === 2 && (
-          <div role="group" aria-label="Interests" className="flex flex-wrap gap-2">
-            {interestSchema.options.map((i) => (
-              <Chip key={i} selected={d.interests.includes(i)} onClick={() => set('interests', d.interests.includes(i) ? d.interests.filter((x) => x !== i) : [...d.interests, i])}>{INTEREST_LABELS[i]}</Chip>
-            ))}
-          </div>
-        )}
-
-        {index === 3 && (
-          <div className="space-y-5">
-            <div role="group" aria-label="Typical trip length" className="flex flex-wrap gap-2">
-              {DURATIONS.map((n) => <Chip key={n} selected={d.typicalDurationDays === n} onClick={() => set('typicalDurationDays', d.typicalDurationDays === n ? undefined : n)}>{n === 10 ? '10+ days' : `${n} days`}</Chip>)}
-            </div>
-            <div role="group" aria-label="Preferred stay" className="flex flex-wrap gap-2">
-              {accommodationTypeSchema.options.map((a) => <Chip key={a} selected={d.accommodation === a} onClick={() => set('accommodation', d.accommodation === a ? undefined : a)}>{STAY_LABEL[a]}</Chip>)}
-            </div>
-            <Input label="Places you’d love to visit" hint="Separate with commas, e.g. Japan, Bali, Goa." value={d.destinations} onChange={(e) => set('destinations', e.target.value)} />
-          </div>
-        )}
-
-        {index !== 0 && error && <p role="alert" className="text-error">{error}</p>}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button variant="ghost" disabled={saving} onClick={() => void finish(true)}>Skip for now</Button>
-          <div className="flex gap-2">
-            {index > 0 && <Button variant="secondary" onClick={() => navigate(`/onboarding/${STEPS[index - 1]!.slug}`)}>Back</Button>}
-            <Button disabled={saving} onClick={next}>{last ? (saving ? 'Saving…' : 'Finish') : 'Continue'}</Button>
-          </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </>
   )
 }
 

@@ -80,12 +80,6 @@
 @layer utilities {
   .pb-safe { padding-bottom: var(--safe-bottom); }
   .pt-safe { padding-top: var(--safe-top); }
-  /* Grows the tappable area of a small control to the touch minimum without changing how it looks. */
-  .hit-area { position: relative; }
-  .hit-area::after {
-    content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: max(100%, var(--touch)); height: max(100%, var(--touch));
-  }
   .sr-only-focusable:not(:focus):not(:focus-within) {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }

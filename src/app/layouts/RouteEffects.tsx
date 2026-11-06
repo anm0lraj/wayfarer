@@ -22,7 +22,8 @@ export function RouteEffects() {
     // Lazy routes render after the navigation, so wait for the heading to exist.
     const timer = setInterval(() => {
       tries++
-      const h1 = document.querySelector('main h1')?.textContent ?? null
+      // A page that is a full-screen dialog (Create Trip) has its h1 in the dialog, outside <main>.
+      const h1 = (document.querySelector('main h1') ?? document.querySelector('[role="dialog"] h1'))?.textContent ?? null
       if (!h1 && tries < 8) return
       clearInterval(timer)
       // Recorded once handled, so a dev-mode double mount (StrictMode) still counts as the first load.
