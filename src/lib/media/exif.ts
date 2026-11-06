@@ -11,17 +11,27 @@ const TYPE_SIZE: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 
 /**
  * Minimal EXIF reader for JPEG: capture time and GPS position, nothing else. Returns {} for anything that
  * isn't a JPEG with EXIF. Compression later re-encodes the image, which drops all EXIF from the stored file.
+ * A truncated or malformed file (any read past the end) also counts as no EXIF: it never throws.
  */
 export function readExif(buffer: ArrayBuffer): ExifData {
-  const v = new DataView(buffer)
+  try {
+    return readJpeg(new DataView(buffer))
+  } catch (e) {
+    if (e instanceof RangeError) return {}
+    throw e
+  }
+}
+
+function readJpeg(v: DataView): ExifData {
   if (v.byteLength < 12 || v.getUint16(0) !== 0xffd8) return {}
   let off = 2
-  while (off + 4 < v.byteLength) {
+  while (off + 4 <= v.byteLength) {
     if (v.getUint8(off) !== 0xff) return {}
     const marker = v.getUint8(off + 1)
     const len = v.getUint16(off + 2)
-    if (marker === 0xe1 && v.getUint32(off + 4) === 0x45786966) return parseTiff(v, off + 10)
     if (marker === 0xda) return {}
+    // APP1 "Exif\0\0" then a TIFF header (8 bytes) must all be present.
+    if (marker === 0xe1 && off + 18 <= v.byteLength && v.getUint32(off + 4) === 0x45786966) return parseTiff(v, off + 10)
     off += 2 + len
   }
   return {}

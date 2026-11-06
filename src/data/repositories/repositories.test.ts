@@ -6,6 +6,7 @@ import { buildSeed } from '../seedData'
 import { bookingRepo, checklistRepo, itineraryRepo, publicTripRepo, tripRepo, applyAIAction, collaboratorRepo } from './index'
 import { pendingCount } from '../syncQueue'
 import { PermissionError } from '@/lib/permissions'
+import { computeTripState } from '@/features/trips/tripState'
 
 beforeEach(async () => {
   setActorId(DEMO_USER_ID)
@@ -118,6 +119,24 @@ describe('trips & public trips', () => {
     await tripRepo.transition(t.id, 'archived')
     expect((await tripRepo.transition(t.id, 'planning')).state).toBe('planning')
   })
+  it('a trip being planned can be marked ready, which makes it Upcoming near departure, and moved back', async () => {
+    const t = await tripRepo.create({ title: 'Jaipur', destinationIds: ['jaipur'], startDate: '2026-12-01', endDate: '2026-12-03', timezone: 'Asia/Kolkata', travellers: { group: 'solo', count: 1 }, budget: { tier: 'economy' }, interests: ['culture'], planningStyle: 'manual' })
+    const day = (await itineraryRepo.listDays(t.id))[0]!
+    await itineraryRepo.addItem(t.id, day.id, { title: 'Amber Fort', startTime: '09:00', durationMin: 120, category: 'sightseeing' })
+    expect((await tripRepo.get(t.id))!.state).toBe('planning')
+    const weekBefore = new Date('2026-11-24T09:00:00+05:30')
+    expect(computeTripState((await tripRepo.get(t.id))!, weekBefore)).toBe('planning') // planning never counts down
+
+    await db.syncQueue.clear()
+    const ready = await tripRepo.transition(t.id, 'ready')
+    expect(ready.state).toBe('ready')
+    expect(computeTripState(ready, weekBefore)).toBe('upcoming')
+    expect(computeTripState(ready, new Date('2026-10-01T09:00:00+05:30'))).toBe('ready') // too far out yet
+    expect(await db.syncQueue.where('entity').equals('trips').count()).toBe(1) // queued for sync like any edit
+
+    const back = await tripRepo.transition(t.id, 'planning')
+    expect(computeTripState(back, weekBefore)).toBe('planning')
+  })
   it('publishes a sanitised snapshot and copies a public itinerary without touching the original', async () => {
     await itineraryRepo.updateItem('item-d1-1', { notes: 'PRIVATE: villa gate code 4821' })
     const pub = await publicTripRepo.publish('trip-bali', { description: 'Test', visibility: 'public' })
@@ -131,5 +150,34 @@ describe('trips & public trips', () => {
     await tripRepo.remove('trip-goa')
     expect(await db.items.where('tripId').equals('trip-goa').count()).toBe(0)
     expect(await db.memories.where('tripId').equals('trip-goa').count()).toBe(0)
+  })
+  it('deleting a trip unpublishes its pages and short links, through the sync queue', async () => {
+    const pub = await publicTripRepo.publish('trip-bali', { description: 'Test', visibility: 'link' })
+    // An older page of the same trip that the trip no longer points to (e.g. left by an earlier publish) goes too.
+    const stale = { ...pub, id: 'pub-stale', slug: 'old-bali-zz99', visibility: 'public' as const }
+    await db.publicTrips.put(stale)
+    const others = (await db.publicTrips.toArray()).filter((p) => p.tripId !== 'trip-bali').map((p) => p.id)
+    await db.syncQueue.clear()
+
+    await tripRepo.remove('trip-bali')
+
+    expect(await db.publicTrips.filter((p) => p.tripId === 'trip-bali').count()).toBe(0)
+    expect(await db.publicTrips.where('slug').anyOf(pub.slug, stale.slug).count()).toBe(0)
+    expect((await db.publicTrips.toArray()).map((p) => p.id).sort()).toEqual(others.sort())
+    const queued = (await db.syncQueue.toArray()).map(({ entity, entityId, op }) => ({ entity, entityId, op }))
+    expect(queued).toEqual(expect.arrayContaining([
+      { entity: 'publicTrips', entityId: pub.id, op: 'delete' },
+      { entity: 'publicSlugs', entityId: pub.slug, op: 'delete' },
+      { entity: 'publicTrips', entityId: stale.id, op: 'delete' },
+      { entity: 'publicSlugs', entityId: stale.slug, op: 'delete' },
+      { entity: 'trips', entityId: 'trip-bali', op: 'delete' },
+    ]))
+  })
+  it('deleting a trip whose page is not cached on this device still queues the page delete', async () => {
+    await db.trips.update('trip-goa', { publicTripId: 'pub-not-here' })
+    await db.syncQueue.clear()
+    await tripRepo.remove('trip-goa')
+    expect((await db.syncQueue.toArray()).map(({ entity, entityId, op }) => ({ entity, entityId, op })))
+      .toContainEqual({ entity: 'publicTrips', entityId: 'pub-not-here', op: 'delete' })
   })
 })

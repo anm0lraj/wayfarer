@@ -16,6 +16,7 @@ import { usePendingChanges, useSyncState } from '@/features/sync/useSyncStatus'
 import { env } from '@/config/env'
 import { APP_VERSION } from '@/config/version'
 import { resetDemoData } from '@/data/seed'
+import { wallClockLabel } from '@/lib/dates'
 import { promptInstall, usePwa } from '@/lib/pwa'
 import { useTheme, type ThemePreference } from '@/lib/theme'
 import { useServices } from '@/services'
@@ -126,7 +127,7 @@ export default function SettingsRoute() {
           </Card>
         </div>
 
-        <Section title="Demo date simulator" description={simulatedNow ? `Simulating ${format(new Date(simulatedNow), 'd MMM yyyy, HH:mm')}.` : 'Preview Upcoming, Live and Completed states without waiting for real dates.'}>
+        <Section title="Demo date simulator" description={simulatedNow ? `Simulating ${wallClockLabel(simulatedNow)}.` : 'Preview Upcoming, Live and Completed states without waiting for real dates.'}>
           {presets.map((p) => <Chip key={p.iso} selected={simulatedNow === p.iso} onClick={() => setSimulatedNow(p.iso)}>{p.label}</Chip>)}
           <Button variant="secondary" disabled={!simulatedNow} onClick={() => setSimulatedNow(null)}>Use real time</Button>
         </Section>

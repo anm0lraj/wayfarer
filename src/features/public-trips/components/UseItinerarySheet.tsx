@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isValid, parseISO } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { ResponsiveSheet } from '@/components/layout/ResponsiveSheet'
 import { toast } from '@/components/feedback/toast'
@@ -21,10 +22,12 @@ export function UseItinerarySheet({ trip, open, onOpenChange }: Props) {
   const copy = useCopyItinerary()
   const [start, setStart] = useState(() => addDays(dateInTimezone(clock.now(), 'UTC'), 30))
   const [error, setError] = useState<string>()
-  const end = addDays(start, trip.durationDays - 1)
+  // The date field can be cleared (or hold a partial value); nothing below may parse it then.
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(start) && isValid(parseISO(start))
+  const end = valid ? addDays(start, trip.durationDays - 1) : undefined
 
   const submit = async () => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return setError('Choose a start date.')
+    if (!end) return
     setError(undefined)
     try {
       const created = await copy.mutateAsync({ id: trip.id, startDate: start, endDate: end })
@@ -39,12 +42,12 @@ export function UseItinerarySheet({ trip, open, onOpenChange }: Props) {
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Use this itinerary" description="We’ll make a copy in your trips. The original stays as it is." wide="dialog">
       <div className="space-y-4 px-5 pb-6">
-        <Input label="When do you want to start?" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-        <p className="text-fg-muted">{trip.durationDays} days · {formatDateRange(start, end)}</p>
+        <Input label="When do you want to start?" type="date" value={start} onChange={(e) => setStart(e.target.value)} error={end ? undefined : 'Choose a start date.'} required />
+        {end && <p className="text-fg-muted">{trip.durationDays} days · {formatDateRange(start, end)}</p>}
         <p className="text-sm text-fg-muted">Bookings, notes and other people’s photos aren’t copied — just the days, places and timings.</p>
         {error && <p role="alert" className="text-error">{error}</p>}
         <div className="flex gap-2">
-          <Button onClick={() => void submit()} disabled={copy.isPending}>{copy.isPending ? 'Copying…' : 'Copy to my trips'}</Button>
+          <Button onClick={() => void submit()} disabled={!end || copy.isPending}>{copy.isPending ? 'Copying…' : 'Copy to my trips'}</Button>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
         </div>
       </div>

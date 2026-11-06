@@ -79,9 +79,13 @@ export function buildHead(t: PreviewTrip, slug: string, origin: string): { title
   return { title, tags }
 }
 
-/** Puts the trip's tags and title into the app's HTML, replacing the generic ones. */
+/**
+ * Puts the trip's tags and title into the app's HTML, replacing the generic ones. The replacement is a function so
+ * `$` in a title or description is kept as written (a string would be read as `$&`, `$$`, … patterns).
+ */
 export function injectHead(html: string, head: { title: string; tags: string }): string {
+  const replacement = `<title>${escapeHtml(head.title)}</title>\n    ${head.tags}`
   return html
     .replace(/<meta name="description"[^>]*>\s*/i, '')
-    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(head.title)}</title>\n    ${head.tags}`)
+    .replace(/<title>[\s\S]*?<\/title>/i, () => replacement)
 }
