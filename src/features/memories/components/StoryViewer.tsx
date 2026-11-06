@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, MapPin, Pause, Play, X } from 'lucide-react'
 import { useMediaUrl } from '@/data/queries/media'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
@@ -64,7 +65,9 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
 
   if (!slide) return null
 
-  return (
+  // Rendered into <body>: the page transition wraps routes in a transformed element, and a transform turns
+  // `position: fixed` into "fixed to that element", which left a strip of the app header showing above the story.
+  return createPortal(
     <div role="dialog" aria-modal="true" aria-label={`Story: ${story.title}`} className="fixed inset-0 z-[60] grid place-items-center bg-black/90 sm:p-4">
       <div className="relative h-full w-full overflow-hidden bg-slate-900 text-white sm:h-[min(100%,52rem)] sm:w-auto sm:aspect-[9/16] sm:rounded-xl">
         <Backdrop memory={memory} />
@@ -112,6 +115,7 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
           <button type="button" onClick={next} aria-label={index + 1 === slides.length ? 'Finish story' : 'Next slide'} className="pointer-events-auto grid size-11 place-items-center rounded-full bg-black/40"><ChevronRight aria-hidden className="size-6" /></button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
