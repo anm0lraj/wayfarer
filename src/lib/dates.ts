@@ -55,3 +55,20 @@ export function zonedIso(date: string, time: string, timeZone: string): string {
   const guess = Date.UTC(y, m - 1, d, hh, mm)
   return new Date(guess - offsetMinutes(new Date(guess), timeZone) * 60000).toISOString()
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * An ISO datetime as its own wall clock, named by the offset it was written with, e.g.
+ * `2026-10-13T10:00:00+08:00` → `13 Oct 2026, 10:00 (UTC+08:00)`. Unlike `format(new Date(iso))` it does not move the
+ * time into the browser's timezone. Without an offset the time is shown as written, unnamed.
+ */
+export function wallClockLabel(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/i.exec(iso)
+  if (!m) return iso
+  const [, y, mo, d, hh, mm, offset] = m as unknown as [string, string, string, string, string, string, string | undefined]
+  const label = `${Number(d)} ${MONTHS[Number(mo) - 1] ?? mo} ${y}, ${hh}:${mm}`
+  if (!offset) return label
+  const zone = offset.toUpperCase() === 'Z' ? '+00:00' : offset.includes(':') ? offset : `${offset.slice(0, 3)}:${offset.slice(3)}`
+  return `${label} (UTC${zone})`
+}
