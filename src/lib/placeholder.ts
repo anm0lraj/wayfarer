@@ -69,25 +69,24 @@ interface Palette {
   accent: string
 }
 
-const GOLDEN: Palette = { sky: ['#2a3a6b', '#e58a6c', '#ffd592'], sun: '#fff1d0', ink: '#1c2236', accent: '#ffb347' }
-const ROSE: Palette = { sky: ['#3b2d62', '#d6628f', '#ffb98f'], sun: '#ffe8d9', ink: '#2a2040', accent: '#ff8fa3' }
-const DAWN: Palette = { sky: ['#1f5062', '#62b5aa', '#f7e4b5'], sun: '#fffbe6', ink: '#13313a', accent: '#f4a259' }
-const BLUE: Palette = { sky: ['#0f1a3f', '#3d5ba8', '#f1aa8b'], sun: '#ffe9d0', ink: '#0b1230', accent: '#ffc46b' }
-const NOON: Palette = { sky: ['#1b6ca8', '#5bb8da', '#fde9c3'], sun: '#fffdf2', ink: '#0f3a4a', accent: '#ff9f68' }
-const SAGE: Palette = { sky: ['#47666a', '#a8c2a6', '#f6e9c9'], sun: '#fffaf0', ink: '#22382f', accent: '#e9b872' }
-const DUSK: Palette = { sky: ['#1d2b4f', '#7a5c8f', '#e9a17a'], sun: '#ffe2c4', ink: '#151a2e', accent: '#ffb86b' }
-const SAND: Palette = { sky: ['#5b7fa6', '#e9b98a', '#fbe6c2'], sun: '#fff6e0', ink: '#3a2a26', accent: '#e07a3f' }
+// Bright, daytime-first palettes. Each sky stays inside one hue family (blue to cyan, or orange to yellow): a blend
+// across the colour wheel goes grey in the middle.
+const CLEAR: Palette = { sky: ['#1a5ff0', '#4fa8ff', '#c4ecff'], sun: '#ffd23f', ink: '#0d3b8a', accent: '#ff9f1c' }
+const TURQ: Palette = { sky: ['#0b86d9', '#3cc8ea', '#d2f7f2'], sun: '#ffcf3a', ink: '#0b4a6e', accent: '#ff7a3d' }
+const AZURE: Palette = { sky: ['#2b5cff', '#6f9dff', '#dbe8ff'], sun: '#ffb627', ink: '#14307a', accent: '#ff9f1c' }
+const MINT: Palette = { sky: ['#1597e5', '#5ad1e6', '#e3fbf1'], sun: '#ffd23f', ink: '#0a5a5e', accent: '#ff6b4a' }
+const GOLDEN: Palette = { sky: ['#ff7b3a', '#ffa94d', '#ffe19a'], sun: '#fff3c4', ink: '#7a2a12', accent: '#ffd23f' }
 
 const PALETTES: Record<Scene, Palette[]> = {
-  coast: [GOLDEN, ROSE, NOON, DAWN, DUSK],
-  temple: [GOLDEN, ROSE, BLUE, DUSK],
-  shrine: [DAWN, SAGE, ROSE, DUSK],
-  fort: [SAND, GOLDEN, DUSK, ROSE],
-  terraces: [DAWN, SAGE, GOLDEN, NOON],
-  mountains: [BLUE, SAGE, DAWN, ROSE],
-  city: [ROSE, BLUE, GOLDEN, DUSK],
-  food: [GOLDEN, ROSE, DAWN, SAGE],
-  hotel: [BLUE, ROSE, GOLDEN, NOON, DUSK],
+  coast: [CLEAR, TURQ, AZURE, MINT, GOLDEN],
+  temple: [CLEAR, AZURE, TURQ, GOLDEN],
+  shrine: [CLEAR, MINT, AZURE, TURQ],
+  fort: [CLEAR, AZURE, GOLDEN, TURQ],
+  terraces: [MINT, CLEAR, TURQ, AZURE],
+  mountains: [CLEAR, AZURE, TURQ, MINT],
+  city: [AZURE, CLEAR, TURQ, GOLDEN],
+  food: [CLEAR, TURQ, MINT, AZURE],
+  hotel: [CLEAR, TURQ, AZURE, MINT, GOLDEN],
 }
 
 // ---------- drawing helpers ----------
@@ -590,7 +589,7 @@ export function placeholderImage(seed: string, label = '', ratio: [number, numbe
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${ht}" preserveAspectRatio="xMidYMid slice">` +
     (mirror ? `<g transform="translate(${w} 0) scale(-1 1)">${SCENES[kind](c)}</g>` : SCENES[kind](c)) +
     // A faint vignette keeps edges calm and gives text laid over the image something to sit on.
-    `<defs><radialGradient id="vg" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></radialGradient></defs><rect width="${w}" height="${ht}" fill="url(#vg)"/>` +
+    `<defs><radialGradient id="vg" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></radialGradient></defs><rect width="${w}" height="${ht}" fill="url(#vg)"/>` +
     (text ? `<text x="${w * 0.06}" y="${ht * 0.92}" font-family="system-ui,sans-serif" font-size="${ht * 0.07}" font-weight="600" fill="white">${text}</text>` : '') +
     `</svg>`
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
