@@ -23,7 +23,8 @@
   --on-secondary: 255 255 255;
   --success: 19 116 68;
   --on-success: 255 255 255;
-  --warning: 156 82 8;
+  /* Dark enough for the 15% badge ("Saved to trip — not booked") on grey panels and the page too, not only on cards. */
+  --warning: 144 74 6;
   --on-warning: 255 255 255;
   --error: 194 29 29;
   --on-error: 255 255 255;
