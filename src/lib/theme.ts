@@ -17,7 +17,7 @@ function read(): ThemePreference {
 export function applyTheme(pref: ThemePreference) {
   const dark = pref === 'dark' || (pref === 'system' && mq().matches)
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0b0f14' : '#0e7490')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0a0f24' : '#1a50f0')
 }
 
 interface ThemeState {

@@ -22,8 +22,8 @@ export default defineConfig({
         name: 'Wayfarer — Travel Planner & Trip Companion',
         short_name: 'Wayfarer',
         description: 'Plan your journey. Experience it. Capture it. Share it.',
-        theme_color: '#0e7490',
-        background_color: '#f6f7f9',
+        theme_color: '#1a50f0',
+        background_color: '#f4f7ff',
         display: 'standalone',
         start_url: '/',
         icons: [

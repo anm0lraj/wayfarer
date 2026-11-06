@@ -35,6 +35,8 @@ describe.each(['light', 'dark'] as const)('WCAG AA contrast — %s theme', (them
     // Badges: coloured text on the same colour at 15% over the surface.
     text(`${c} badge text`, t[c]!, over(t[c]!, 0.15, t.surface!))
   }
+  // Bright orange is a fill, never text: its label must be the dark ink, and orange *text* is the deeper `secondary`.
+  text('accent fill label (ink on bright orange)', t['on-accent']!, t.accent!)
   // The "Saved to trip — not booked" badge sits on cards (surface), grey panels (surface-2) and the page (bg).
   for (const bg of ['surface', 'surface-2', 'bg'] as const) text(`demo booking (warning) badge on ${bg}`, t.warning!, over(t.warning!, 0.15, t[bg]!))
   text('focus ring against the page', t.focus!, t.bg!, 3)

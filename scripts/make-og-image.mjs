@@ -4,7 +4,7 @@ import { chromium } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
 const icon = readFileSync(new URL('../public/icon.svg', import.meta.url), 'utf8')
-const html = `<html><body style="margin:0;width:1200px;height:630px;display:grid;place-items:center;background:linear-gradient(160deg,#0b3b4a,#0e7490 55%,#f59e0b);font-family:Inter,system-ui,sans-serif;color:#fff">
+const html = `<html><body style="margin:0;width:1200px;height:630px;display:grid;place-items:center;background:radial-gradient(circle at 93% 118%,#ff9f1c 0 17%,transparent 17.4%),linear-gradient(160deg,#0a1f7a,#1a50f0 62%,#4c82ff);font-family:Inter,system-ui,sans-serif;color:#fff">
 <div style="text-align:center"><div style="width:140px;height:140px;margin:0 auto 28px">${icon}</div>
 <div style="font-size:92px;font-weight:700;letter-spacing:-1px">Wayfarer</div>
 <div style="font-size:36px;margin-top:14px;opacity:.92">Plan your journey. Experience it. Capture it. Share it.</div></div></body></html>`

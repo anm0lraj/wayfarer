@@ -8,19 +8,22 @@
 
 /* Design tokens. Colors are space-separated RGB channels so Tailwind can apply alpha. */
 :root {
-  /* Cool, crisp neutrals + an ocean-blue brand with a coral accent (live / highlights). */
-  --bg: 246 247 249;
+  /* Electric Blue: a bright blue brand on a cool, clean ground; orange means "happening now" (live, highlights). */
+  --bg: 244 247 255;
   --surface: 255 255 255;
-  --surface-2: 238 240 244;
-  --border: 224 227 233;
+  --surface-2: 232 238 252;
+  --border: 219 227 247;
   /* Edges of inputs and buttons: 3:1 against the surface (WCAG 1.4.11). `--border` stays for quiet dividers. */
-  --border-strong: 118 127 142;
-  --fg: 16 24 40;
-  --fg-muted: 84 94 110;
-  --primary: 14 110 136;
+  --border-strong: 106 120 160;
+  --fg: 16 24 52;
+  --fg-muted: 74 86 120;
+  --primary: 26 80 240;
   --on-primary: 255 255 255;
-  --secondary: 194 35 56;
+  --secondary: 168 66 0;
   --on-secondary: 255 255 255;
+  /* Bright orange: a FILL only (about 2:1 on white), always with `on-accent` ink; orange text uses `secondary`. */
+  --accent: 255 159 28;
+  --on-accent: 38 22 4;
   --success: 19 116 68;
   --on-success: 255 255 255;
   /* Dark enough for the 15% badge ("Saved to trip — not booked") on grey panels and the page too, not only on cards. */
@@ -28,7 +31,7 @@
   --on-warning: 255 255 255;
   --error: 194 29 29;
   --on-error: 255 255 255;
-  --focus: 14 110 136;
+  --focus: 26 80 240;
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -62,24 +65,26 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: 11 15 20;
-  --surface: 19 25 33;
-  --surface-2: 29 37 48;
-  --border: 45 55 69;
-  --border-strong: 112 124 142;
-  --fg: 236 240 245;
-  --fg-muted: 148 160 176;
-  --primary: 56 189 248;
-  --on-primary: 4 30 45;
-  --secondary: 251 113 133;
-  --on-secondary: 50 6 14;
+  --bg: 10 15 36;
+  --surface: 18 27 58;
+  --surface-2: 28 40 82;
+  --border: 42 56 104;
+  --border-strong: 118 134 184;
+  --fg: 238 242 255;
+  --fg-muted: 158 172 210;
+  --primary: 124 156 255;
+  --on-primary: 8 18 60;
+  --secondary: 255 159 28;
+  --on-secondary: 38 22 4;
+  --accent: 255 159 28;
+  --on-accent: 38 22 4;
   --success: 74 222 128;
   --on-success: 5 40 20;
   --warning: 251 191 36;
   --on-warning: 40 25 4;
   --error: 248 113 113;
   --on-error: 50 8 8;
-  --focus: 56 189 248;
+  --focus: 124 156 255;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
   --shadow-lg: 0 12px 40px rgb(0 0 0 / 0.6);

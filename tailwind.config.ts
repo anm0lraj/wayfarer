@@ -12,6 +12,7 @@ export default {
         fg: c('fg'), 'fg-muted': c('fg-muted'),
         primary: { DEFAULT: c('primary'), fg: c('on-primary') },
         secondary: { DEFAULT: c('secondary'), fg: c('on-secondary') },
+        accent: { DEFAULT: c('accent'), fg: c('on-accent') },
         success: { DEFAULT: c('success'), fg: c('on-success') },
         warning: { DEFAULT: c('warning'), fg: c('on-warning') },
         error: { DEFAULT: c('error'), fg: c('on-error') },
