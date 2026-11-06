@@ -1,12 +1,18 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useMatch } from 'react-router-dom'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { liveNavItem, primaryNav, type NavItem } from './navItems'
 import { useActiveTrip } from '@/data/queries/trips'
 import { cn } from '@/lib/cn'
 
+/**
+ * Primary items, with Live Trip first while a trip is active. On the Live Trip page itself only Live is the current
+ * item: `/trips` would otherwise also match `/trips/:id/live` and two items would read as "current page".
+ */
 function useNavItems(): NavItem[] {
   const active = useActiveTrip()
-  return active ? [liveNavItem(active.id), ...primaryNav] : primaryNav
+  const onLive = useMatch('/trips/:tripId/live') !== null
+  const items = onLive ? primaryNav.map((item) => (item.to === '/trips' ? { ...item, end: true } : item)) : primaryNav
+  return active ? [liveNavItem(active.id), ...items] : items
 }
 
 const liveDot = <span aria-hidden className="absolute right-2 top-2 size-2 rounded-full bg-error motion-safe:animate-pulse" />

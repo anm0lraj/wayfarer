@@ -54,6 +54,16 @@ describe('app shell', () => {
     expect(screen.getByText(/Demo date/)).toBeInTheDocument()
   })
 
+  it('marks only Live Trip as the current page while on Live Trip', async () => {
+    useClockStore.setState({ simulatedNow: '2026-10-13T10:00:00+08:00' })
+    renderAt('/trips/trip-bali/live')
+    await screen.findAllByRole('link', { name: /^Live/ })
+    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) {
+      const current = within(nav).getAllByRole('link').filter((a) => a.getAttribute('aria-current') === 'page')
+      expect(current.map((a) => a.textContent)).toEqual([expect.stringMatching(/^Live/)])
+    }
+  })
+
   it('renders the trip workspace with URL-reflected tabs', async () => {
     const router = renderAt('/trips/trip-bali')
     expect(await screen.findByRole('heading', { name: '5 Days in Bali', level: 1 })).toBeInTheDocument()
