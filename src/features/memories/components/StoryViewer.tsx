@@ -72,7 +72,6 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
       <div className="relative h-full w-full overflow-hidden bg-slate-900 text-white sm:h-[min(100%,52rem)] sm:w-auto sm:aspect-[9/16] sm:rounded-xl">
         <Backdrop memory={memory} />
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent" />
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/70 to-transparent" />
 
         <div className="absolute inset-x-0 top-0 z-10 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="flex gap-1" role="progressbar" aria-label="Story progress" aria-valuemin={1} aria-valuemax={slides.length} aria-valuenow={index + 1} aria-valuetext={`Slide ${index + 1} of ${slides.length}`}>
@@ -100,7 +99,7 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
         <button type="button" tabIndex={-1} aria-hidden onClick={prev} className="absolute inset-y-24 left-0 w-1/3" />
         <button type="button" tabIndex={-1} aria-hidden onClick={next} className="absolute inset-y-24 right-0 w-2/3" />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="scrim-text pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-3 px-5 pt-12 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {slide.sticker && <p aria-hidden className="text-6xl drop-shadow">{slide.sticker}</p>}
           {slide.text && <p className="text-2xl font-bold leading-snug drop-shadow">{slide.text}</p>}
           {memory?.caption && memory.kind !== 'text' && <p className="text-sm opacity-90">{memory.caption}</p>}

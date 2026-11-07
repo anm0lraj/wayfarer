@@ -20,7 +20,7 @@ function StoryTile({ story, tripId, cover }: { story: Story; tripId: string; cov
   return (
     <Link to={`/trips/${tripId}/stories/${story.id}`} className="relative block aspect-[9/16] w-32 shrink-0 overflow-hidden rounded-lg bg-surface-2 sm:w-36">
       {url && <img src={url} alt="" className="size-full object-cover" />}
-      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-2.5 text-white">
+      <span className="scrim-text absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-10 text-white [--scrim-fade:2.5rem]">
         <span className="block text-sm font-semibold">{story.title}</span>
         <span className="mt-0.5 flex items-center gap-1 text-xs opacity-90"><v.icon aria-hidden className="size-3" />{v.label} · {story.slides.length} slides</span>
       </span>
