@@ -17,6 +17,7 @@ import { CATEGORY_META } from '../categoryMeta'
 import { itemCategoryForPlace } from '../placeCategory'
 import { suggestNextStart } from '../schedule'
 import type { useItineraryActions } from '../useItineraryActions'
+import { thumbnail } from '@/lib/photos/responsive'
 
 type Actions = ReturnType<typeof useItineraryActions>
 
@@ -107,7 +108,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions, 
               const added = inDay.has(p.id)
               return (
                 <li key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2">
-                  <img src={p.images[0]} alt="" className="size-14 shrink-0 rounded-md object-cover" />
+                  <img src={thumbnail(p.images[0])} alt="" className="size-14 shrink-0 rounded-md object-cover" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{p.name}</p>
                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-fg-muted">

@@ -16,6 +16,7 @@ import { useSavedTrips } from '@/data/queries/publicTrips'
 import { useTrips } from '@/data/queries/trips'
 import { db } from '@/data/db'
 import type { Memory } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 const TABS = ['trips', 'published', 'saved', 'memories'] as const
 type Tab = (typeof TABS)[number]
@@ -33,7 +34,7 @@ function MemoryTile({ memory }: { memory: Memory }) {
   const url = useMediaUrl(memory.mediaKey)
   return (
     <Link to={`/trips/${memory.tripId}/memories`} className="relative block aspect-square overflow-hidden rounded-lg bg-surface-2">
-      {url && <img src={url} alt={memory.caption ?? 'Trip photo'} loading="lazy" className="size-full object-cover" />}
+      {url && <img {...responsiveImage(url, CARD_SIZES)} alt={memory.caption ?? 'Trip photo'} loading="lazy" className="size-full object-cover" />}
     </Link>
   )
 }

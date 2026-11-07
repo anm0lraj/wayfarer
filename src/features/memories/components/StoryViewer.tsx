@@ -5,6 +5,7 @@ import { useMediaUrl } from '@/data/queries/media'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { cn } from '@/lib/cn'
 import type { ItineraryItem, Memory, Story } from '@/types'
+import { responsiveImage } from '@/lib/photos/responsive'
 
 const SLIDE_MS = 6000
 
@@ -18,7 +19,7 @@ interface Props {
 function Backdrop({ memory }: { memory?: Memory }) {
   const url = useMediaUrl(memory?.mediaKey)
   if (!memory) return <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
-  if (memory.kind === 'photo') return url ? <img src={url} alt={memory.caption ?? ''} className="absolute inset-0 size-full object-cover" /> : <div className="absolute inset-0 bg-slate-800" />
+  if (memory.kind === 'photo') return url ? <img {...responsiveImage(url, '100vw')} alt={memory.caption ?? ''} className="absolute inset-0 size-full object-cover" /> : <div className="absolute inset-0 bg-slate-800" />
   if (memory.kind === 'video') return url ? <video src={url} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" aria-label={memory.caption ?? 'Video'} /> : <div className="absolute inset-0 bg-slate-800" />
   if (memory.kind === 'voice') return <div className="absolute inset-0 grid place-items-center bg-slate-800 p-6">{url && <audio src={url} controls aria-label={memory.caption ?? 'Voice note'} className="w-full" />}</div>
   return (

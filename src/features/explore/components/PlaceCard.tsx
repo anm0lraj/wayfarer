@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/cn'
 import type { Place } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 interface PlaceCardProps {
   place: Place
@@ -18,7 +19,7 @@ export function PlaceCard({ place, saved, onSave, onAdd, onShare }: PlaceCardPro
   return (
     <article id={`place-${place.id}`} className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
       <div className="relative aspect-[16/10] bg-surface-2">
-        <img src={place.images[0]} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+        <img {...responsiveImage(place.images[0], CARD_SIZES)} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
         <button
           type="button"
           onClick={onSave}

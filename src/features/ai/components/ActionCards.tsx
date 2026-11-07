@@ -18,6 +18,7 @@ import { cn } from '@/lib/cn'
 import { useServices } from '@/services'
 import type { AIAction, AIMessage, NewDayInput, Place } from '@/types'
 import { DayPreview } from './DayPreview'
+import { thumbnail } from '@/lib/photos/responsive'
 
 type ActionState = 'pending' | 'applied' | 'dismissed' | 'undone'
 
@@ -222,7 +223,7 @@ function PlaceSuggestions({ placeIds, kind, trip, plan, hintDay }: { placeIds: s
           const added = !!targetDay && (plan?.items ?? []).some((i) => i.dayId === targetDay.id && i.placeId === p.id)
           return (
             <li key={p.id} className="flex gap-3 rounded-lg border border-border p-2">
-              <img src={p.images[0]} alt="" className="size-16 shrink-0 rounded-md object-cover" />
+              <img src={thumbnail(p.images[0])} alt="" className="size-16 shrink-0 rounded-md object-cover" />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div>
                   <p className="truncate font-medium">{p.name}</p>

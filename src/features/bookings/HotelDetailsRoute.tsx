@@ -17,6 +17,7 @@ import { cn } from '@/lib/cn'
 import { DemoBadge } from './BookingCard'
 import { nightsBetween, parseHotelSearch, stayTotal, validStay } from './filters'
 import type { Hotel } from '@/types'
+import { responsiveImage, thumbnail } from '@/lib/photos/responsive'
 
 function Gallery({ hotel }: { hotel: Hotel }) {
   const [i, setI] = useState(0)
@@ -26,21 +27,21 @@ function Gallery({ hotel }: { hotel: Hotel }) {
   return (
     <div className="space-y-2">
       <button type="button" onClick={() => setOpen(true)} aria-label={`Open photo ${i + 1} of ${n} full size`} className="block w-full overflow-hidden rounded-lg">
-        <img src={hotel.images[i]} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="aspect-[16/9] w-full object-cover" />
+        <img {...responsiveImage(hotel.images[i], '(min-width: 1024px) 60vw, 100vw')} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="aspect-[16/9] w-full object-cover" />
       </button>
       {n > 1 && (
         <ul className="flex gap-2" aria-label="Photos">
           {hotel.images.map((src, k) => (
             <li key={src}>
               <button type="button" aria-label={`Show photo ${k + 1}`} aria-current={k === i} onClick={() => setI(k)} className={cn('overflow-hidden rounded-md border-2', k === i ? 'border-primary' : 'border-transparent')}>
-                <img src={src} alt="" className="h-14 w-20 object-cover" />
+                <img src={thumbnail(src)} alt="" className="h-14 w-20 object-cover" />
               </button>
             </li>
           ))}
         </ul>
       )}
       <ResponsiveSheet open={open} onOpenChange={setOpen} title={hotel.name} description={`Photo ${i + 1} of ${n}`} wide="dialog">
-        <img src={hotel.images[i]} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="w-full rounded-md object-contain" />
+        <img {...responsiveImage(hotel.images[i], '100vw')} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="w-full rounded-md object-contain" />
         {n > 1 && (
           <div className="mt-3 flex justify-between">
             <Button variant="secondary" onClick={() => go(-1)}><ChevronLeft aria-hidden className="size-4" /> Previous</Button>

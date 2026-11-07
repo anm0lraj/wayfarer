@@ -4,7 +4,7 @@
 //
 //   node scripts/curate-photos.mjs                       pick and encode every id that has no photo yet (resumable)
 //   node scripts/curate-photos.mjs --only a,b            redo these ids (e.g. after changing PINNED or a query)
-//   node scripts/curate-photos.mjs --candidates a,b --out x.html   contact sheet of search candidates, to choose pins
+//   node scripts/curate-photos.mjs --candidates a,b --out x.html [--per 8]   contact sheet of search candidates, to choose pins
 //   node scripts/curate-photos.mjs --sheet x.html        contact sheet of the chosen photos, to review them
 //   node scripts/curate-photos.mjs --reencode            re-encode the chosen photos from the cached downloads (no network)
 //
@@ -26,46 +26,113 @@ const API = 'https://commons.wikimedia.org/w/api.php'
 const UA = 'WayfarerPhotoCurator/1.0 (open-source travel app demo; one-off curation script)'
 const WIDTHS = [640, 1280]
 // WebP quality per width: the large file carries most of the bytes, and at 1280 px a little less detail doesn't show.
-const QUALITY = { 640: 0.62, 1280: Number(process.env.WEBP_QUALITY) || 0.5 }
+const QUALITY = { 640: 0.55, 1280: Number(process.env.WEBP_QUALITY) || 0.4 }
 
 /** id → Commons search. Hotels are fictional: generic, unbranded resort/villa/room photos from the region only. */
 const QUERIES = {
   // destinations
   bali: 'Bali rice terraces landscape', goa: 'Goa beach palm trees', japan: 'Mount Fuji pagoda Chureito',
-  paris: 'Paris Eiffel Tower Seine', jaipur: 'Hawa Mahal Jaipur', delhi: 'India Gate New Delhi', udaipur: 'Udaipur Lake Pichola City Palace',
-  jodhpur: 'Jodhpur blue city Mehrangarh', manali: 'Manali Himachal Pradesh mountains valley',
+  paris: 'Eiffel Tower blue sky', jaipur: 'Hawa Mahal Jaipur', delhi: 'India Gate New Delhi', udaipur: 'Udaipur Lake Pichola City Palace',
+  jodhpur: 'Mehrangarh Fort Jodhpur', manali: 'Manali Himachal',
   // Bali places
-  'p-dps': 'Ngurah Rai International Airport terminal', 'p-seminyak-village': 'Seminyak street Bali', 'p-seminyak-beach': 'Seminyak beach sunset',
-  'p-uluwatu-temple': 'Uluwatu temple cliff', 'p-kecak': 'Kecak dance Uluwatu', 'p-jimbaran-bay': 'Jimbaran beach Bali',
-  'p-tegallalang': 'Tegallalang rice terraces', 'p-tirta-empul': 'Tirta Empul temple', 'p-monkey-forest': 'Ubud Monkey Forest temple',
+  'p-dps': 'Ngurah Rai International Airport terminal', 'p-seminyak-village': 'Seminyak street Bali', 'p-seminyak-beach': 'Seminyak beach',
+  'p-uluwatu-temple': 'Pura Luhur Uluwatu', 'p-kecak': 'Kecak dance Uluwatu', 'p-jimbaran-bay': 'Jimbaran beach Bali',
+  'p-tegallalang': 'Tegallalang rice terraces', 'p-tirta-empul': 'Tirta Empul', 'p-monkey-forest': 'Ubud Monkey Forest temple',
   'p-campuhan': 'Campuhan ridge walk Ubud', 'p-batu-bolong': 'Canggu beach Bali', 'p-tanah-lot': 'Tanah Lot temple',
-  'p-sanur-beach': 'Sanur beach Bali', 'p-spa': 'spa Bali', 'p-kuta-market': 'Ubud art market',
-  'p-sidemen': 'Sidemen Bali', 'p-tukad-cepung': 'Tukad Cepung', 'p-nyang-nyang': 'Nyang Nyang beach Bali',
+  'p-sanur-beach': 'Sanur Beach', 'p-spa': 'Bali spa', 'p-kuta-market': 'Bali market stall',
+  'p-sidemen': 'Mount Agung rice field', 'p-tukad-cepung': 'Tukad Cepung', 'p-nyang-nyang': 'Nyang Nyang',
   // Bali food: the dish or cuisine each place is known for
-  'r-warung-sari': 'nasi campur Bali', 'r-pagi-kitchen': 'smoothie bowl breakfast', 'r-jimbaran-grill': 'grilled seafood Jimbaran',
+  'r-warung-sari': 'nasi campur', 'r-pagi-kitchen': 'smoothie bowl', 'r-jimbaran-grill': 'grilled seafood Bali',
   'r-kayu-dinner': 'sate lilit', 'r-padi-hijau': 'bebek betutu', 'r-ubud-vegan': 'gado-gado', 'r-canggu-cafe': 'brunch avocado toast eggs',
-  'r-sanur-warung': 'ikan bakar grilled fish',
-  // hotels: 1 = outside, 2 = room, 3 = pool
-  'h-seminyak-garden1': 'Bali villa garden', 'h-seminyak-garden2': 'Bali villa bedroom', 'h-seminyak-garden3': 'Bali villa private pool',
-  'h-sunset-boutique1': 'Bali hotel building', 'h-sunset-boutique2': 'hotel room bed Bali', 'h-sunset-boutique3': 'hotel swimming pool Bali',
-  'h-kayu-homestay1': 'Balinese house compound', 'h-kayu-homestay2': 'homestay room Bali', 'h-kayu-homestay3': 'Ubud pool rice field',
-  'h-coral-resort1': 'Bali beach resort', 'h-coral-resort2': 'resort room ocean view', 'h-coral-resort3': 'resort infinity pool Bali',
+  'r-sanur-warung': 'ikan bakar',
+  // hotels: 1 = outside, 2 = room, 3 = pool. Search mostly finds real named hotels, so these ask for generic scenes.
+  'h-seminyak-garden1': 'Ubud villa', 'h-seminyak-garden2': 'Bed in hotel room', 'h-seminyak-garden3': 'swimming pool palm trees',
+  'h-sunset-boutique1': 'Balinese house', 'h-sunset-boutique2': 'Bed in hotel room', 'h-sunset-boutique3': 'outdoor swimming pool tropical',
+  'h-kayu-homestay1': 'Balinese Traditional House', 'h-kayu-homestay2': 'wooden bedroom bed', 'h-kayu-homestay3': 'swimming pool jungle',
+  'h-coral-resort1': 'beach bungalows palm trees', 'h-coral-resort2': 'hotel room sea view', 'h-coral-resort3': 'infinity pool ocean',
   // trip covers and public trips
-  'bali-cover': 'Bali beach sunset', 'goa-cover': 'Goa beach sunset', 'pub-japan': 'Kyoto street Yasaka pagoda', 'pub-bali': 'Ubud rice field Bali',
-  'pub-goa': 'Anjuna beach Goa', 'pub-bali-budget': 'Bali beach boats', 'pub-tokyo-4': 'Tokyo skyline night', 'pub-goa-food': 'Goan fish curry',
+  'bali-cover': 'Padang Padang beach', 'goa-cover': 'Agonda beach', 'pub-japan': 'Kyoto street Yasaka pagoda', 'pub-bali': 'Ubud rice field Bali',
+  'pub-goa': 'Anjuna beach Goa', 'pub-bali-budget': 'Bali beach boats', 'pub-tokyo-4': 'Tokyo Tower daytime', 'pub-goa-food': 'Goan fish curry',
   'pub-ubud-slow': 'Ubud Bali jungle', 'pub-kyoto-3': 'Kyoto temple autumn',
   // Goa and Japan places
   'g-baga': 'Baga beach Goa', 'g-fort-aguada': 'Fort Aguada Goa', 'g-fontainhas': 'Fontainhas Panaji', 'g-palolem': 'Palolem beach',
-  'g-shack': 'beach shack Goa', 'j-senso-ji': 'Senso-ji Asakusa', 'j-tsukiji': 'Tsukiji outer market', 'j-shibuya': 'Shibuya crossing',
-  'j-meiji': 'Meiji Jingu shrine', 'j-ramen': 'tonkotsu ramen', 'j-teamlab': 'teamLab Planets', 'j-yanaka': 'Yanaka Ginza',
+  'g-shack': 'beach shack Goa', 'j-senso-ji': 'Senso-ji Asakusa', 'j-tsukiji': 'Tsukiji sushi', 'j-shibuya': 'Shibuya crossing',
+  'j-meiji': 'Meiji Shrine torii', 'j-ramen': 'tonkotsu ramen', 'j-yanaka': 'Yanaka Ginza',
   'j-fushimi': 'Fushimi Inari torii', 'j-nishiki': 'Nishiki Market Kyoto', 'j-kinkaku': 'Kinkaku-ji', 'j-arashiyama': 'Arashiyama bamboo grove',
-  'j-gion': 'Gion Kyoto street', 'j-kaiseki': 'kaiseki ryori',
+  'j-gion': 'Hanamikoji Gion', 'j-kaiseki': 'kaiseki ryori',
+  // No j-teamlab: its photos show the artworks themselves (still under copyright, and Japan has no freedom of panorama
+  // for art), or else a plain warehouse. It keeps its illustration.
   // seeded memories (Goa trip)
   'goa-1': 'Baga beach sunset Goa', 'goa-2': 'fish thali', 'goa-3': 'Aguada lighthouse', 'goa-4': 'Panaji Latin quarter houses',
 }
 
 /** Hand-picked files for ids that search gets wrong (exact Commons titles, with "File:"). */
-const PINNED = {}
+const PINNED = {
+  jodhpur: 'File:Mehrangarh Fort 2, Jodhpur, Rajasthan, India.jpg', // search: a hazy, washed-out city panorama
+  manali: 'File:Snow Rohtang Range Manali May24 A7CR 00128.jpg', // search: a dark mountain road
+  paris: 'File:Eiffel Tower in 2022 05.jpg', // search: a night shot
+  delhi: 'File:India Gate, New Delhi by Shagil Kannur 6.jpg', // search: a stage in front of the gate
+  'p-kecak': 'File:Kecak fire dance at sunset.jpg', // the wide view, not close-ups of performers
+  'p-sanur-beach': 'File:Morning in Sanur Beach, Bali.jpg', // search: a statue near the beach
+  'p-tirta-empul': 'File:Pura Tirta Empul Bali 20120828b.jpg', // the spouts, not bathers
+  'p-uluwatu-temple': 'File:Kuta Bali Indonesia Pura-Luhur-Uluwatu-03.jpg', // the temple on its cliff
+  'p-nyang-nyang': 'File:Nyangnyangbeach.jpg', // search: a dark sunset, then a Senegalese festival of the same name
+  'p-tukad-cepung': 'File:Tukad Cepung Waterfall (52462237566).jpg', // portrait only; the centre crop keeps the falls
+  'p-spa': 'File:Mansion Resort and Spa in Bali - 31.jpg', // garden carvings and frangipani; search: spa resorts in Malaysia
+  'p-kuta-market': 'File:Bali fruit stall 2.JPG',
+  'r-warung-sari': 'File:Nasi campur, Ubud, Indonesia.jpg',
+  'r-pagi-kitchen': 'File:Green smoothie bowl with berries and seeds.jpg',
+  'r-jimbaran-grill': 'File:Ikan kakap bakar madu.JPG', // grilled snapper; search: a chilli relish
+  'r-kayu-dinner': 'File:Nasi Campur Ayam Bali.jpg', // with sate lilit
+  'r-padi-hijau': 'File:Bebek tutu.jpg',
+  'r-ubud-vegan': 'File:Gado-gado - Bali 2025-09-25.jpg',
+  'r-canggu-cafe': 'File:NOT avocado on toast with fried egg - Black Mocha 2025-08-12.jpg',
+  'r-sanur-warung': 'File:Gurame bakar kecap 2.JPG',
+  'h-kayu-homestay1': 'File:Balinese Traditional House.jpg',
+  'h-kayu-homestay2': 'File:Bed in hotel room 4.jpg',
+  'h-sunset-boutique2': 'File:Bed in hotel room 2.jpg',
+  'goa-1': 'File:Baga beach sun set view with aura.jpg',
+  'goa-2': 'File:Fish Curry Rice Thali (25910628531).jpg', // search: an Assamese thali
+  'goa-3': 'File:Aguada sunset.jpg',
+  'goa-4': 'File:Streets of Fontainhas, Panaji (02).jpg',
+  'bali-cover': 'File:Sunset, Kuta, Bali, Indonesia, 20220825 1755 0879.jpg',
+  'goa-cover': 'File:Mandrem Beach at sunset 2, Mandrem, Goa, India.jpg',
+  'pub-japan': 'File:Yasaka-dori early morning with street lanterns and the Tower of Yasaka (Hokan-ji Temple), Kyoto, Japan.jpg',
+  'pub-bali': 'File:Rice fields, Bedulu near Ubud, Bali, Indonesia, 20220824 1039 0665.jpg',
+  'pub-goa': 'File:Anjuna Beach 25012016.jpg',
+  'pub-bali-budget': 'File:Jerman Beach, Kuta, Bali, Indonesia, 20220825 1329 0831.jpg',
+  'pub-tokyo-4': 'File:Tokyo Tower, Minato City.jpg',
+  'pub-goa-food': 'File:Goan typical meal -- fish, curry and rice.jpg',
+  'pub-ubud-slow': 'File:500px photo (137035547).jpeg', // search: a named hotel
+  'pub-kyoto-3': 'File:Kiyomizu-dera, Kyoto, November 2016 -01.jpg',
+  'g-baga': 'File:Baga Beach-Goa India-Andres Larin.jpg',
+  'g-fort-aguada': 'File:Fort Aguada, Goa, India.jpg', // search: a resort from above
+  'g-fontainhas': 'File:Streets of Fontainhas, Panaji (03).jpg',
+  'g-palolem': 'File:Palolem Beach, South Goa.jpg',
+  'g-shack': 'File:Sunloungers at Palolem beach.jpg', // shack loungers; search: named shacks and their signs
+  'j-senso-ji': 'File:Senso-ji Temple @ Asakusa (13824517393).jpg',
+  'j-tsukiji': 'File:Tsukiji Outer Market -06.jpg',
+  'j-shibuya': 'File:Tokyo Shibuya Scramble Crossing 2018-10-09.jpg',
+  'j-ramen': 'File:Tonkotsu ramen in Tokyo.jpg',
+  'j-yanaka': 'File:Yanaka Ginza 2.jpg',
+  'j-fushimi': 'File:Torii path with lantern at Fushimi Inari Taisha Shrine, Kyoto, Japan.jpg',
+  'j-nishiki': 'File:Tsukemono shop by collinox in Nishiki Ichiba, Kyoto.jpg',
+  'j-kinkaku': 'File:Water reflection of Kinkaku-ji Temple a sunny day, Kyoto, Japan.jpg',
+  'j-arashiyama': 'File:Bamboo Forest, Arashiyama, Kyoto, Japan.jpg',
+  'j-kaiseki': 'File:IMG-2023-12-2-kaisekifuuteishoku.jpg',
+  'j-meiji': 'File:Meiji Shrine Minami-tamagaki-torii 2023-01-26.jpg', // search: the baseball stadium
+  'j-gion': 'File:JP 日本 Japan 京都 Kyoto Higashiyama-ku Gion 花見小路通 Hanamikoji Dori 10am morning June 2026 N13P 21.jpg',
+  // Hotels: generic scenes whose files don't name a real hotel.
+  'h-seminyak-garden3': 'File:Swimming Pool in a hotel in Tamil Nadu 03.jpg',
+  'h-sunset-boutique1': 'File:Balinese Traditional House Shrines 1452.jpg',
+  'h-kayu-homestay3': 'File:Sigiriya resort5.jpg',
+  'h-coral-resort1': 'File:-bali resort. Tanning at the beach (6288105043).jpg',
+  'h-coral-resort3': 'File:Endless Water (Unsplash).jpg',
+  'h-seminyak-garden1': 'File:Downtown Ubud Bali Indonesia - panoramio (26).jpg',
+  'h-seminyak-garden2': 'File:Bed in hotel room 5.jpg',
+  'h-sunset-boutique3': 'File:GX-213 - Tropical palms sway beside a serene pool leading to a white villa with a curved staircase under clear blue skies.jpg',
+  'h-coral-resort2': 'File:Bed in hotel room 3.jpg',
+}
 
 const OK_LICENCE = /^(cc0|public domain|pd\b|pd-|cc[- ]by(-sa)?[- ]\d)/i
 const BAD_LICENCE = /\b(nc|nd)\b|non-?commercial|no ?deriv|fair use/i
@@ -162,28 +229,17 @@ async function encoder() {
 }
 
 /**
- * Download a 1920 or 1280 px thumbnail once (kept in the cache, so --reencode needs no network). Thumbnails Commons
- * already has are served at once; rendering a new one is rate-limited hard (429 with Retry-After of minutes), as are
- * original files, so try the sizes most likely to exist first and otherwise wait out the block.
+ * Download the 1280 px thumbnail once (kept in the cache, so --reencode needs no network). It is requested from Commons'
+ * own thumb.php at a standard width: upload.wikimedia.org answers 429 for minutes at a time when new renders come from
+ * a shared address. Requests stay a few seconds apart, and a 429 is waited out like any other.
  */
 async function download(id, d) {
   const src = join(CACHE, `${id}.jpg`)
   const key = join(CACHE, `${id}.src`)
   if (existsSync(src) && existsSync(key) && readFileSync(key, 'utf8') === d.thumb) return
-  const sizes = d.width >= 1920 ? ['1920', '1280'] : ['1280']
-  for (let round = 0; ; round++) {
-    for (const size of sizes) {
-      try {
-        writeFileSync(src, await get(d.thumb.replace('/1280px-', `/${size}px-`), 'buffer', { patient: false }))
-        writeFileSync(key, d.thumb)
-        return
-      } catch (e) {
-        if (e.status !== 429 || round >= 3) throw e
-      }
-    }
-    console.warn('  thumbnails rate-limited, waiting 10 minutes')
-    await sleep(600_000)
-  }
+  await sleep(3000)
+  writeFileSync(src, await get(`https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(d.file.replace(/^File:/, ''))}&w=1280`, 'buffer'))
+  writeFileSync(key, d.thumb)
 }
 
 /** Crop the downloaded file to between 16:10 and 2:1 and write WebP at each width. Returns the size and bytes per width. */
@@ -238,17 +294,22 @@ async function main() {
   }
   if (flag('--candidates') !== undefined) {
     // Small thumbnails are downloaded here (rate-limited) rather than hot-linked, so the sheet doesn't trip Commons' limits.
+    const out = flag('--out') ?? join(CACHE, 'candidates.html')
     const rows = []
     for (const id of flag('--candidates').split(',')) {
-      for (const d of (await candidates(id, new Set())).slice(0, 12)) {
+      for (const d of (await candidates(id, new Set())).slice(0, Number(flag('--per')) || 8)) {
         const thumb = join(CACHE, 'thumbs', d.file.replace(/[^\w.-]+/g, '_') + '.jpg')
         mkdirSync(dirname(thumb), { recursive: true })
-        if (!existsSync(thumb)) writeFileSync(thumb, await get(d.thumb.replace(/\/1280px-/, '/330px-'), 'buffer'))
+        try {
+          if (!existsSync(thumb)) writeFileSync(thumb, await get(d.thumb.replace(/\/1280px-/, '/330px-'), 'buffer'))
+        } catch (e) {
+          console.warn(`${id}: ${e.message}`)
+          continue
+        }
         rows.push({ id, img: `file://${thumb}`, title: d.file, licence: d.licence, width: d.width, note: d.quality ? 'QI' : '' })
+        writeFileSync(out, sheetHtml(rows, 'Candidates')) // after each one, so a slow run can be looked at part-way
       }
     }
-    const out = flag('--out') ?? join(CACHE, 'candidates.html')
-    writeFileSync(out, sheetHtml(rows, 'Candidates'))
     return console.log(`Wrote ${out}`)
   }
 

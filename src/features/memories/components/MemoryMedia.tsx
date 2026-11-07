@@ -3,6 +3,7 @@ import { useMediaUrl } from '@/data/queries/media'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useServices } from '@/services'
 import type { Memory } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 /** The content of one memory. Fixed aspect ratios for photos/video so the timeline doesn't jump as media loads. */
 export function MemoryMedia({ memory, className = '' }: { memory: Memory; className?: string }) {
@@ -12,7 +13,7 @@ export function MemoryMedia({ memory, className = '' }: { memory: Memory; classN
 
   switch (memory.kind) {
     case 'photo':
-      return url ? <img src={url} alt={label} loading="lazy" className={`aspect-[4/3] w-full object-cover ${className}`} /> : <Skeleton className={`aspect-[4/3] w-full ${className}`} />
+      return url ? <img {...responsiveImage(url, CARD_SIZES)} alt={label} loading="lazy" className={`aspect-[4/3] w-full object-cover ${className}`} /> : <Skeleton className={`aspect-[4/3] w-full ${className}`} />
     case 'video':
       return url ? <video src={url} controls preload="metadata" aria-label={memory.caption ?? 'Video'} className={`aspect-video w-full bg-black ${className}`} /> : <Skeleton className={`aspect-video w-full ${className}`} />
     case 'voice':

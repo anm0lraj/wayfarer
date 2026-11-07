@@ -7,6 +7,7 @@ import { formatDateRange, tripLengthDays } from '@/lib/dates'
 import { cn } from '@/lib/cn'
 import { fetchPriority } from '@/lib/fetchPriority'
 import type { Trip, TripState } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 const tone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning' | 'error'> = {
   draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'error', completed: 'neutral', archived: 'neutral',
@@ -34,7 +35,7 @@ export function TripCard({ trip, state, countdown, progress, className, priority
       className={cn('group block overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md', className)}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-2">
-        <img src={trip.coverImage} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
+        <img {...responsiveImage(trip.coverImage, CARD_SIZES)} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
         <Badge tone={tone[state]} className="absolute left-3 top-3 bg-surface/95 shadow-sm backdrop-blur">
           {state === 'active' && <span aria-hidden className="size-1.5 rounded-full bg-error motion-safe:animate-pulse" />}
           {stateLabel[state]}

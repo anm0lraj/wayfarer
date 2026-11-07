@@ -18,18 +18,18 @@ beforeEach(async () => {
 const photo = () => new File([new Uint8Array([1, 2, 3, 4])], 'beach.jpg', { type: 'image/jpeg' })
 
 describe('trip cover photo', () => {
-  it('the traveller’s own photo replaces the illustration, and they can go back', async () => {
+  it('the traveller’s own photo replaces the stock cover, and they can go back to the destination photo', async () => {
     const user = userEvent.setup()
     renderApp('/trips/trip-bali')
-    expect((await db.trips.get('trip-bali'))?.coverImage).toMatch(/^data:image\/svg/)
+    expect((await db.trips.get('trip-bali'))?.coverImage).toBe('/photos/bali-cover-1280.webp')
 
     await user.upload(await screen.findByLabelText('Choose a cover photo'), photo())
     await waitFor(async () => expect((await db.trips.get('trip-bali'))?.coverImage).toMatch(/^data:image\/jpeg;base64,/))
 
-    const reset = await screen.findByRole('button', { name: 'Use illustration' })
+    const reset = await screen.findByRole('button', { name: 'Use destination photo' })
     await waitFor(() => expect(reset).toBeEnabled()) // disabled while the first change finishes
     await user.click(reset)
-    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.coverImage).toMatch(/^data:image\/svg/))
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.coverImage).toBe('/photos/bali-1280.webp'))
     await settle()
   })
 })

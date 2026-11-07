@@ -95,7 +95,7 @@ describe('generated illustrations', () => {
     expect(placeholderImage('p-some-new-place-nobody-listed')).toMatch(/^data:image\/svg\+xml/)
   })
 
-  it('cover every image in the seed data, with nothing fetched from another site', () => {
+  it('stand in for every seed image without a stock photo, with nothing fetched from another site', () => {
     const s = buildSeed()
     const urls = [
       ...s.destinations.map((d) => d.heroImage),
@@ -105,6 +105,7 @@ describe('generated illustrations', () => {
       ...s.publicTrips.map((p) => p.coverImage),
     ]
     expect(urls.length).toBeGreaterThan(40)
-    for (const u of urls) expect(u.startsWith('data:image/svg+xml'), u.slice(0, 60)).toBe(true)
+    // Either a self-hosted stock photo (src/lib/photos) or an illustration drawn here.
+    for (const u of urls) expect(u.startsWith('data:image/svg+xml') || /^\/photos\/[a-z0-9-]+-1280\.webp$/.test(u), u.slice(0, 60)).toBe(true)
   })
 })

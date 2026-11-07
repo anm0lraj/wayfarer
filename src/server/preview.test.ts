@@ -38,9 +38,11 @@ describe('link preview tags', () => {
     expect(tags).toContain('twitter:card" content="summary_large_image"')
   })
 
-  it('use the trip’s photo as the picture, or the Wayfarer card when the cover is an illustration', () => {
+  it('use the trip’s photo or stock photo as the picture, or the Wayfarer card when the cover is an illustration', () => {
     expect(buildHead(trip({ coverImage: JPEG_COVER }), 'x', 'https://w.test').tags).toContain('og:image" content="https://w.test/api/og-image?slug=x"')
     expect(buildHead(trip({ coverImage: 'data:image/svg+xml;utf8,<svg/>' }), 'x', 'https://w.test').tags).toContain('og:image" content="https://w.test/og-default.png"')
+    expect(buildHead(trip({ coverImage: '/photos/bali-cover-1280.webp' }), 'x', 'https://w.test').tags).toContain('og:image" content="https://w.test/photos/bali-cover-1280.webp"')
+    expect(buildHead(trip({ coverImage: '/photos/../secret-1280.webp' }), 'x', 'https://w.test').tags).toContain('og-default.png')
     expect(coverIsPhoto(JPEG_COVER)).toBe(true)
     expect(coverIsPhoto('data:image/svg+xml;utf8,<svg/>')).toBe(false)
     expect(decodeCover(JPEG_COVER)).toMatchObject({ type: 'image/jpeg' })

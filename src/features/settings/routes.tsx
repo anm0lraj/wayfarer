@@ -158,6 +158,7 @@ export default function SettingsRoute() {
           <Section title="About" description="How Wayfarer handles your data, and the rules of use.">
             <Button asChild variant="secondary"><Link to="/privacy">Privacy notice</Link></Button>
             <Button asChild variant="secondary"><Link to="/terms">Terms of use</Link></Button>
+            <Button asChild variant="secondary"><Link to="/credits">Photo credits</Link></Button>
             <Button variant="secondary" onClick={() => setFeedbackOpen(true)}>Send feedback</Button>
             <Badge>Version {APP_VERSION}</Badge>
             <FeedbackSheet open={feedbackOpen} onOpenChange={setFeedbackOpen} />
