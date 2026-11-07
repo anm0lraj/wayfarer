@@ -79,6 +79,12 @@
 
 @layer utilities {
   .pb-safe { padding-bottom: var(--safe-bottom); }
+  /* Caption scrim for white text over a picture, set on the text block itself: at least 55% black behind every line
+     (white text stays above 4.5:1 even over a white wall or a bright sky; measured over every seeded illustration),
+     fading out across the block's top padding, which must equal --scrim-fade. */
+  .scrim-text {
+    background-image: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0.55) calc(100% - var(--scrim-fade, 3rem)), rgb(0 0 0 / 0));
+  }
   .pt-safe { padding-top: var(--safe-top); }
   .sr-only-focusable:not(:focus):not(:focus-within) {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;

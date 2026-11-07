@@ -41,6 +41,56 @@ describe('generated illustrations', () => {
     for (let i = 1; i < covers.length; i++) expect(covers[i], `cards ${i - 1} and ${i}`).not.toBe(covers[i - 1])
   })
 
+  it('draw the right scene for every kind of seeded place', () => {
+    const s = buildSeed()
+    for (const p of s.places) {
+      const scene = sceneFor(p.id)
+      if (p.kind === 'restaurant') expect(scene, p.id).toBe('food')
+      if (/temple/.test(p.id)) expect(scene, p.id).toBe('temple')
+      if (/beach/.test(p.id)) expect(scene, p.id).toBe('coast')
+    }
+    for (const id of ['jaipur', 'udaipur', 'delhi']) expect(sceneFor(id)).toBe('fort')
+    for (const id of ['p-tegallalang', 'p-sidemen']) expect(sceneFor(id)).toBe('terraces')
+    expect(sceneFor('paris')).toBe('city')
+    expect(sceneFor('h-kayu-homestay1')).toBe('hotel')
+  })
+
+  it('show the right landmark for known places', () => {
+    expect(svg(placeholderImage('jodhpur'))).toMatch(/#2f6bff|#5a95ff|#8fb8ff|#3d7fe6/) // blue houses below the fort
+    expect(svg(placeholderImage('paris'))).toContain('#9a5a34') // an iron lattice tower
+    expect(svg(placeholderImage('g-fort-aguada'))).toContain('#ff4b3a') // a striped lighthouse
+    expect(svg(placeholderImage('goa-3:Fish thali at the shack'))).toContain('#c9d2df') // steel bowls of a thali
+  })
+
+  it('stay bright: daytime skies and no near-black fills', () => {
+    const s = buildSeed()
+    const urls = [...s.destinations.map((d) => d.heroImage), ...s.places.flatMap((p) => p.images), ...s.hotels.flatMap((h) => h.images)]
+    const lum = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number]
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+    for (const u of urls) {
+      const fills = [...svg(u).matchAll(/(?:fill|stop-color)="(#[0-9a-f]{6})"/g)].map((m) => m[1]!)
+      // Deep colours are small details (thatch, nori, a shadow), never black silhouettes.
+      expect(Math.min(...fills.map(lum)), u.slice(0, 80)).toBeGreaterThan(0.08)
+    }
+    const golden = s.places.filter((p) => svg(p.images[0]!).includes('#ff6a2b')).length
+    expect(golden).toBeLessThan(s.places.length / 3) // golden hour is the exception, not the rule
+  })
+
+  it('are valid, self-contained SVG with unique ids', () => {
+    const s = buildSeed()
+    for (const u of [...s.places.flatMap((p) => p.images), ...s.hotels.flatMap((h) => h.images), ...s.publicTrips.map((p) => p.coverImage)]) {
+      const text = svg(u)
+      expect(new DOMParser().parseFromString(text, 'image/svg+xml').querySelector('parsererror'), u.slice(0, 80)).toBeNull()
+      expect(text).not.toMatch(/href=|url\(http/)
+      // A hotel room draws a small sky in its window as a nested <svg>, which may reuse the outer ids inside it.
+      if (text.includes('<svg x=')) continue
+      const ids = [...text.matchAll(/ id="([^"]+)"/g)].map((m) => m[1])
+      expect(new Set(ids).size, u.slice(0, 80)).toBe(ids.length)
+    }
+  })
+
   it('give any new place an image with no asset to source', () => {
     expect(placeholderImage('p-some-new-place-nobody-listed')).toMatch(/^data:image\/svg\+xml/)
   })
