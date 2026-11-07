@@ -119,12 +119,17 @@ interface Ctx {
   sx: number
   /** The lower-cased seed, for scenes with keyword-chosen variants. */
   seed: string
+  /** A fresh id for each gradient a scene defines. */
+  uid: () => string
 }
 
 const n = (x: number) => Math.round(x * 10) / 10
 
-/** A flat-bottomed puffy cloud. */
-function cloud(x: number, y: number, s: number, col: string): string {
+/** A puffy cloud: a shaded underside, then the lit body slightly above it. */
+function cloud(x: number, y: number, s: number, col: string, shade: string): string {
+  return puff(x, y + s * 0.12, s, shade) + puff(x - s * 0.04, y, s * 0.96, col)
+}
+function puff(x: number, y: number, s: number, col: string): string {
   return `<g fill="${col}"><rect x="${n(x - s * 1.5)}" y="${n(y - s * 0.4)}" width="${n(s * 3)}" height="${n(s * 0.4)}" rx="${n(s * 0.2)}"/>` +
     `<circle cx="${n(x - s * 0.7)}" cy="${n(y - s * 0.4)}" r="${n(s * 0.45)}"/><circle cx="${n(x + s * 0.05)}" cy="${n(y - s * 0.6)}" r="${n(s * 0.65)}"/><circle cx="${n(x + s * 0.8)}" cy="${n(y - s * 0.35)}" r="${n(s * 0.4)}"/></g>`
 }
@@ -145,17 +150,21 @@ function sky(c: Ctx, sunY: number, opts: { clouds?: number; birds?: boolean } = 
   const { w, ht, p, sx, r } = c
   const y = p.low ? sunY + ht * 0.06 : sunY - ht * 0.12
   const R = ht * (p.low ? 0.09 : 0.065)
-  const cloudCol = p.low ? '#fff1d6' : WHITE
+  const cloudCol = p.low ? '#fff4e0' : WHITE
+  const cloudShade = p.low ? '#ffd3a8' : mix(p.sky[2], p.sky[1], 0.35)
   const clouds = Array.from({ length: opts.clouds ?? 2 }, (_, i) => {
     // Keep clouds off the sun: left or right of it, alternating.
     const side = i % 2 === 0 ? -1 : 1
     const cx = Math.min(w * 0.92, Math.max(w * 0.08, sx + side * w * (0.22 + r() * 0.18)))
-    return cloud(cx, ht * (0.14 + r() * 0.16), ht * (0.05 + r() * 0.03), cloudCol)
+    return cloud(cx, ht * (0.14 + r() * 0.16), ht * (0.05 + r() * 0.03), cloudCol, cloudShade)
   }).join('')
   return (
     `<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky[0]}"/><stop offset=".55" stop-color="${p.sky[1]}"/><stop offset="1" stop-color="${p.sky[2]}"/></linearGradient></defs>` +
     `<rect width="${w}" height="${ht}" fill="url(#sk)"/>` +
-    `<circle cx="${n(sx)}" cy="${n(y)}" r="${n(R * 2.1)}" fill="${p.sun}" opacity=".16"/><circle cx="${n(sx)}" cy="${n(y)}" r="${n(R * 1.5)}" fill="${p.sun}" opacity=".3"/><circle cx="${n(sx)}" cy="${n(y)}" r="${n(R)}" fill="${p.sun}"/>` +
+    // A soft bloom of light around a sun that is lit from its centre.
+    `<defs><radialGradient id="bloom"><stop offset="0" stop-color="${p.sun}" stop-opacity=".7"/><stop offset=".35" stop-color="${p.sun}" stop-opacity=".25"/><stop offset="1" stop-color="${p.sun}" stop-opacity="0"/></radialGradient>` +
+    `<radialGradient id="disc" cx=".4" cy=".4"><stop offset="0" stop-color="${lighten(p.sun, 0.6)}"/><stop offset="1" stop-color="${p.sun}"/></radialGradient></defs>` +
+    `<circle cx="${n(sx)}" cy="${n(y)}" r="${n(R * 5)}" fill="url(#bloom)"/><circle cx="${n(sx)}" cy="${n(y)}" r="${n(R)}" fill="url(#disc)"/>` +
     clouds + (opts.birds === false || r() < 0.35 ? '' : birds(c, w * (0.15 + r() * 0.5), ht * (0.12 + r() * 0.12), 2 + Math.floor(r() * 2)))
   )
 }
@@ -171,7 +180,27 @@ function hills(c: Ctx, base: number, amp: number, count: number, fill: string, o
     const cx = (x0 + x1) / 2
     d += ` C${n(cx)} ${n(y0)} ${n(cx)} ${n(y1)} ${n(x1)} ${n(y1)}`
   }
-  return `<path d="${d} L${w} ${ht}Z" fill="${fill}" opacity="${opacity}"/>`
+  // Lit from above: lighter along the ridge, deeper towards the foot, with a thin rim of light on the crest.
+  const id = c.uid()
+  return vgrad(id, lighten(fill, 0.16), deepen(fill, 0.14)) +
+    `<path d="${d} L${w} ${ht}Z" fill="url(#${id})" opacity="${opacity}"/><path d="${d.slice(d.indexOf('L0') + 1).replace(/^0 /, 'M0 ')}" stroke="${WHITE}" stroke-opacity=".35" stroke-width="${n(ht * 0.005)}" fill="none"/>`
+}
+
+/** Atmospheric perspective: the air thickens towards the horizon line at y. */
+function haze(c: Ctx, y: number, depth = 0.14, strength = 0.55): string {
+  const id = c.uid()
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.p.sky[2]}" stop-opacity="0"/><stop offset="1" stop-color="${c.p.sky[2]}" stop-opacity="${strength}"/></linearGradient></defs>` +
+    `<rect y="${n(y - c.ht * depth)}" width="${c.w}" height="${n(c.ht * depth)}" fill="url(#${id})"/>`
+}
+
+/** A soft, blurred contact shadow on the ground. */
+const shadow = (x: number, y: number, rx: number, ry: number, opacity = 0.22) =>
+  `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(ry)}" fill="#0b1d5c" opacity="${opacity}" filter="url(#soft)"/>`
+
+/** A face lit from the top left: [the gradient's definition, the fill that uses it]. */
+function lit(c: Ctx, col: string): [string, string] {
+  const id = c.uid()
+  return [`<defs><linearGradient id="${id}" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="${lighten(col, 0.2)}"/><stop offset="1" stop-color="${deepen(col, 0.08)}"/></linearGradient></defs>`, `url(#${id})`]
 }
 
 /** A vertical gradient fill, defined once under `id`. */
@@ -194,7 +223,8 @@ function palm(c: Ctx, x: number, y: number, height: number, lean: number): strin
       return `<path d="M${n(tx)} ${n(ty)} Q${n(cx)} ${n(cy)} ${n(tipX)} ${n(tipY)} Q${n(cx)} ${n(cy + len * 0.2)} ${n(tx)} ${n(ty)}Z" fill="${i % 2 ? p.green[1] : p.green[2]}"/>`
     })
     .join('')
-  return `<path d="M${n(x)} ${n(y)} Q${n(x + lean * 0.15)} ${n(y - height * 0.6)} ${n(tx)} ${n(ty)}" stroke="#a8652f" stroke-width="${n(height * 0.035)}" stroke-linecap="round" fill="none"/>${fronds}` +
+  return shadow(x + height * 0.1, y, height * 0.2, height * 0.035) +
+    `<path d="M${n(x)} ${n(y)} Q${n(x + lean * 0.15)} ${n(y - height * 0.6)} ${n(tx)} ${n(ty)}" stroke="#a8652f" stroke-width="${n(height * 0.035)}" stroke-linecap="round" fill="none"/>${fronds}` +
     `<circle cx="${n(tx - len * 0.05)}" cy="${n(ty + len * 0.08)}" r="${n(len * 0.06)}" fill="#8a4f22"/><circle cx="${n(tx + len * 0.07)}" cy="${n(ty + len * 0.07)}" r="${n(len * 0.06)}" fill="#8a4f22"/>`
 }
 
@@ -240,8 +270,9 @@ function coast(c: Ctx): string {
   const sail = (x: number) => `<path d="M${n(x)} ${n(hz - ht * 0.005)} L${n(x)} ${n(hz - ht * 0.08)} L${n(x + ht * 0.05)} ${n(hz - ht * 0.005)}Z" fill="${WHITE}"/><path d="M${n(x - ht * 0.02)} ${n(hz)} L${n(x + ht * 0.06)} ${n(hz)}" stroke="${p.ink}" stroke-width="${n(ht * 0.008)}"/>`
   const shore = `M0 ${n(ht * 0.8)} Q${n(w * 0.3)} ${n(ht * 0.74)} ${n(w * 0.62)} ${n(ht * 0.82)} T${w} ${n(ht * 0.79)}`
   const rock = lighthouse ? '#d9763a' : /uluwatu|nyang/.test(seed) ? '#f0d3a0' : '#e58a45'
-  const headland =
-    `<path d="M${L(0)} ${n(ht * 0.86)} L${L(0)} ${n(ht * 0.3)} Q${n(L(w * 0.12))} ${n(ht * 0.26)} ${n(L(w * 0.2))} ${n(ht * 0.4)} L${n(L(w * 0.25))} ${n(ht * 0.6)} Q${n(L(w * 0.31))} ${n(ht * 0.66)} ${n(L(w * 0.28))} ${n(ht * 0.76)}Z" fill="${rock}"/>` +
+  const [rockDef, rockFill] = lit(c, rock)
+  const headland = rockDef +
+    `<path d="M${L(0)} ${n(ht * 0.86)} L${L(0)} ${n(ht * 0.3)} Q${n(L(w * 0.12))} ${n(ht * 0.26)} ${n(L(w * 0.2))} ${n(ht * 0.4)} L${n(L(w * 0.25))} ${n(ht * 0.6)} Q${n(L(w * 0.31))} ${n(ht * 0.66)} ${n(L(w * 0.28))} ${n(ht * 0.76)}Z" fill="${rockFill}"/>` +
     `<path d="M${n(L(w * 0.16))} ${n(ht * 0.34)} L${n(L(w * 0.21))} ${n(ht * 0.42)} L${n(L(w * 0.26))} ${n(ht * 0.6)} Q${n(L(w * 0.32))} ${n(ht * 0.66)} ${n(L(w * 0.29))} ${n(ht * 0.76)} L${n(L(w * 0.18))} ${n(ht * 0.78)}Z" fill="${mix(rock, '#8c3f1c', 0.35)}"/>` +
     `<path d="M${L(0)} ${n(ht * 0.34)} L${L(0)} ${n(ht * 0.29)} Q${n(L(w * 0.12))} ${n(ht * 0.24)} ${n(L(w * 0.21))} ${n(ht * 0.38)} Q${n(L(w * 0.1))} ${n(ht * 0.33)} ${L(0)} ${n(ht * 0.34)}Z" fill="${p.green[1]}"/>` +
     (lighthouse
@@ -251,8 +282,10 @@ function coast(c: Ctx): string {
       : '')
   return (
     sky(c, hz, { clouds: 2 }) +
-    `<path d="M${L(w)} ${n(hz)} Q${n(L(w * 0.82))} ${n(hz - ht * 0.1)} ${n(L(w * 0.6))} ${n(hz)}Z" fill="${p.far}"/>` +
-    vgrad('sea', p.sea[0], p.sea[1]) + `<rect y="${n(hz)}" width="${w}" height="${n(ht - hz)}" fill="url(#sea)"/>${glitter}` +
+    `<path d="M${L(w)} ${n(hz)} Q${n(L(w * 0.82))} ${n(hz - ht * 0.1)} ${n(L(w * 0.6))} ${n(hz)}Z" fill="${p.far}"/>` + haze(c, hz, 0.12) +
+    vgrad('sea', p.sea[0], p.sea[1]) + `<rect y="${n(hz)}" width="${w}" height="${n(ht - hz)}" fill="url(#sea)"/>` +
+    // A bright line where the sea meets the sky, and the sun's path on the water.
+    `<rect y="${n(hz)}" width="${w}" height="${n(ht * 0.006)}" fill="${WHITE}" opacity=".55"/>${glitter}` +
     Array.from({ length: 3 }, (_, i) => {
       const y = hz + ht * (0.06 + i * 0.045)
       return `<path d="M${n(w * (0.1 + i * 0.2))} ${n(y)} q${n(w * 0.03)} ${n(-ht * 0.012)} ${n(w * 0.06)} 0" stroke="${WHITE}" stroke-opacity=".55" stroke-width="${n(ht * 0.006)}" stroke-linecap="round" fill="none"/>`
@@ -261,8 +294,9 @@ function coast(c: Ctx): string {
     `<path d="M0 ${ht} L${shore.slice(1)} L${w} ${ht}Z" fill="${SAND}"/>` +
     `<path d="${shore}" stroke="${WHITE}" stroke-width="${n(ht * 0.014)}" fill="none"/>` +
     (cliffs
-      ? headland + boat(w * 0.56, ht * 0.9, ht * 0.11, p.accent) + boat(w * 0.8, ht * 0.94, ht * 0.08, AZURE.sky[0])
-      : umbrella(c, side ? w * 0.62 : w * 0.38, ht * 0.95, ht * 0.11, p.accent) + boat(side ? w * 0.84 : w * 0.16, ht * 0.9, ht * 0.08, AZURE.sky[0]) +
+      ? headland + shadow(w * 0.57, ht * 0.93, ht * 0.13, ht * 0.02) + boat(w * 0.56, ht * 0.9, ht * 0.11, p.accent) + shadow(w * 0.81, ht * 0.96, ht * 0.1, ht * 0.016) + boat(w * 0.8, ht * 0.94, ht * 0.08, AZURE.sky[0])
+      : shadow(side ? w * 0.64 : w * 0.4, ht * 0.95, ht * 0.11, ht * 0.02) + umbrella(c, side ? w * 0.62 : w * 0.38, ht * 0.95, ht * 0.11, p.accent) +
+        shadow(side ? w * 0.85 : w * 0.17, ht * 0.92, ht * 0.1, ht * 0.016) + boat(side ? w * 0.84 : w * 0.16, ht * 0.9, ht * 0.08, AZURE.sky[0]) +
         palm(c, L(w * 0.12), ht * 1.02, ht * 0.66, side ? ht * 0.1 : -ht * 0.1) +
         palm(c, L(w * 0.2), ht * 1.02, ht * 0.44, side ? ht * 0.06 : -ht * 0.06))
   )
@@ -271,7 +305,7 @@ function coast(c: Ctx): string {
 /** Balinese temple: a terracotta split gate (candi bentar) between tiered meru shrines, on a green lawn. */
 function temple(c: Ctx): string {
   const { w, ht, p, r } = c
-  const brick = '#d8643a'
+  const brick = '#e06a3c'
   const brickShade = '#b04826'
   const thatch = '#5a3424'
   const cx = w * (0.46 + r() * 0.08)
@@ -305,11 +339,11 @@ function temple(c: Ctx): string {
   const flowers = Array.from({ length: 8 }, () => `<circle cx="${n(w * r())}" cy="${n(ht * (0.86 + r() * 0.1))}" r="${n(ht * 0.012)}" fill="${r() > 0.5 ? '#ffffff' : '#ffd23f'}"/>`).join('')
   return (
     sky(c, ht * 0.44) +
-    hills(c, 0.64, 0.1, 5, p.far) +
+    hills(c, 0.64, 0.1, 5, p.far) + haze(c, ht * 0.7, 0.16) +
     hills(c, 0.74, 0.06, 6, p.green[0]) +
     meru(cx - ht * 0.55, ht * 0.07) + meru(cx + ht * 0.6, ht * 0.06) +
     penjor(cx - gap - half - ht * 0.04, -1) +
-    gateHalf(-1) + gateHalf(1) +
+    shadow(cx, base, half + gap, ht * 0.025, 0.3) + gateHalf(-1) + gateHalf(1) +
     `<rect y="${n(base)}" width="${w}" height="${n(ht - base)}" fill="${p.green[1]}"/>` +
     `<path d="M${n(cx - gap)} ${n(base)} L${n(cx + gap)} ${n(base)} L${n(cx + gap * 2.2)} ${ht} L${n(cx - gap * 2.2)} ${ht}Z" fill="#f2d3a6"/>` + flowers +
     palm(c, w * 0.06, ht * 1.02, ht * 0.7, ht * 0.08) + palm(c, w * 0.95, ht * 1.02, ht * 0.5, -ht * 0.06)
@@ -344,7 +378,7 @@ function shrine(c: Ctx): string {
     Array.from({ length: 7 }, () => `<circle cx="${n(bx + (r() - 0.5) * s * 1.6)}" cy="${n(by + (r() - 0.6) * s)}" r="${n(s * (0.35 + r() * 0.25))}" fill="${r() > 0.5 ? '#ffb3cb' : '#ff8fb4'}"/>`).join('')
   return (
     sky(c, ht * 0.36) +
-    hills(c, 0.58, 0.12, 4, p.far) +
+    hills(c, 0.58, 0.12, 4, p.far) + haze(c, ht * 0.66, 0.16) +
     hills(c, 0.72, 0.06, 5, p.green[0]) + pagoda +
     hills(c, 0.84, 0.04, 6, p.green[1]) +
     `<rect y="${n(base)}" width="${w}" height="${n(ht - base)}" fill="#f2d3a6"/>` + torii +
@@ -365,6 +399,9 @@ function fort(c: Ctx): string {
   const stone = /delhi|agra|red/.test(seed) ? '#d04a2c' : /jaipur|pink/.test(seed) ? '#f08a6e' : lake ? '#fff4e2' : '#eba052'
   const shade = lake ? '#f2c890' : mix(stone, '#7a2a12', 0.3)
   const light = lighten(stone, 0.3)
+  const [wallDef, wallFill] = lit(c, stone)
+  const [rockDef, rockFill] = lit(c, '#e39a55')
+  const [palaceDef, palaceFill] = lit(c, light)
   const hill = /jodhpur|jaipur|amber|mehrangarh|hill/.test(seed) || (!lake && h % 3 === 1)
   const blue = /jodhpur|blue/.test(seed)
   const base = lake ? ht * 0.72 : hill ? ht * 0.6 : ht * 0.78
@@ -400,21 +437,21 @@ function fort(c: Ctx): string {
       Array.from({ length: 6 }, (_, i) => `<rect x="${n(w * (0.1 + r() * 0.7))}" y="${n(base + ht * (0.04 + i * 0.035))}" width="${n(w * (0.05 + r() * 0.12))}" height="${n(ht * 0.006)}" fill="${WHITE}" opacity=".5"/>`).join('') +
       boat(w * 0.25, ht * 0.9, ht * 0.06, p.accent)
     : hill
-      ? `<path d="M0 ${ht} L0 ${n(base + ht * 0.12)} Q${n(w * 0.1)} ${n(base + ht * 0.02)} ${n(w * 0.25)} ${n(base)} L${n(w * 0.8)} ${n(base - ht * 0.01)} Q${n(w * 0.92)} ${n(base + ht * 0.04)} ${w} ${n(base + ht * 0.14)} L${w} ${ht}Z" fill="#c97a42"/>` +
-        `<path d="M${n(w * 0.45)} ${ht} L${n(w * 0.55)} ${n(base)} L${n(w * 0.8)} ${n(base - ht * 0.01)} Q${n(w * 0.92)} ${n(base + ht * 0.04)} ${w} ${n(base + ht * 0.14)} L${w} ${ht}Z" fill="#a85f30"/>` + houses
+      ? `<path d="M0 ${ht} L0 ${n(base + ht * 0.12)} Q${n(w * 0.1)} ${n(base + ht * 0.02)} ${n(w * 0.25)} ${n(base)} L${n(w * 0.8)} ${n(base - ht * 0.01)} Q${n(w * 0.92)} ${n(base + ht * 0.04)} ${w} ${n(base + ht * 0.14)} L${w} ${ht}Z" fill="${rockFill}"/>` +
+        `<path d="M${n(w * 0.45)} ${ht} L${n(w * 0.55)} ${n(base)} L${n(w * 0.8)} ${n(base - ht * 0.01)} Q${n(w * 0.92)} ${n(base + ht * 0.04)} ${w} ${n(base + ht * 0.14)} L${w} ${ht}Z" fill="#c4743c" opacity=".7"/>` + houses
       : `<path d="M0 ${ht} L0 ${n(base + ht * 0.02)} Q${n(w * 0.3)} ${n(base - ht * 0.03)} ${n(w * 0.55)} ${n(base + ht * 0.01)} T${w} ${n(base)} L${w} ${ht}Z" fill="${p.green[1]}"/>` +
-        `<rect x="${n(w * 0.3)}" y="${n(base + ht * 0.06)}" width="${n(w * 0.4)}" height="${n(ht * 0.05)}" fill="${p.sea[1]}"/>` +
         // A gateway arch in the wall for forts on flat ground.
         `<path d="M${n(x0 + (x1 - x0) * 0.22)} ${n(base)} L${n(x0 + (x1 - x0) * 0.22)} ${n(wallTop + ht * 0.06)} Q${n(x0 + (x1 - x0) * 0.25)} ${n(wallTop + ht * 0.01)} ${n(x0 + (x1 - x0) * 0.28)} ${n(wallTop + ht * 0.06)} L${n(x0 + (x1 - x0) * 0.28)} ${n(base)}Z" fill="${mix(shade, '#7a2a12', 0.4)}"/>`
   const kites = /jaipur|jodhpur|rajasthan/.test(seed) || h % 2 === 0
     ? kite(w * (0.12 + r() * 0.1), ht * 0.16, ht * 0.035, p.accent) + kite(w * (0.8 + r() * 0.1), ht * 0.1, ht * 0.028, '#ff4fa0')
     : ''
   return (
-    sky(c, ht * 0.42, { clouds: 1 }) + hills(c, 0.62, 0.08, 5, p.far) + kites +
-    `<rect x="${n(x0)}" y="${n(wallTop)}" width="${n(x1 - x0)}" height="${n(base - wallTop)}" fill="${stone}"/>` +
+    sky(c, ht * 0.42, { clouds: 1 }) + hills(c, 0.62, 0.08, 5, p.far) + haze(c, ht * 0.66, 0.16) + kites +
+    wallDef + palaceDef + rockDef +
+    `<rect x="${n(x0)}" y="${n(wallTop)}" width="${n(x1 - x0)}" height="${n(base - wallTop)}" fill="${wallFill}"/>` +
     `<rect x="${n(x0)}" y="${n(base - ht * 0.03)}" width="${n(x1 - x0)}" height="${n(ht * 0.03)}" fill="${shade}"/>` + merlons(x0, x1, wallTop) +
     bastion(x0) + bastion(x1) + bastion((x0 + x1) / 2 + w * 0.17) +
-    `<rect x="${n(px)}" y="${n(pTop)}" width="${n(pw)}" height="${n(wallTop - pTop + ht * 0.02)}" fill="${light}"/>` + arches +
+    `<rect x="${n(px)}" y="${n(pTop)}" width="${n(pw)}" height="${n(wallTop - pTop + ht * 0.02)}" fill="${palaceFill}"/>` + arches +
     `<rect x="${n(px)}" y="${n(pTop + ht * 0.15)}" width="${n(pw)}" height="${n(ht * 0.012)}" fill="${shade}"/>` +
     dome(px + pw * 0.12, pTop - ht * 0.03, ht * 0.035) + dome(px + pw * 0.5, pTop - ht * 0.045, ht * 0.05) + dome(px + pw * 0.88, pTop - ht * 0.03, ht * 0.035) +
     ground
@@ -444,7 +481,7 @@ function terraces(c: Ctx): string {
     `<rect x="${n(x - s * 0.04)}" y="${n(y - s * 0.4)}" width="${n(s * 0.08)}" height="${n(s * 0.4)}" fill="#a8652f"/><rect x="${n(x + s * 0.5)}" y="${n(y - s * 0.4)}" width="${n(s * 0.08)}" height="${n(s * 0.4)}" fill="#a8652f"/>` +
     `<path d="M${n(x - s * 0.25)} ${n(y - s * 0.38)} L${n(x + s * 0.27)} ${n(y - s * 0.9)} L${n(x + s * 0.85)} ${n(y - s * 0.38)}Z" fill="#e8a640"/>`
   return (
-    sky(c, ht * 0.36) + volcano +
+    sky(c, ht * 0.36) + volcano + haze(c, ht * 0.56, 0.2) +
     hills(c, 0.52, 0.05, 6, mix(p.far, p.green[0], 0.5)) + bands +
     hut(w * (0.55 + r() * 0.15), ht * 0.72, ht * 0.14) +
     palm(c, w * 0.9, ht * 0.98, ht * 0.62, -ht * 0.07) + palm(c, w * 0.8, ht * 1.0, ht * 0.42, -ht * 0.04)
@@ -488,7 +525,7 @@ function mountains(c: Ctx): string {
   return (
     sky(c, ht * 0.38) +
     peak(w * (0.68 + m1 * 0.1), ht * 0.16, w * 0.36, deepen(range, 0.05)) +
-    peak(w * 0.28, ht * 0.28, w * 0.36, range) +
+    peak(w * 0.28, ht * 0.28, w * 0.36, range) + haze(c, ht * 0.7, 0.22, 0.65) +
     hills(c, 0.68, 0.08, 5, p.green[0]) +
     vgrad('lake', p.sea[0], p.sea[1]) +
     `<rect y="${n(ht * 0.78)}" width="${w}" height="${n(ht * 0.22)}" fill="url(#lake)"/>` +
@@ -559,7 +596,7 @@ function city(c: Ctx): string {
       : `<path d="M${n(dx - ht * 0.12)} ${n(ht * 0.72)} Q${n(dx)} ${n(ht * 0.34)} ${n(dx + ht * 0.12)} ${n(ht * 0.72)}Z" fill="${lighten(p.far, 0.1)}"/><rect x="${n(dx - ht * 0.004)}" y="${n(ht * 0.27)}" width="${n(ht * 0.008)}" height="${n(ht * 0.1)}" fill="${lighten(p.far, 0.1)}"/>`
   return (
     sky(c, ht * 0.5) +
-    far(ht * 0.72) + (town ? '' : lm) + (town ? houses(ht * 0.86) : blocks(ht * 0.86)) +
+    far(ht * 0.72) + haze(c, ht * 0.74, 0.18) + (town ? '' : lm) + (town ? houses(ht * 0.86) : blocks(ht * 0.86)) +
     vgrad('riv', p.sea[0], p.sea[1]) +
     `<rect y="${n(ht * 0.86)}" width="${w}" height="${n(ht * 0.14)}" fill="url(#riv)"/>` +
     `<rect y="${n(ht * 0.86)}" width="${w}" height="${n(ht * 0.012)}" fill="${WHITE}" opacity=".7"/>` +
@@ -581,7 +618,7 @@ function food(c: Ctx): string {
   const cloth = vgrad('tb', table, deepen(table, 0.08)) + `<rect width="${w}" height="${ht}" fill="url(#tb)"/>` +
     Array.from({ length: 8 }, (_, i) => `<rect x="${n((i * w) / 8)}" width="${n(w / 16)}" height="${ht}" fill="${stripe}" opacity=".5"/>`).join('')
   const plate = (x: number, y: number, rad: number, rim = '#ffffff', well = '#f3f6fb') =>
-    `<circle cx="${n(x + ht * 0.015)}" cy="${n(y + ht * 0.025)}" r="${n(rad)}" fill="#0b1d5c" opacity=".18"/><circle cx="${n(x)}" cy="${n(y)}" r="${n(rad)}" fill="${rim}"/><circle cx="${n(x)}" cy="${n(y)}" r="${n(rad * 0.84)}" fill="${well}"/>`
+    `<circle cx="${n(x + ht * 0.02)}" cy="${n(y + ht * 0.035)}" r="${n(rad)}" fill="#0b1d5c" opacity=".35" filter="url(#soft)"/><circle cx="${n(x)}" cy="${n(y)}" r="${n(rad)}" fill="${rim}"/><circle cx="${n(x)}" cy="${n(y)}" r="${n(rad * 0.84)}" fill="${well}"/><path d="M${n(x - rad * 0.92)} ${n(y)} A${n(rad * 0.92)} ${n(rad * 0.92)} 0 0 1 ${n(x)} ${n(y - rad * 0.92)}" stroke="${WHITE}" stroke-width="${n(rad * 0.05)}" stroke-linecap="round" fill="none" opacity=".9"/>`
   const leaf = (x: number, y: number, rot: number, s: number) => `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(s)}" ry="${n(s * 0.45)}" transform="rotate(${rot} ${n(x)} ${n(y)})" fill="${p.green[1]}"/><path d="M${n(x - s)} ${n(y)} L${n(x + s)} ${n(y)}" transform="rotate(${rot} ${n(x)} ${n(y)})" stroke="${p.green[2]}" stroke-width="${n(s * 0.06)}"/>`
   const lime = (x: number, y: number, s: number) => `<circle cx="${n(x)}" cy="${n(y)}" r="${n(s)}" fill="#7ccf3a"/><circle cx="${n(x)}" cy="${n(y)}" r="${n(s * 0.78)}" fill="#d9f59a"/>` +
     [0, 60, 120].map((a) => `<path d="M${n(x - s * 0.78)} ${n(y)} L${n(x + s * 0.78)} ${n(y)}" transform="rotate(${a} ${n(x)} ${n(y)})" stroke="#9fdc5a" stroke-width="${n(s * 0.08)}"/>`).join('')
@@ -652,9 +689,10 @@ function villa(c: Ctx): string {
     `<rect x="${n(bx + bw * 0.32)}" y="${n(by - ht * 0.16)}" width="${n(bw * 0.61)}" height="${n(ht * 0.022)}" fill="#dfe8f7"/>`
   const bougainvillea = Array.from({ length: 12 }, () => `<circle cx="${n(bx - w * 0.01 + r() * w * 0.08)}" cy="${n(by + ht * (0.02 + r() * 0.2))}" r="${n(ht * (0.018 + r() * 0.018))}" fill="${r() > 0.4 ? '#ff4fa0' : '#ff8cc6'}"/>`).join('')
   return (
-    sky(c, ht * 0.5) + hills(c, 0.6, 0.07, 6, p.green[0]) +
+    sky(c, ht * 0.5) + hills(c, 0.6, 0.07, 6, p.green[0]) + haze(c, ht * 0.62, 0.12) +
     upper +
-    `<rect x="${n(bx)}" y="${n(by)}" width="${n(bw)}" height="${n(bh)}" fill="${WHITE}"/><rect x="${n(bx + bw * 0.86)}" y="${n(by)}" width="${n(bw * 0.14)}" height="${n(bh)}" fill="#dfe8f7"/>` +
+    shadow(bx + bw * 0.55, by + bh, bw * 0.6, ht * 0.03, 0.3) +
+    `<rect x="${n(bx)}" y="${n(by)}" width="${n(bw)}" height="${n(bh)}" fill="${WHITE}"/><rect x="${n(bx)}" y="${n(by)}" width="${n(bw)}" height="${n(ht * 0.03)}" fill="#0b1d5c" opacity=".1"/><rect x="${n(bx + bw * 0.86)}" y="${n(by)}" width="${n(bw * 0.14)}" height="${n(bh)}" fill="#dfe8f7"/>` +
     `<rect x="${n(bx - w * 0.02)}" y="${n(by - ht * 0.02)}" width="${n(bw + w * 0.04)}" height="${n(ht * 0.025)}" fill="#dfe8f7"/>` +
     panes + bougainvillea +
     `<rect y="${n(ht * 0.74)}" width="${w}" height="${n(ht * 0.26)}" fill="#f6e7cf"/>` + lounger(c, w * 0.72, ht * 0.76) + lounger(c, w * 0.81, ht * 0.76) +
@@ -672,14 +710,16 @@ function tower(c: Ctx): string {
   const floors = 7
   const fh = (ht * 0.6 - top) / floors
   const face = ['#ffffff', '#ffe9d6', '#e3ecff'][c.h % 3]!
+  const [faceDef, faceFill] = lit(c, face)
   const rows = Array.from({ length: floors }, (_, i) => {
     const y = top + i * fh
     return Array.from({ length: 5 }, (_, k) => `<rect x="${n(bx + bw * (0.05 + k * 0.19))}" y="${n(y + fh * 0.18)}" width="${n(bw * 0.14)}" height="${n(fh * 0.55)}" fill="${p.glass}"/>`).join('') +
       `<rect x="${n(bx - w * 0.01)}" y="${n(y + fh * 0.74)}" width="${n(bw + w * 0.02)}" height="${n(fh * 0.16)}" fill="${i % 2 ? p.accent : AZURE.sky[0]}" opacity="${r() > 0.5 ? 1 : 0.85}"/>`
   }).join('')
   return (
-    sky(c, ht * 0.3) + hills(c, 0.62, 0.06, 6, p.green[0]) +
-    `<rect x="${n(bx)}" y="${n(top)}" width="${n(bw)}" height="${n(ht * 0.62 - top)}" fill="${face}"/><rect x="${n(bx + bw * 0.9)}" y="${n(top)}" width="${n(bw * 0.1)}" height="${n(ht * 0.62 - top)}" fill="${deepen(face, 0.1)}"/>` + rows +
+    sky(c, ht * 0.3) + hills(c, 0.62, 0.06, 6, p.green[0]) + haze(c, ht * 0.64, 0.12) + faceDef +
+    shadow(bx + bw * 0.6, ht * 0.63, bw * 0.7, ht * 0.03, 0.3) +
+    `<rect x="${n(bx)}" y="${n(top)}" width="${n(bw)}" height="${n(ht * 0.62 - top)}" fill="${faceFill}"/><rect x="${n(bx + bw * 0.9)}" y="${n(top)}" width="${n(bw * 0.1)}" height="${n(ht * 0.62 - top)}" fill="${deepen(face, 0.1)}"/>` + rows +
     `<rect x="${n(bx - w * 0.015)}" y="${n(top - ht * 0.025)}" width="${n(bw + w * 0.03)}" height="${n(ht * 0.025)}" fill="${p.ink}"/>` +
     `<rect y="${n(ht * 0.62)}" width="${w}" height="${n(ht * 0.38)}" fill="#f6e7cf"/>` +
     pool(c, w * 0.04, ht * 0.7, w * 0.92, ht * 0.2) +
@@ -700,7 +740,7 @@ function huts(c: Ctx): string {
   const xs = [0.2, 0.42, 0.66, 0.86].map((x) => w * (x + (r() - 0.5) * 0.04))
   const flowers = Array.from({ length: 9 }, () => `<circle cx="${n(w * r())}" cy="${n(ht * (0.78 + r() * 0.16))}" r="${n(ht * 0.014)}" fill="${r() > 0.5 ? '#ff4fa0' : '#ffd23f'}"/>`).join('')
   return (
-    sky(c, ht * 0.4) + hills(c, 0.56, 0.1, 5, p.far) +
+    sky(c, ht * 0.4) + hills(c, 0.56, 0.1, 5, p.far) + haze(c, ht * 0.62, 0.14) +
     hills(c, 0.68, 0.04, 6, p.green[0]) +
     palm(c, w * 0.32, ht * 0.72, ht * 0.62, ht * 0.05) + palm(c, w * 0.56, ht * 0.72, ht * 0.5, -ht * 0.06) +
     xs.map((x, i) => hut(x, ht * (0.16 - i * 0.01))).join('') +
@@ -717,7 +757,8 @@ function resort(c: Ctx): string {
     Array.from({ length: 9 }, (_, k) => `<rect x="${n(w * (0.1 + k * 0.088))}" y="${n(ht * (0.54 + f * 0.075))}" width="${n(w * 0.05)}" height="${n(ht * 0.045)}" fill="${p.glass}"/><rect x="${n(w * (0.095 + k * 0.088))}" y="${n(ht * (0.585 + f * 0.075))}" width="${n(w * 0.06)}" height="${n(ht * 0.01)}" fill="${r() > 0.5 ? p.accent : '#22c2c9'}"/>`).join('')).join('')
   return (
     sky(c, hz) +
-    vgrad('sea', p.sea[0], p.sea[1]) + `<rect y="${n(hz)}" width="${w}" height="${n(ht * 0.2)}" fill="url(#sea)"/>` +
+    vgrad('sea', p.sea[0], p.sea[1]) + `<rect y="${n(hz)}" width="${w}" height="${n(ht * 0.2)}" fill="url(#sea)"/>` + `<rect y="${n(hz)}" width="${w}" height="${n(ht * 0.006)}" fill="${WHITE}" opacity=".55"/>` +
+    shadow(w * 0.5, ht * 0.71, w * 0.46, ht * 0.03, 0.3) +
     `<rect x="${n(w * 0.07)}" y="${n(ht * 0.5)}" width="${n(w * 0.84)}" height="${n(ht * 0.2)}" fill="${WHITE}"/>` +
     `<rect x="${n(w * 0.05)}" y="${n(ht * 0.49)}" width="${n(w * 0.88)}" height="${n(ht * 0.025)}" fill="${p.ink}"/>` + wing +
     `<rect y="${n(ht * 0.7)}" width="${w}" height="${n(ht * 0.3)}" fill="${SAND}"/>` +
@@ -771,13 +812,20 @@ export function placeholderImage(seed: string, label = '', ratio: [number, numbe
   const list = PALETTES[kind]
   const r = rng(Math.imul(h, 2654435761) ^ 0x9e3779b9)
   // The palette follows the hash (not the shared random stream) so ids that differ by one letter still land apart.
-  const c: Ctx = { w, ht, r, p: list[(h >> 5) % list.length]!, h, sx: w * (0.3 + r() * 0.4), seed: seed.toLowerCase() }
+  let ids = 0
+  const c: Ctx = { w, ht, r, p: list[(h >> 5) % list.length]!, h, sx: w * (0.3 + r() * 0.4), seed: seed.toLowerCase(), uid: () => `g${ids++}` }
   // Half the scenes are mirrored, so two of a kind next to each other don't line up the same way.
   const mirror = (h >> 2) % 2 === 1
   const text = label.replace(/[<>&"]/g, '')
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${ht}" preserveAspectRatio="xMidYMid slice">` +
+    `<defs><filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${n(ht * 0.012)}"/></filter></defs>` +
     (mirror ? `<g transform="translate(${w} 0) scale(-1 1)">${SCENES[kind](c)}</g>` : SCENES[kind](c)) +
+    // Soft light: a glow from the top left, and the foreground settling into a little shade (which also gives text
+    // laid over the bottom of the card a calmer ground).
+    `<defs><linearGradient id="lt" x1="0" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#0b1d5c" stop-opacity="0"/><stop offset="1" stop-color="#0b1d5c" stop-opacity=".12"/></linearGradient></defs>` +
+    `<rect width="${w}" height="${ht}" fill="url(#lt)"/><rect width="${w}" height="${ht}" fill="url(#fg)"/>` +
     (text ? `<rect width="${w}" height="${ht}" fill="#0b1d5c" opacity=".35"/><text x="${w * 0.06}" y="${ht * 0.92}" font-family="system-ui,sans-serif" font-size="${ht * 0.07}" font-weight="600" fill="white">${text}</text>` : '') +
     `</svg>`
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
