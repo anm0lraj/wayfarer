@@ -34,7 +34,7 @@ describe('stock photos (photos.json)', () => {
     const dir = join(process.cwd(), 'public/photos')
     for (const [id] of entries) for (const w of [640, 1280]) expect(existsSync(join(dir, `${id}-${w}.webp`)), `${id}-${w}`).toBe(true)
     const json = readFileSync(join(process.cwd(), 'src/lib/photos/photos.json'), 'utf8')
-    expect(json).not.toMatch(/@/) // no email addresses in credits copied from Commons
+    expect(json).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i) // no email addresses in credits copied from Commons
   })
 })
 
@@ -70,5 +70,19 @@ describe('installImageFallback', () => {
     await vi.waitFor(() => expect(el.getAttribute('src')).toBe(placeholderImage('bali', '', [16, 9])))
     expect(el.hasAttribute('srcset')).toBe(false)
     el.remove()
+  })
+})
+
+describe('seed images', () => {
+  it('are stock photos, except places deliberately left on their illustration', async () => {
+    const { buildSeed } = await import('@/data/seedData')
+    const s = buildSeed()
+    const urls = [
+      ...s.destinations.map((d) => d.heroImage), ...s.places.flatMap((p) => p.images), ...s.hotels.flatMap((h) => h.images),
+      ...s.trips.map((t) => t.coverImage ?? ''), ...s.publicTrips.map((p) => p.coverImage),
+    ]
+    // teamLab's photos show copyrighted artworks (see scripts/curate-photos.mjs), so it keeps its illustration.
+    expect(s.places.filter((p) => !p.images[0]!.startsWith('/photos/')).map((p) => p.id)).toEqual(['j-teamlab'])
+    expect(urls.filter((u) => !u.startsWith('/photos/'))).toHaveLength(1)
   })
 })

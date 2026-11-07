@@ -26,7 +26,7 @@ const API = 'https://commons.wikimedia.org/w/api.php'
 const UA = 'WayfarerPhotoCurator/1.0 (open-source travel app demo; one-off curation script)'
 const WIDTHS = [640, 1280]
 // WebP quality per width: the large file carries most of the bytes, and at 1280 px a little less detail doesn't show.
-const QUALITY = { 640: 0.55, 1280: Number(process.env.WEBP_QUALITY) || 0.4 }
+const QUALITY = { 640: 0.5, 1280: Number(process.env.WEBP_QUALITY) || 0.36 }
 
 /** id → Commons search. Hotels are fictional: generic, unbranded resort/villa/room photos from the region only. */
 const QUERIES = {
@@ -95,8 +95,9 @@ const PINNED = {
   'goa-2': 'File:Fish Curry Rice Thali (25910628531).jpg', // search: an Assamese thali
   'goa-3': 'File:Aguada sunset.jpg',
   'goa-4': 'File:Streets of Fontainhas, Panaji (02).jpg',
-  'bali-cover': 'File:Sunset, Kuta, Bali, Indonesia, 20220825 1755 0879.jpg',
-  'goa-cover': 'File:Mandrem Beach at sunset 2, Mandrem, Goa, India.jpg',
+  'bali-cover': 'File:Padang Padang Beach Bali.jpg', // bright; the first pick was another dark sunset
+  'p-seminyak-beach': 'File:Seminyak Beach 02.jpg', // daytime; search: a dark sunset
+  'goa-cover': 'File:Agonda beach - panoramio.jpg',
   'pub-japan': 'File:Yasaka-dori early morning with street lanterns and the Tower of Yasaka (Hokan-ji Temple), Kyoto, Japan.jpg',
   'pub-bali': 'File:Rice fields, Bedulu near Ubud, Bali, Indonesia, 20220824 1039 0665.jpg',
   'pub-goa': 'File:Anjuna Beach 25012016.jpg',
@@ -133,6 +134,9 @@ const PINNED = {
   'h-sunset-boutique3': 'File:GX-213 - Tropical palms sway beside a serene pool leading to a white villa with a curved staircase under clear blue skies.jpg',
   'h-coral-resort2': 'File:Bed in hotel room 3.jpg',
 }
+
+/** Where to crop a tall photo, from 0 (top) to 1 (bottom); the default is the middle. */
+const FOCUS = { 'p-tukad-cepung': 0.12 } // the opening, foliage and light at the top of the falls
 
 const OK_LICENCE = /^(cc0|public domain|pd\b|pd-|cc[- ]by(-sa)?[- ]\d)/i
 const BAD_LICENCE = /\b(nc|nd)\b|non-?commercial|no ?deriv|fair use/i
@@ -196,7 +200,7 @@ function describe(page) {
   if (m.NonFree?.value === 'true' || BAD_LICENCE.test(licence) || !OK_LICENCE.test(licence)) return { reject: `licence ${licence || '?'}` }
   if (!author) return { reject: 'no author' }
   if (!/jpeg|png/.test(info.mime)) return { reject: info.mime }
-  let licenceUrl = m.LicenseUrl?.value
+  let licenceUrl = m.LicenseUrl?.value?.replace(/^http:/, 'https:')
   if (!licenceUrl && /cc0/i.test(licence)) licenceUrl = 'https://creativecommons.org/publicdomain/zero/1.0/'
   if (!licenceUrl && /public domain|^pd/i.test(licence)) licenceUrl = 'https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain'
   if (!licenceUrl) return { reject: 'no licence url' }
@@ -247,13 +251,13 @@ async function encode(id) {
   const src = join(CACHE, `${id}.jpg`)
   const page = await encoder()
   const dataUrl = `data:image/jpeg;base64,${readFileSync(src).toString('base64')}`
-  const out = await page.evaluate(async ({ dataUrl, widths, quality }) => { // (the browser sniffs PNG behind the JPEG label)
+  const out = await page.evaluate(async ({ dataUrl, widths, quality, focus }) => { // (the browser sniffs PNG behind the JPEG label)
     const img = new Image()
     img.src = dataUrl
     await img.decode()
     let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0
     if (sw / sh > 2) { sw = sh * 2; sx = (img.naturalWidth - sw) / 2 }
-    if (sw / sh < 1.6) { sh = sw / 1.6; sy = (img.naturalHeight - sh) / 2 }
+    if (sw / sh < 1.6) { sh = sw / 1.6; sy = (img.naturalHeight - sh) * focus }
     const res = []
     for (const w of widths) {
       const c = document.createElement('canvas')
@@ -266,7 +270,7 @@ async function encode(id) {
       res.push({ w, h: c.height, data: [...new Uint8Array(await blob.arrayBuffer())] })
     }
     return res
-  }, { dataUrl, widths: WIDTHS, quality: QUALITY })
+  }, { dataUrl, widths: WIDTHS, quality: QUALITY, focus: FOCUS[id] ?? 0.5 })
   await page.close()
   for (const o of out) writeFileSync(join(OUT_DIR, `${id}-${o.w}.webp`), Buffer.from(o.data))
   return { w: out.at(-1).w, h: out.at(-1).h, bytes: out.map((o) => o.data.length) }

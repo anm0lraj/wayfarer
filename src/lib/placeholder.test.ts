@@ -80,7 +80,7 @@ describe('generated illustrations', () => {
 
   it('are valid, self-contained SVG with unique ids', () => {
     const s = buildSeed()
-    for (const u of [...s.places.flatMap((p) => p.images), ...s.hotels.flatMap((h) => h.images), ...s.publicTrips.map((p) => p.coverImage)]) {
+    for (const u of [...s.places.flatMap((p) => p.images), ...s.hotels.flatMap((h) => h.images), ...s.publicTrips.map((p) => p.coverImage)].filter((x) => x.startsWith('data:'))) {
       const text = svg(u)
       expect(new DOMParser().parseFromString(text, 'image/svg+xml').querySelector('parsererror'), u.slice(0, 80)).toBeNull()
       expect(text).not.toMatch(/href=|url\(http/)
