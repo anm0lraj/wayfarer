@@ -12,3 +12,6 @@ test-results
 !.env.development
 !.env.production
 !.env.example
+
+# Photo curation downloads (scripts/curate-photos.mjs)
+.cache
