@@ -96,6 +96,13 @@ describe('itinerary repository', () => {
     const copy = await itineraryRepo.duplicateItem(removed.id)
     expect(copy.position).toBe(1)
   })
+  it('re-timing a day that would run past midnight changes nothing and says why', async () => {
+    const day = await db.items.where('dayId').equals('day-1').toArray()
+    await db.items.update(day[0]!.id, { startTime: '22:30' }) // first stop starts late: the rest can't fit before midnight
+    const before = await db.items.where('dayId').equals('day-1').toArray()
+    await expect(itineraryRepo.retimeDay('day-1')).rejects.toThrow('would start after midnight')
+    expect(await db.items.where('dayId').equals('day-1').toArray()).toEqual(before)
+  })
   it('queues changes for sync', async () => {
     const before = await pendingCount()
     await itineraryRepo.updateItem('item-d1-1', { notes: 'Pre-arranged pickup' })
