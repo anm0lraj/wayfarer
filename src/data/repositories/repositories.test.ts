@@ -211,6 +211,15 @@ describe('trips & public trips', () => {
     expect((await itineraryRepo.listItems(copy.id)).length).toBe(pub.snapshot.items.length)
     expect((await db.publicTrips.get(pub.id))?.title).toBe(pub.title)
   })
+  it('never puts day notes (or any field not chosen for the page) into the published snapshot', async () => {
+    await itineraryRepo.updateDay('day-2', { title: 'Temples', notes: 'PRIVATE: driver Wayan +62 812 5550 1234' })
+    const pub = await publicTripRepo.publish('trip-bali', { description: 'Test', visibility: 'public' })
+    expect(JSON.stringify(pub)).not.toContain('Wayan')
+    expect(JSON.stringify((await db.syncQueue.toArray()).filter((o) => o.entity === 'publicTrips'))).not.toContain('Wayan') // nor in what is sent
+    const day2 = pub.snapshot.days.find((d) => d.id === 'day-2')!
+    expect(Object.keys(day2).sort()).toEqual(['date', 'dayNumber', 'destinationId', 'id', 'title', 'tripId'])
+    expect(day2.title).toBe('Temples')
+  })
   it('deleting a trip cascades', async () => {
     await tripRepo.remove('trip-goa')
     expect(await db.items.where('tripId').equals('trip-goa').count()).toBe(0)
