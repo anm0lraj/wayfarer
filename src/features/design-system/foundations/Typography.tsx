@@ -38,7 +38,7 @@ export function TypographyPage() {
           head={['Step', 'Sample', 'At 390 px', 'At 1440 px', 'Token', 'Use']}
           rows={SCALE.map((s) => [
             <Code key="c">text-{s}</Code>,
-            <span key="s" className="font-bold" style={{ fontSize: `var(--text-${s})` }}>Bali in October</span>,
+            <span key="s" className="whitespace-nowrap font-bold" style={{ fontSize: `var(--text-${s})` }}>Bali in October</span>,
             px(clampPx(baseVars[`text-${s}`] ?? '', 390)),
             px(clampPx(baseVars[`text-${s}`] ?? '', 1440)),
             <Code key="t">{baseVars[`text-${s}`]}</Code>,
