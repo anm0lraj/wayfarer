@@ -1,5 +1,6 @@
 import { Bookmark, CalendarDays } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { Badge } from '@/components/ui/Chip'
 import { fetchPriority } from '@/lib/fetchPriority'
 import { formatMoney } from '@/lib/money'
 import type { PublicTrip } from '@/types'
@@ -13,9 +14,9 @@ export function PublicTripCard({ trip, priority, headingLevel = 3 }: { trip: Pub
     <Link to={`/t/${trip.slug}`} className="lift group block overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-2">
         <img {...responsiveImage(trip.coverImage, FEED_SIZES)} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-surface/95 px-2.5 py-0.5 text-sm font-semibold text-fg shadow-sm">
+        <Badge className="absolute left-3 top-3 bg-surface/95 shadow-sm">
           <CalendarDays aria-hidden className="size-4 text-primary" />{trip.durationDays} days
-        </span>
+        </Badge>
       </div>
       <div className="space-y-1.5 p-4">
         <Heading className="line-clamp-2 text-lg font-bold leading-snug">{trip.title}</Heading>
