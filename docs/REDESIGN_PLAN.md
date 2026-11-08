@@ -20,3 +20,11 @@ Today only the built-in catalogue has photos. A custom activity or a new place g
 - Live search runs through a small Vercel function (`api/`), so any key stays server-side (same pattern as the AI proxy). Candidate providers: **Unsplash API** (best fit: its rules require hotlinking, which suits runtime use; free key), Wikimedia Commons (no key, strong for named landmarks), Google Places Photos (best coverage of small places, paid per request).
 - Needs: the provider's image host in the CSP `img-src`, the privacy notice and `legal.test.tsx` updated (visitors' browsers would contact the image host), attribution shown where the provider requires it, the environment switch pattern (`VITE_PLACE_PHOTOS` mock|live) like weather/routing.
 - Intended end state: curated, self-hosted photos for built-in places; live photos for new places; generated illustrations as the last fallback.
+
+## Waiting on the owner
+
+Steps only the owner can do. Remind them before anything that depends on one.
+
+- **Unsplash variables in Vercel (postponed by the owner).** Project → Settings → Environment Variables, **Preview** scope only: `UNSPLASH_ACCESS_KEY` (the Unsplash Access Key, marked Sensitive) and `UNSPLASH_APP_NAME` = `travel_planner_app` (the Unsplash app is registered as "Travel Planner App"). Never `VITE_`-prefixed. Production gets them only after phase 4 is checked on the preview and merged to `main`, ideally with a fresh key (the current one was once pasted into a chat) and Unsplash production access applied for (demo mode is 50 requests/hour). Phase 4 can be built and tested against the mock without them; real photos appear on the preview once they are set.
+- **Optional, for live testing in a Claude cloud session:** a network secret on the "wayfarer" environment for host `api.unsplash.com`, header `Authorization`, value `Client-ID <Access Key>`.
+- **Decision pending:** should undoing an archive (or restoring a trip) return a trip that was *ready* to ready instead of planning? Today the state machine only allows archived → planning.
