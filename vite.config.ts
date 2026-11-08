@@ -60,6 +60,8 @@ export default defineConfig({
     exclude: ['**/node_modules/**', 'src/**/*.emu.test.ts'], // emulator tests run with npm run test:sync
     // Each test file boots a jsdom app with IndexedDB; running them all at once on a many-core machine starves the
     // first query of CPU and produces random timeouts. A handful of workers is faster overall and stable.
+    // The design-system library reads tokens.css as text (?raw); Vitest blanks CSS files unless they are included here.
+    css: { include: [/tokens\.css/] },
     maxWorkers: 6,
     minWorkers: 1,
     testTimeout: 15_000,

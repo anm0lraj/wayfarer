@@ -10,22 +10,22 @@ export type PreviewTheme = 'light' | 'dark'
 type ThemeChoice = PreviewTheme | 'both'
 type Width = 'fit' | 390 | 820 | 1440
 
-const WIDTHS: { value: Width; label: string }[] = [
-  { value: 'fit', label: 'Fit' },
-  { value: 390, label: 'Phone 390' },
-  { value: 820, label: 'Tablet 820' },
-  { value: 1440, label: 'Desktop 1440' },
+const WIDTHS: { value: Width; label: string; name?: string }[] = [
+  { value: 'fit', label: 'Fit', name: 'Fit to the page' },
+  { value: 390, label: '390', name: 'Phone, 390 px' },
+  { value: 820, label: '820', name: 'Tablet, 820 px' },
+  { value: 1440, label: '1440', name: 'Desktop, 1440 px' },
 ]
 
 const appTheme = (): PreviewTheme => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
 
 /** A row of toggle chips: one choice of several (each chip is a pressed/not pressed button). */
-function Choice<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+function Choice<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string; name?: string }[]; onChange: (v: T) => void }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
       <span aria-hidden className="mr-1 text-xs font-semibold uppercase tracking-wide text-fg-muted">{label}</span>
       {options.map((o) => (
-        <Chip key={String(o.value)} selected={o.value === value} onClick={() => onChange(o.value)} className="min-h-9 px-3 text-xs">{o.label}</Chip>
+        <Chip key={String(o.value)} selected={o.value === value} onClick={() => onChange(o.value)} aria-label={o.name} title={o.name} className="min-h-9 px-3 text-xs">{o.label}</Chip>
       ))}
     </div>
   )
@@ -85,18 +85,20 @@ export function CodeBlock({ code, label = 'Copy code' }: { code: string; label?:
     return () => clearTimeout(t)
   }, [copied])
   return (
-    <div className="relative">
-      <pre className="max-h-96 overflow-auto rounded-md bg-[rgb(16_24_52)] p-4 pr-24 text-sm leading-relaxed text-[rgb(226_232_255)]"><code>{code}</code></pre>
-      <button
-        type="button"
-        onClick={() => {
-          void navigator.clipboard?.writeText(code).then(() => { setCopied(true); announce('Copied to clipboard') }, () => announce('Couldn’t copy. Select the code and copy it by hand.'))
-        }}
-        className="absolute right-2 top-2 inline-flex min-h-9 items-center gap-1.5 rounded-md bg-white/10 px-3 text-xs font-semibold text-white hover:bg-white/20"
-      >
-        {copied ? <Check aria-hidden className="size-4" /> : <Copy aria-hidden className="size-4" />}
-        {copied ? 'Copied' : label}
-      </button>
+    <div className="overflow-hidden rounded-md bg-[rgb(16_24_52)] text-[rgb(226_232_255)]">
+      <div className="flex justify-end border-b border-white/10 px-2 py-1">
+        <button
+          type="button"
+          onClick={() => {
+            void navigator.clipboard?.writeText(code).then(() => { setCopied(true); announce('Copied to clipboard') }, () => announce('Couldn’t copy. Select the code and copy it by hand.'))
+          }}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-xs font-semibold text-white hover:bg-white/10"
+        >
+          {copied ? <Check aria-hidden className="size-4" /> : <Copy aria-hidden className="size-4" />}
+          {copied ? 'Copied' : label}
+        </button>
+      </div>
+      <pre className="max-h-96 overflow-auto p-4 text-sm leading-relaxed"><code>{code}</code></pre>
     </div>
   )
 }

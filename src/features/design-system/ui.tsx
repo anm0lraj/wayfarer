@@ -37,7 +37,7 @@ export function DoDont({ dos, donts }: { dos: ReactNode[]; donts: ReactNode[] })
       <h3 className={cn('mb-2 flex items-center gap-2 font-bold', good ? 'text-success' : 'text-error')}>
         {good ? <Check aria-hidden className="size-5" /> : <X aria-hidden className="size-5" />}{title}
       </h3>
-      <ul className="space-y-1.5 text-sm">{items.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      <ul className="space-y-1.5 text-sm">{items.map((t, i) => <li key={i}>{typeof t === 'string' ? rich(t) : t}</li>)}</ul>
     </div>
   )
   return <div className="grid gap-3 sm:grid-cols-2">{col('Do', dos, true)}{col('Don’t', donts, false)}</div>

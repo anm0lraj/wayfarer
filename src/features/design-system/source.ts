@@ -49,7 +49,7 @@ export function exampleSource(raw: string, id: string): string | undefined {
     if (raw[i] === '{') body = body.replace(/^\s*return\s*/, '')
   } else {
     const end = raw.indexOf('\n', i)
-    body = raw.slice(i, end < 0 ? undefined : end).replace(/,\s*$/, '')
+    body = raw.slice(i, end < 0 ? undefined : end).replace(/[\s,}\]]+$/, '') // a one-line JSX element ends with '>'; drop the object's closing `},` / `}],`
   }
   body = cleanSnippet(body.trim())
   // `render: () => <SheetDemo wide="dialog" />` → show the demo component itself, which holds the state.
