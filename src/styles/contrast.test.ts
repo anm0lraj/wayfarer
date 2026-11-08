@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 type RGB = [number, number, number]
 
+/** Badge fill: the tone at 12% (`bg-primary/[0.12]` etc. in components/ui/Chip.tsx). Keep the two in step. */
+const BADGE_TINT = 0.12
+
 /** Reads `--name: r g b;` declarations from the :root block (light) or the dark block. */
 function tokens(theme: 'light' | 'dark'): Record<string, RGB> {
   const css = readFileSync('src/styles/tokens.css', 'utf8')
@@ -32,13 +35,17 @@ describe.each(['light', 'dark'] as const)('WCAG AA contrast — %s theme', (them
     text(`${c} button label`, t[`on-${c}`]!, t[c]!)
     text(`${c} as text on surface`, t[c]!, t.surface!)
     text(`${c} as text on bg`, t[c]!, t.bg!)
-    // Badges: coloured text on the same colour at 15% over the surface.
-    text(`${c} badge text`, t[c]!, over(t[c]!, 0.15, t.surface!))
+    // Badges (`Badge` in components/ui/Chip.tsx): coloured text on the same colour at BADGE_TINT. Badges sit on cards
+    // (surface), grey panels (surface-2) and the page (bg), so every tone must pass on all three (warning = "Saved to trip — not booked").
+    for (const bg of ['surface', 'surface-2', 'bg'] as const) text(`${c} badge text on ${bg}`, t[c]!, over(t[c]!, BADGE_TINT, t[bg]!))
   }
+  // Neutral and solid badges carry their own opaque fill, so the background behind them doesn't matter.
+  text('neutral badge text (fg on surface-2)', t.fg!, t['surface-2']!)
+  text('solid primary badge', t['on-primary']!, t.primary!)
   // Bright orange is a fill, never text: its label must be the dark ink, and orange *text* is the deeper `secondary`.
   text('accent fill label (ink on bright orange)', t['on-accent']!, t.accent!)
-  // The "Saved to trip — not booked" badge sits on cards (surface), grey panels (surface-2) and the page (bg).
-  for (const bg of ['surface', 'surface-2', 'bg'] as const) text(`demo booking (warning) badge on ${bg}`, t.warning!, over(t.warning!, 0.15, t[bg]!))
+  // Muted ink on the bright orange live card (on-accent at 80%).
+  text('muted ink on the live (accent) card', over(t['on-accent']!, 0.8, t.accent!), t.accent!)
   text('focus ring against the page', t.focus!, t.bg!, 3)
   // WCAG 1.4.11: the edge of an input or button must be visible against what it sits on.
   text('input/button border against surface', t['border-strong'] ?? t.border!, t.surface!, 3)

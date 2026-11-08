@@ -6,12 +6,20 @@
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 
+/*
+ * Bricolage Grotesque (SIL Open Font License 1.1, licence in public/fonts/OFL-BricolageGrotesque.txt), self-hosted like
+ * Inter: the display face for headings only (h1–h3 and `font-display`). Variable in weight (200–800) and optical size,
+ * so big headings get its lively display cut automatically and small ones stay sturdy. Latin + Latin Extended.
+ */
+@font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/bricolage-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/bricolage-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 /* Design tokens. Colors are space-separated RGB channels so Tailwind can apply alpha. */
 :root {
   /* Electric Blue: a bright blue brand on a cool, clean ground; orange means "happening now" (live, highlights). */
   --bg: 244 247 255;
   --surface: 255 255 255;
-  --surface-2: 232 238 252;
+  --surface-2: 238 243 254;
   --border: 219 227 247;
   /* Edges of inputs and buttons: 3:1 against the surface (WCAG 1.4.11). `--border` stays for quiet dividers. */
   --border-strong: 106 120 160;
@@ -24,16 +32,18 @@
   /* Bright orange: a FILL only (about 2:1 on white), always with `on-accent` ink; orange text uses `secondary`. */
   --accent: 255 159 28;
   --on-accent: 38 22 4;
-  --success: 19 116 68;
+  --success: 17 109 64;
   --on-success: 255 255 255;
   /* Dark enough for the 15% badge ("Saved to trip — not booked") on grey panels and the page too, not only on cards. */
   --warning: 144 74 6;
   --on-warning: 255 255 255;
-  --error: 194 29 29;
+  --error: 184 26 26;
   --on-error: 255 255 255;
   --focus: 26 80 240;
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Headings only. Body, controls, prices and data stay in Inter. */
+  --font-display: 'Bricolage Grotesque', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   --text-xs: clamp(0.6875rem, 0.67rem + 0.08vw, 0.75rem);
   --text-sm: clamp(0.78125rem, 0.76rem + 0.1vw, 0.84375rem);
@@ -42,16 +52,27 @@
   --text-xl: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
   --text-2xl: clamp(1.25rem, 1.15rem + 0.6vw, 1.5rem);
   --text-3xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --text-4xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.625rem);
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  /* Generous, friendly corners: controls 12px, cards 16px, hero panels and dialogs 24px. Chips and badges are pills. */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 
   /* Minimum interactive size: 44px for touch, tightened on desktop pointers. */
   --touch: 2.75rem;
-  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
-  --shadow-md: 0 2px 4px rgb(16 24 40 / 0.05), 0 8px 20px rgb(16 24 40 / 0.08);
-  --shadow-lg: 0 8px 16px rgb(16 24 40 / 0.08), 0 24px 48px rgb(16 24 40 / 0.14);
+  /* Soft, layered elevation tinted with the brand ink (not grey haze): a tight contact shadow plus a wide, offset
+     ambient one. `--shadow-primary` / `--shadow-accent` give filled buttons a little lift in their own colour. */
+  --shadow-sm: 0 1px 2px rgb(16 24 52 / 0.06), 0 2px 8px -2px rgb(26 60 160 / 0.1);
+  --shadow-md: 0 1px 3px rgb(16 24 52 / 0.06), 0 10px 24px -8px rgb(26 60 160 / 0.2);
+  --shadow-lg: 0 2px 6px rgb(16 24 52 / 0.06), 0 24px 48px -16px rgb(26 60 160 / 0.3);
+  --shadow-primary: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(16 24 52 / 0.12), 0 6px 16px -6px rgb(26 80 240 / 0.6);
+  --shadow-accent: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 1px 2px rgb(16 24 52 / 0.1), 0 6px 16px -6px rgb(230 120 0 / 0.55);
+  /* Micro-interactions only (hover lift, press). Page-level motion lives in PageTransition. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
 
   --nav-h: 3.5rem;
   --rail-w: 4.5rem;
@@ -67,7 +88,7 @@
 :root[data-theme='dark'] {
   --bg: 10 15 36;
   --surface: 18 27 58;
-  --surface-2: 28 40 82;
+  --surface-2: 24 35 74;
   --border: 42 56 104;
   --border-strong: 118 134 184;
   --fg: 238 242 255;
@@ -85,8 +106,10 @@
   --error: 248 113 113;
   --on-error: 50 8 8;
   --focus: 124 156 255;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
-  --shadow-lg: 0 12px 40px rgb(0 0 0 / 0.6);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35), 0 2px 8px -2px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 1px 3px rgb(0 0 0 / 0.35), 0 12px 28px -8px rgb(0 0 0 / 0.55);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.35), 0 28px 56px -16px rgb(0 0 0 / 0.7);
+  --shadow-primary: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 6px 18px -6px rgb(124 156 255 / 0.45);
+  --shadow-accent: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 6px 18px -6px rgb(255 159 28 / 0.45);
   color-scheme: dark;
 }

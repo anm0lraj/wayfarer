@@ -16,11 +16,11 @@ export function Section({ title, description, to, linkLabel = 'See all', childre
     <section aria-label={title} className={cn('space-y-3', className)}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-2xl font-bold">{title}</h2>
           {description && <p className="text-sm text-fg-muted">{description}</p>}
         </div>
         {to && (
-          <Link to={to} className="inline-flex min-h-touch shrink-0 items-center gap-0.5 text-sm font-semibold text-primary hover:underline">
+          <Link to={to} className="-mr-3 inline-flex min-h-touch shrink-0 items-center gap-0.5 rounded-full px-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10">
             {linkLabel} <ChevronRight aria-hidden className="size-4" />
           </Link>
         )}

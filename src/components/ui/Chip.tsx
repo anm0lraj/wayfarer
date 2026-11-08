@@ -2,14 +2,17 @@ import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes } from 'reac
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
-const chip = cva('inline-flex items-center gap-1.5 rounded-full text-sm font-medium', {
+// Tinted tones are the colour at 12% under text in that colour; src/styles/contrast.test.ts checks every tone on
+// cards, grey panels and the page (BADGE_TINT there must match). `accent` is the solid orange "happening now" badge.
+const chip = cva('inline-flex items-center gap-1.5 rounded-full text-sm font-semibold', {
   variants: {
     tone: {
       neutral: 'bg-surface-2 text-fg',
-      primary: 'bg-primary/15 text-primary',
-      success: 'bg-success/15 text-success',
-      warning: 'bg-warning/15 text-warning',
-      error: 'bg-error/15 text-error',
+      primary: 'bg-primary/[0.12] text-primary',
+      success: 'bg-success/[0.12] text-success',
+      warning: 'bg-warning/[0.12] text-warning',
+      error: 'bg-error/[0.12] text-error',
+      accent: 'bg-accent text-accent-fg',
     },
   },
   defaultVariants: { tone: 'neutral' },
@@ -20,7 +23,7 @@ export function Badge({ className, tone, ...props }: HTMLAttributes<HTMLSpanElem
   return <span className={cn(chip({ tone }), 'px-2.5 py-0.5', className)} {...props} />
 }
 
-/** Selectable filter/interest chip — a toggle button with a 44px hit area. */
+/** Selectable filter/interest chip — a pill toggle button with a 44px hit area; selected is solid Electric Blue. */
 export const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean }>(
   ({ className, selected = false, type = 'button', ...props }, ref) => (
     <button
@@ -28,8 +31,10 @@ export const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButto
       type={type}
       aria-pressed={selected}
       className={cn(
-        'inline-flex min-h-touch items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors',
-        selected ? 'border-primary bg-primary text-primary-fg' : 'border-border-strong bg-surface text-fg hover:bg-surface-2',
+        'inline-flex min-h-touch items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-[background-color,border-color,color,box-shadow] duration-fast ease-out',
+        selected
+          ? 'border-primary bg-primary text-primary-fg shadow-primary'
+          : 'border-border-strong bg-surface text-fg hover:border-primary hover:bg-primary/5 hover:text-primary',
         className,
       )}
       {...props}

@@ -26,10 +26,10 @@ const ratios = { '16/9': 'aspect-[16/9]', '4/3': 'aspect-[4/3]', '3/4': 'aspect-
 export function ImageCard({ src, alt, title, subtitle, meta, badge, ratio = '4/3', className, priority, sizes = CARD_SIZES }: ImageCardProps) {
   return (
     <div className={cn('relative overflow-hidden rounded-lg bg-surface-2', ratios[ratio], className)}>
-      <img {...responsiveImage(src, sizes)} alt={alt} loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover" />
+      <img {...responsiveImage(src, sizes)} alt={alt} loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
       {badge && <div className="absolute left-3 top-3">{badge}</div>}
       <div className="scrim-text absolute inset-x-0 bottom-0 space-y-0.5 px-4 pb-3.5 pt-5 text-white">
-        <p className="truncate text-lg font-semibold leading-tight">{title}</p>
+        <p className="truncate font-display text-xl font-bold leading-tight tracking-tight">{title}</p>
         {subtitle && <p className="line-clamp-2 text-sm leading-snug text-white/90">{subtitle}</p>}
         {meta && <p className="truncate text-sm font-medium leading-snug text-white">{meta}</p>}
       </div>
