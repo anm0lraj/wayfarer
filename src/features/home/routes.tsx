@@ -40,7 +40,7 @@ function LiveBanner({ trip }: { trip: TripWithState }) {
         <span className="block font-display text-xl font-extrabold leading-tight">You’re on {trip.title}{day ? ` — Day ${day}` : ''}</span>
         <span className="mt-0.5 block text-sm font-medium text-accent-fg/80">Today’s plan, your next stop and directions, one tap away</span>
       </span>
-      <span aria-hidden className="hidden min-h-touch shrink-0 items-center gap-1 rounded-full bg-accent-fg px-5 font-bold text-accent sm:inline-flex">
+      <span aria-hidden className="hidden min-h-touch shrink-0 items-center gap-1 rounded-full bg-white px-5 font-bold text-accent-fg shadow-sm sm:inline-flex">
         Open Live Trip <ChevronRight className="size-4" />
       </span>
       <ChevronRight aria-hidden className="size-6 shrink-0 sm:hidden" />

@@ -53,7 +53,7 @@ export function BottomNav() {
 export function NavRail() {
   const items = useNavItems()
   return (
-    <nav aria-label="Primary" className="fixed inset-y-0 left-0 z-30 hidden w-rail flex-col items-center gap-1 border-r border-border bg-surface py-4 pt-safe sm:flex lg:hidden">
+    <nav aria-label="Primary" className="fixed inset-y-0 left-0 z-30 hidden w-rail flex-col items-center gap-1 border-r border-border bg-surface pb-4 pt-[calc(1rem+var(--safe-top))] sm:flex lg:hidden">
       <Brand compact />
       <ul className="mt-4 flex flex-1 flex-col gap-2">
         {items.map(({ to, label, icon: Icon, end, live }) => (

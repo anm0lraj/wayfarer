@@ -118,7 +118,7 @@ export function DestinationDetails() {
         <div className="scrim-text absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 px-4 pb-4 pt-5 text-white sm:px-6 sm:pb-6">
           <div>
             <p className="text-sm text-white/85">{[d.region, d.country].filter(Boolean).join(', ')}</p>
-            <h1 className="text-3xl font-bold sm:text-4xl">{d.name}</h1>
+            <h1 className="text-4xl font-extrabold">{d.name}</h1>
           </div>
           <Button asChild size="lg"><Link to={`/trips/new/destination?destination=${d.id}`}>Plan a Trip</Link></Button>
         </div>
