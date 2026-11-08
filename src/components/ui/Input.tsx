@@ -23,7 +23,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, hint, er
         aria-invalid={!!error}
         aria-describedby={describedBy}
         className={cn(
-          'min-h-touch w-full rounded-md border bg-surface px-3.5 text-base text-fg shadow-sm transition-colors duration-fast placeholder:text-fg-muted hover:border-primary/70 focus-visible:border-primary',
+          'min-h-touch w-full rounded-md border bg-surface px-3.5 text-base text-fg shadow-sm transition-colors duration-fast placeholder:text-fg-muted hover:border-primary/70 focus-visible:border-primary read-only:bg-surface-2 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-fg-muted disabled:hover:border-border-strong',
           error ? 'border-error' : 'border-border-strong',
           className,
         )}

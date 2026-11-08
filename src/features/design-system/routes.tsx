@@ -167,7 +167,7 @@ function Frame() {
   return (
     <main ref={root} data-theme={theme} className="bg-bg p-4 text-fg">
       <h1 className="sr-only">{example.title}</h1>
-      <div className={example.stack ? 'flex flex-col gap-6' : 'flex flex-wrap items-end gap-6'}>{example.render()}</div>
+      <div className={example.stack ? 'flex flex-col gap-6' : 'flex flex-wrap items-start gap-6'}>{example.render()}</div>
     </main>
   )
 }

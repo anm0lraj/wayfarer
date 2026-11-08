@@ -8,6 +8,7 @@ The owner's brief: bright, bold and adventurous, in the Airbnb/Booking spirit; n
 | 2 | Generated illustrations: bright daytime scenes with depth; now the offline/error fallback | Done (`f2700c2`) |
 | 2b | Real photos for the built-in catalogue (destinations, places, food, hotels, covers, memories): Wikimedia Commons, self-hosted WebP 640/1280 with `srcset`, `/credits` page | Done (`3acfb54`) |
 | 3 | Component polish: buttons, cards, chips, live-trip card in orange; heading font; bolder, friendlier copy for headings and empty states; 3D-style illustrations for empty states and onboarding | Done (branch `claude/zen-mendel-f597ao-phase3`): Plus Jakarta Sans throughout, radius/shadow/motion tokens, subtle orange live panels and outlined badges, drawn 3D spot illustrations (no CC0 3D set was reachable), badge contrast on every background |
+| 3b | Design-system library: `/_design` grown into a living reference (foundations, one page per component with typed props docs, patterns), `docs/DESIGN_SYSTEM.md`, drift and accessibility tests | Done (branch `claude/zen-mendel-f597ao-design-system`) |
 | 4 | Automatic photos for new places | Planned (see below) |
 | 5 | Screen-by-screen layout pass, then re-run the UI/UX, accessibility and performance audits | Planned |
 

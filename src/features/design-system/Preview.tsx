@@ -149,7 +149,7 @@ export function Preview({ docId, example, code }: { docId: string; example: Exam
                   title={`${example.title}: ${t} theme at ${width}px`}
                 />
               ) : (
-                <div className={cn(example.stack ? 'flex flex-col gap-6' : 'flex flex-wrap items-end gap-6')}>{example.render()}</div>
+                <div className={cn(example.stack ? 'flex flex-col gap-6' : 'flex flex-wrap items-start gap-6')}>{example.render()}</div>
               )}
             </Stage>
           ))}
