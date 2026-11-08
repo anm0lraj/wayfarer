@@ -24,8 +24,8 @@ import type { TripState } from '@/types'
 // The assistant panel is only needed once opened on desktop, so it stays out of the main bundle.
 const AIPanel = lazy(() => import('@/features/ai/AIPanel').then((m) => ({ default: m.AIPanel })))
 
-const stateTone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning'> = {
-  draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'warning', completed: 'neutral', archived: 'neutral',
+const stateTone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning' | 'accent'> = {
+  draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'accent', completed: 'neutral', archived: 'neutral',
 }
 
 /** Destination, dates, weather and planning progress (spec §10 header). Own component so its hooks stay out of the loading branches. */
@@ -117,7 +117,7 @@ function Workspace({ trip }: { trip: TripWithState }) {
             </Link>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">{trip.title}</h1>
+                <h1 className="text-3xl font-extrabold sm:text-4xl">{trip.title}</h1>
                 <Badge tone={stateTone[trip.effectiveState]}>{stateLabel[trip.effectiveState]}</Badge>
               </div>
               {desktop ? (

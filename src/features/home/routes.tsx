@@ -31,13 +31,19 @@ function greeting(now: Date) {
 function LiveBanner({ trip }: { trip: TripWithState }) {
   const day = currentDayNumber(trip, useNow())
   return (
-    <Link to={`/trips/${trip.id}/live`} className="flex items-center gap-3 rounded-lg bg-secondary p-4 text-secondary-fg shadow-md">
-      <Radio aria-hidden className="size-6 shrink-0 motion-safe:animate-pulse" />
-      <span className="min-w-0 flex-1">
-        <span className="block font-semibold">You’re on {trip.title}{day ? ` — Day ${day}` : ''}</span>
-        <span className="block text-sm opacity-90">Open Live Trip for today’s plan and directions</span>
+    // Bright orange = happening now: the one place on Home that should grab the eye, with dark ink for contrast.
+    <Link to={`/trips/${trip.id}/live`} className="lift flex items-center gap-4 rounded-xl bg-accent p-4 text-accent-fg shadow-accent sm:p-5">
+      <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-accent-fg/10">
+        <Radio className="size-6 motion-safe:animate-pulse" strokeWidth={2.4} />
       </span>
-      <ChevronRight aria-hidden className="size-5 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-xl font-extrabold leading-tight">You’re on {trip.title}{day ? ` — Day ${day}` : ''}</span>
+        <span className="mt-0.5 block text-sm font-medium text-accent-fg/80">Today’s plan, your next stop and directions, one tap away</span>
+      </span>
+      <span aria-hidden className="hidden min-h-touch shrink-0 items-center gap-1 rounded-full bg-accent-fg px-5 font-bold text-accent sm:inline-flex">
+        Open Live Trip <ChevronRight className="size-4" />
+      </span>
+      <ChevronRight aria-hidden className="size-6 shrink-0 sm:hidden" />
     </Link>
   )
 }
@@ -94,8 +100,8 @@ export default function HomeRoute() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{greeting(now)}{session ? `, ${session.user.name}` : ''}</h1>
-          <p className="mt-1 text-fg-muted">Where to next?</p>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">{greeting(now)}{session ? `, ${session.user.name}` : ''}</h1>
+          <p className="mt-1 text-lg text-fg-muted">Where are we heading next?</p>
         </div>
         <Button asChild><Link to="/trips/new/destination"><Plus aria-hidden className="size-5" /> Plan a Trip</Link></Button>
       </header>
@@ -113,8 +119,8 @@ export default function HomeRoute() {
             {trips.isError && <ErrorState title="Couldn’t load your trips" onRetry={() => void trips.refetch()} />}
             {trips.data && upcoming.length === 0 && (
               <EmptyState
-                title="No trips on the horizon"
-                description="Pick a destination and we’ll build a day-by-day plan with you."
+                title="Your next adventure starts here"
+                description="Pick a place you’ve been dreaming about and we’ll sketch out the days together."
                 action={<Button asChild><Link to="/trips/new/destination">Plan a Trip</Link></Button>}
               />
             )}
@@ -129,13 +135,13 @@ export default function HomeRoute() {
             )}
           </Section>
 
-          <Section title="Explore" description="Destinations travellers love right now" to="/explore">
+          <Section title="Explore" description="Places travellers can’t stop talking about" to="/explore">
             {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}
             {destinations.isError && <ErrorState onRetry={() => void destinations.refetch()} />}
             {destinations.data && <CardRow className="xl:grid-cols-3">{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
           </Section>
 
-          <Section title="Inspiration" description="Itineraries from other travellers" to="/explore/itineraries">
+          <Section title="Inspiration" description="Real trips by real travellers. Borrow a plan and make it yours." to="/explore/itineraries">
             {publicTrips.isPending && <SkeletonGroup label="Loading itineraries" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="h-60" /><Skeleton className="h-60" /></SkeletonGroup>}
             {publicTrips.isError && <ErrorState title="Couldn’t load itineraries" onRetry={() => void publicTrips.refetch()} />}
             {publicTrips.data && publicTrips.data.length > 0 && <CardRow>{publicTrips.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</CardRow>}
@@ -151,7 +157,7 @@ export default function HomeRoute() {
               {trips.isPending ? (
                 <Skeleton className="h-40" />
               ) : tasks.length === 0 ? (
-                <Card className="p-4 text-sm text-fg-muted">You’re all caught up. Nice work.</Card>
+                <Card className="p-4 text-sm text-fg-muted">You’re all caught up. Time to start packing!</Card>
               ) : (
                 <PromptList rows={tasks} />
               )}
@@ -159,7 +165,7 @@ export default function HomeRoute() {
           )}
 
           {afterTrip.length > 0 && (
-            <Section title="After your trip" description="Keep the memories and share the plan">
+            <Section title="After your trip" description="Relive the best bits and inspire the next traveller">
               <PromptList rows={afterTrip} />
             </Section>
           )}
@@ -170,7 +176,7 @@ export default function HomeRoute() {
             ) : memories.data && memories.data.length > 0 ? (
               <ul className="grid grid-cols-3 gap-2">{memories.data.map((m) => <li key={m.id}><MemoryThumb memory={m} /></li>)}</ul>
             ) : (
-              <Card className="flex items-center gap-3 p-4 text-sm text-fg-muted"><ImageIcon aria-hidden className="size-5 shrink-0" /> Photos you add during a trip will show up here.</Card>
+              <Card className="flex items-center gap-3 p-4 text-sm text-fg-muted"><ImageIcon aria-hidden className="size-5 shrink-0" /> Snap a photo on your trip and it lands right here.</Card>
             )}
           </Section>
         </aside>
