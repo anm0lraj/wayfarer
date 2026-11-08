@@ -129,20 +129,28 @@ export const itineraryRepo = {
     return copy
   },
 
-  /** Move to `toIndex` within `toDayId` (same or different day). */
+  /**
+   * Move to `toIndex` within `toDayId` (same or different day). One transaction: both days' new orders, the moved item and
+   * both days' travel legs are written (and queued for sync) together, or nothing is, so a failure part-way can't leave
+   * two stops sharing a position or a day measured against a stop that has left it.
+   */
   async moveItem(id: string, toDayId: string, toIndex: number): Promise<void> {
     const current = await db.items.get(id)
     if (!current) throw new Error('Activity not found')
     await requireTripAccess(current.tripId, 'edit')
     const target = await db.days.get(toDayId)
     if (!target || target.tripId !== current.tripId) throw new Error('Day not found in this trip')
-    if (current.dayId !== toDayId) await writeOrder((await dayItems(current.dayId)).filter((i) => i.id !== id))
-    const list = (await dayItems(toDayId)).filter((i) => i.id !== id)
-    list.splice(Math.max(0, Math.min(toIndex, list.length)), 0, { ...current, dayId: toDayId })
-    await put('items', db.items, { ...current, dayId: toDayId, updatedAt: nowIso() })
-    await writeOrder(list)
-    await refreshLegs(toDayId)
-    if (current.dayId !== toDayId) await refreshLegs(current.dayId)
+    await db.transaction('rw', db.tables, async () => {
+      const item = (await db.items.get(id)) ?? current
+      const moved = { ...item, dayId: toDayId, updatedAt: nowIso() }
+      const list = (await dayItems(toDayId)).filter((i) => i.id !== id)
+      list.splice(Math.max(0, Math.min(toIndex, list.length)), 0, moved)
+      await put('items', db.items, moved)
+      if (item.dayId !== toDayId) await writeOrder((await dayItems(item.dayId)).filter((i) => i.id !== id))
+      await writeOrder(list)
+      await refreshLegs(toDayId)
+      if (item.dayId !== toDayId) await refreshLegs(item.dayId)
+    })
   },
 
   async reorder(dayId: string, itemIds: string[]): Promise<void> {

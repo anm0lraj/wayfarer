@@ -49,6 +49,37 @@ describe('itinerary reorder is all-or-nothing', () => {
   })
 })
 
+describe('moving an activity between days is all-or-nothing', () => {
+  const snapshot = async () => (await db.items.where('tripId').equals('trip-bali').toArray())
+    .map((i) => `${i.id}:${i.dayId}:${i.position}:${i.distanceFromPrevKm ?? '-'}`).sort()
+
+  it('leaves both days and the sync queue exactly as they were if a write fails part-way', async () => {
+    const before = await snapshot()
+    const queued = await pendingCount()
+    const realAdd = db.syncQueue.add.bind(db.syncQueue)
+    let calls = 0
+    const spy = vi.spyOn(db.syncQueue, 'add').mockImplementation(((...args: Parameters<typeof realAdd>) => {
+      if (++calls === 3) return Promise.reject(new Error('interrupted'))
+      return realAdd(...args)
+    }) as typeof db.syncQueue.add)
+    await expect(itineraryRepo.moveItem('item-d1-2', 'day-2', 1)).rejects.toThrow('interrupted')
+    spy.mockRestore()
+    expect(await snapshot()).toEqual(before) // not in both days, not in neither, no positions rewritten
+    expect(await pendingCount()).toBe(queued) // and nothing half-queued for sync
+  })
+
+  it('moves it with consecutive positions in both days and refreshed travel legs', async () => {
+    await itineraryRepo.moveItem('item-d1-2', 'day-2', 1)
+    const items = await itineraryRepo.listItems('trip-bali')
+    for (const day of ['day-1', 'day-2']) {
+      const list = items.filter((i) => i.dayId === day)
+      expect(list.map((i) => i.position)).toEqual(list.map((_, i) => i))
+      expect(list[0]!.distanceFromPrevKm).toBeUndefined()
+    }
+    expect(items.find((i) => i.id === 'item-d1-2')).toMatchObject({ dayId: 'day-2', position: 1 })
+  })
+})
+
 describe('itinerary repository', () => {
   it('reorders, moves between days, deletes with undo, duplicates', async () => {
     const day1 = (await itineraryRepo.listItems('trip-bali')).filter((i) => i.dayId === 'day-1')

@@ -31,6 +31,12 @@ export function useItineraryActions(tripId: string) {
       }
     }
 
+    /** An Undo button's handler: a failed undo is reported (never an unhandled rejection) and the plan reloaded either way. */
+    const undo = (action: () => Promise<unknown>) => () =>
+      void action()
+        .catch((e: unknown) => toast({ title: 'Couldn’t undo that', description: e instanceof Error ? e.message : undefined }))
+        .finally(() => void refresh())
+
     return {
       reorder: (dayId: string, orderedIds: string[]) => run('Couldn’t reorder', () => itineraryRepo.reorder(dayId, orderedIds), (p) => optimisticReorder(p, dayId, orderedIds)),
 
@@ -39,27 +45,27 @@ export function useItineraryActions(tripId: string) {
           await itineraryRepo.moveItem(item.id, toDayId, toIndex ?? Number.MAX_SAFE_INTEGER)
           toast({
             title: `Moved to Day ${dayNumber}`, description: item.title,
-            action: { label: 'Undo', onClick: () => void itineraryRepo.moveItem(item.id, item.dayId, item.position).then(refresh) },
+            action: { label: 'Undo', onClick: undo(() => itineraryRepo.moveItem(item.id, item.dayId, item.position)) },
           })
         }, (p) => optimisticMove(p, item.id, toDayId, toIndex)),
 
       remove: (item: ItineraryItem) =>
         run('Couldn’t delete that', async () => {
           const removed = await itineraryRepo.removeItem(item.id)
-          toast({ title: 'Activity deleted', description: removed.title, action: { label: 'Undo', onClick: () => void itineraryRepo.restoreItem(removed).then(refresh) } })
+          toast({ title: 'Activity deleted', description: removed.title, action: { label: 'Undo', onClick: undo(() => itineraryRepo.restoreItem(removed)) } })
         }, (p) => optimisticRemove(p, item.id)),
 
       duplicate: (item: ItineraryItem) =>
         run('Couldn’t duplicate that', async () => {
           const copy = await itineraryRepo.duplicateItem(item.id)
-          toast({ title: 'Activity duplicated', description: copy.title, action: { label: 'Undo', onClick: () => void itineraryRepo.removeItem(copy.id).then(refresh) } })
+          toast({ title: 'Activity duplicated', description: copy.title, action: { label: 'Undo', onClick: undo(() => itineraryRepo.removeItem(copy.id)) } })
         }),
 
       /** Appends to the day, or inserts at `atIndex` between two stops. */
       add: (dayId: string, dayNumber: number, input: NewItemInput & Partial<Pick<ItineraryItem, 'image' | 'notes'>>, atIndex?: number) =>
         run('Couldn’t add that', async () => {
           const item = await itineraryRepo.addItem(tripId, dayId, input, atIndex)
-          toast({ title: `Added to Day ${dayNumber}`, description: item.title, action: { label: 'Undo', onClick: () => void itineraryRepo.removeItem(item.id).then(refresh) } })
+          toast({ title: `Added to Day ${dayNumber}`, description: item.title, action: { label: 'Undo', onClick: undo(() => itineraryRepo.removeItem(item.id)) } })
           return item
         }),
 
@@ -68,7 +74,7 @@ export function useItineraryActions(tripId: string) {
       retimeDay: (dayId: string) =>
         run('Couldn’t re-time the day', async () => {
           const previous = await itineraryRepo.retimeDay(dayId)
-          toast({ title: 'Day re-timed', description: 'Start times now leave room for travel.', action: { label: 'Undo', onClick: () => void itineraryRepo.setTimes(previous).then(refresh) } })
+          toast({ title: 'Day re-timed', description: 'Start times now leave room for travel.', action: { label: 'Undo', onClick: undo(() => itineraryRepo.setTimes(previous)) } })
         }),
 
       refresh,
