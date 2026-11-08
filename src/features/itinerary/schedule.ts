@@ -5,12 +5,25 @@ export const toMinutes = (hhmm: string): number => {
   return Number(h) * 60 + Number(m)
 }
 
-export const fromMinutes = (total: number): string => {
-  const t = Math.max(0, Math.min(23 * 60 + 59, Math.round(total)))
-  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
-}
+const DAY_MIN = 24 * 60
+const hhmm = (t: number) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
 
-export const endTime = (item: Pick<ItineraryItem, 'startTime' | 'durationMin'>): string => fromMinutes(toMinutes(item.startTime) + item.durationMin)
+/**
+ * A start time within the day, kept between 00:00 and 23:59. Only for *suggested* times (the default for a new stop);
+ * never use it to rewrite a stored time, which would silently move it.
+ */
+export const fromMinutes = (total: number): string => hhmm(Math.max(0, Math.min(DAY_MIN - 1, Math.round(total))))
+
+/** How many days after its start day a stop ends (0 for most; 1 for one that runs past midnight). */
+export const endDayOffset = (item: Pick<ItineraryItem, 'startTime' | 'durationMin'>): number =>
+  Math.floor((toMinutes(item.startTime) + item.durationMin) / DAY_MIN)
+
+/** When a stop ends, as a wall clock; past midnight it says so: 22:00 + 3 h → "01:00 +1 day". */
+export const endTime = (item: Pick<ItineraryItem, 'startTime' | 'durationMin'>): string => {
+  const days = endDayOffset(item)
+  const clock = hhmm((toMinutes(item.startTime) + item.durationMin) % DAY_MIN)
+  return days ? `${clock} +${days} ${days === 1 ? 'day' : 'days'}` : clock
+}
 
 export interface ScheduleWarning {
   /** The later of the two items involved; the warning is shown above it. */
@@ -58,7 +71,8 @@ export function dayLoad(items: ItineraryItem[]): DayLoad {
 
 /**
  * New start times that make a day realistic: the first stop keeps its time, each next one starts after the
- * previous ends plus travel (at least `minGapMin`), rounded up to 5 minutes.
+ * previous ends plus travel (at least `minGapMin`), rounded up to 5 minutes. A stop's start must stay on its day (a
+ * stop may *end* after midnight), so if one would start after 23:59 this throws and nothing is changed.
  */
 export function retime(items: ItineraryItem[], minGapMin = 10): Array<{ id: string; startTime: string }> {
   const out: Array<{ id: string; startTime: string }> = []
@@ -68,7 +82,8 @@ export function retime(items: ItineraryItem[], minGapMin = 10): Array<{ id: stri
       const wait = Math.max(item.travelTimeFromPrevMin ?? 0, minGapMin)
       cursor = Math.ceil((cursor + wait) / 5) * 5
     }
-    out.push({ id: item.id, startTime: fromMinutes(cursor) })
+    if (cursor >= DAY_MIN) throw new Error(`“${item.title}” would start after midnight, so this day can’t be re-timed. Move a stop to another day first.`)
+    out.push({ id: item.id, startTime: hhmm(cursor) })
     cursor += item.durationMin
   })
   return out

@@ -49,6 +49,37 @@ describe('itinerary reorder is all-or-nothing', () => {
   })
 })
 
+describe('moving an activity between days is all-or-nothing', () => {
+  const snapshot = async () => (await db.items.where('tripId').equals('trip-bali').toArray())
+    .map((i) => `${i.id}:${i.dayId}:${i.position}:${i.distanceFromPrevKm ?? '-'}`).sort()
+
+  it('leaves both days and the sync queue exactly as they were if a write fails part-way', async () => {
+    const before = await snapshot()
+    const queued = await pendingCount()
+    const realAdd = db.syncQueue.add.bind(db.syncQueue)
+    let calls = 0
+    const spy = vi.spyOn(db.syncQueue, 'add').mockImplementation(((...args: Parameters<typeof realAdd>) => {
+      if (++calls === 3) return Promise.reject(new Error('interrupted'))
+      return realAdd(...args)
+    }) as typeof db.syncQueue.add)
+    await expect(itineraryRepo.moveItem('item-d1-2', 'day-2', 1)).rejects.toThrow('interrupted')
+    spy.mockRestore()
+    expect(await snapshot()).toEqual(before) // not in both days, not in neither, no positions rewritten
+    expect(await pendingCount()).toBe(queued) // and nothing half-queued for sync
+  })
+
+  it('moves it with consecutive positions in both days and refreshed travel legs', async () => {
+    await itineraryRepo.moveItem('item-d1-2', 'day-2', 1)
+    const items = await itineraryRepo.listItems('trip-bali')
+    for (const day of ['day-1', 'day-2']) {
+      const list = items.filter((i) => i.dayId === day)
+      expect(list.map((i) => i.position)).toEqual(list.map((_, i) => i))
+      expect(list[0]!.distanceFromPrevKm).toBeUndefined()
+    }
+    expect(items.find((i) => i.id === 'item-d1-2')).toMatchObject({ dayId: 'day-2', position: 1 })
+  })
+})
+
 describe('itinerary repository', () => {
   it('reorders, moves between days, deletes with undo, duplicates', async () => {
     const day1 = (await itineraryRepo.listItems('trip-bali')).filter((i) => i.dayId === 'day-1')
@@ -64,6 +95,13 @@ describe('itinerary repository', () => {
 
     const copy = await itineraryRepo.duplicateItem(removed.id)
     expect(copy.position).toBe(1)
+  })
+  it('re-timing a day that would run past midnight changes nothing and says why', async () => {
+    const day = await db.items.where('dayId').equals('day-1').toArray()
+    await db.items.update(day[0]!.id, { startTime: '22:30' }) // first stop starts late: the rest can't fit before midnight
+    const before = await db.items.where('dayId').equals('day-1').toArray()
+    await expect(itineraryRepo.retimeDay('day-1')).rejects.toThrow('would start after midnight')
+    expect(await db.items.where('dayId').equals('day-1').toArray()).toEqual(before)
   })
   it('queues changes for sync', async () => {
     const before = await pendingCount()
@@ -103,6 +141,33 @@ describe('AI actions go through repositories', () => {
     expect((await itineraryRepo.listItems('trip-bali')).some((i) => i.title === 'Sunset viewpoint' && i.source === 'ai')).toBe(true)
     await res.undo()
     expect((await itineraryRepo.listItems('trip-bali')).some((i) => i.title === 'Sunset viewpoint')).toBe(false)
+  })
+  it('rejects an action naming an activity from another trip, and applies nothing', async () => {
+    const goaItem = (await db.items.where('tripId').equals('trip-goa').first())!
+    const baliDay1 = (await db.items.where('dayId').equals('day-1').toArray()).map((i) => i.id)
+    const before = await db.items.toArray()
+    await expect(applyAIAction('trip-bali', { type: 'REMOVE_ACTIVITY', itemId: goaItem.id })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'MOVE_ACTIVITY', itemId: goaItem.id, toDayNumber: 2, position: 0 })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'MOVE_ACTIVITY', itemId: 'item-nope', toDayNumber: 2, position: 0 })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'REORDER_ITINERARY', dayNumber: 1, itemIds: [goaItem.id, ...baliDay1] })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'OPTIMIZE_ROUTE', dayNumber: 2, itemIds: baliDay1 })).rejects.toThrow('not on Day 2')
+    expect(await db.items.toArray()).toEqual(before)
+  })
+  it('CREATE_ITINERARY counts only the days that fit the trip, and Undo restores the exact previous days and items', async () => {
+    const plan = async () => {
+      const strip = <T extends { updatedAt?: string }>(rows: T[]) => rows.map(({ updatedAt: _u, ...r }) => r)
+      return { days: strip(await itineraryRepo.listDays('trip-bali')), items: strip(await itineraryRepo.listItems('trip-bali')) }
+    }
+    const before = await plan()
+    const item = { title: 'Rice terrace walk', startTime: '16:00', durationMin: 60, category: 'sightseeing' as const }
+    const days = Array.from({ length: 7 }, (_, i) => ({ title: `New day ${i + 1}`, items: [item] })) // the trip has 5 days
+    const res = await applyAIAction('trip-bali', { type: 'CREATE_ITINERARY', days })
+    expect(res.summary).toBe('Created a 5-day itinerary')
+    const after = await plan()
+    expect(after.days.map((d) => d.title)).toEqual(['New day 1', 'New day 2', 'New day 3', 'New day 4', 'New day 5'])
+    expect(after.items).toHaveLength(before.items.length + 5)
+    await res.undo()
+    expect(await plan()).toEqual(before)
   })
   it('rejects malformed model output', async () => {
     await expect(applyAIAction('trip-bali', { type: 'DROP_TABLE' })).rejects.toThrow()
@@ -145,6 +210,15 @@ describe('trips & public trips', () => {
     expect(copy.copiedFromPublicTripId).toBe(pub.id)
     expect((await itineraryRepo.listItems(copy.id)).length).toBe(pub.snapshot.items.length)
     expect((await db.publicTrips.get(pub.id))?.title).toBe(pub.title)
+  })
+  it('never puts day notes (or any field not chosen for the page) into the published snapshot', async () => {
+    await itineraryRepo.updateDay('day-2', { title: 'Temples', notes: 'PRIVATE: driver Wayan +62 812 5550 1234' })
+    const pub = await publicTripRepo.publish('trip-bali', { description: 'Test', visibility: 'public' })
+    expect(JSON.stringify(pub)).not.toContain('Wayan')
+    expect(JSON.stringify((await db.syncQueue.toArray()).filter((o) => o.entity === 'publicTrips'))).not.toContain('Wayan') // nor in what is sent
+    const day2 = pub.snapshot.days.find((d) => d.id === 'day-2')!
+    expect(Object.keys(day2).sort()).toEqual(['date', 'dayNumber', 'destinationId', 'id', 'title', 'tripId'])
+    expect(day2.title).toBe('Temples')
   })
   it('deleting a trip cascades', async () => {
     await tripRepo.remove('trip-goa')

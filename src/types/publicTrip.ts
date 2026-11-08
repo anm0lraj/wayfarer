@@ -5,7 +5,7 @@ import { placeSchema } from './place'
 
 /** Sanitised copy of a trip: no private notes, bookings, confirmation numbers or exact memory locations. */
 export const sanitizedTripSnapshotSchema = z.object({
-  days: z.array(itineraryDaySchema),
+  days: z.array(itineraryDaySchema.omit({ notes: true, updatedAt: true })),
   items: z.array(itineraryItemSchema.omit({ notes: true, bookingId: true })),
   places: z.array(placeSchema),
   memories: z.array(

@@ -129,20 +129,28 @@ export const itineraryRepo = {
     return copy
   },
 
-  /** Move to `toIndex` within `toDayId` (same or different day). */
+  /**
+   * Move to `toIndex` within `toDayId` (same or different day). One transaction: both days' new orders, the moved item and
+   * both days' travel legs are written (and queued for sync) together, or nothing is, so a failure part-way can't leave
+   * two stops sharing a position or a day measured against a stop that has left it.
+   */
   async moveItem(id: string, toDayId: string, toIndex: number): Promise<void> {
     const current = await db.items.get(id)
     if (!current) throw new Error('Activity not found')
     await requireTripAccess(current.tripId, 'edit')
     const target = await db.days.get(toDayId)
     if (!target || target.tripId !== current.tripId) throw new Error('Day not found in this trip')
-    if (current.dayId !== toDayId) await writeOrder((await dayItems(current.dayId)).filter((i) => i.id !== id))
-    const list = (await dayItems(toDayId)).filter((i) => i.id !== id)
-    list.splice(Math.max(0, Math.min(toIndex, list.length)), 0, { ...current, dayId: toDayId })
-    await put('items', db.items, { ...current, dayId: toDayId, updatedAt: nowIso() })
-    await writeOrder(list)
-    await refreshLegs(toDayId)
-    if (current.dayId !== toDayId) await refreshLegs(current.dayId)
+    await db.transaction('rw', db.tables, async () => {
+      const item = (await db.items.get(id)) ?? current
+      const moved = { ...item, dayId: toDayId, updatedAt: nowIso() }
+      const list = (await dayItems(toDayId)).filter((i) => i.id !== id)
+      list.splice(Math.max(0, Math.min(toIndex, list.length)), 0, moved)
+      await put('items', db.items, moved)
+      if (item.dayId !== toDayId) await writeOrder((await dayItems(item.dayId)).filter((i) => i.id !== id))
+      await writeOrder(list)
+      await refreshLegs(toDayId)
+      if (item.dayId !== toDayId) await refreshLegs(item.dayId)
+    })
   },
 
   async reorder(dayId: string, itemIds: string[]): Promise<void> {
@@ -196,6 +204,28 @@ export const itineraryRepo = {
     for (const id of snapshot.addedIds) if (await db.items.get(id)) await del('items', db.items, id)
     for (const item of snapshot.removed) await put('items', db.items, item)
     await refreshLegs(snapshot.dayId)
+  },
+
+  /**
+   * Puts days back exactly as they were in `before` (from `listDays`/`listItems` of the trip): their titles and notes,
+   * and their items with the same content and order; items added to those days since are removed. One transaction.
+   * Rewritten rows get a fresh `updatedAt` so sync treats the Undo as the newest edit.
+   */
+  async restorePlan(tripId: string, before: { days: ItineraryDay[]; items: ItineraryItem[] }): Promise<void> {
+    await requireTripAccess(tripId, 'edit')
+    const content = (o: object) => JSON.stringify(Object.entries(o).filter(([k, v]) => k !== 'updatedAt' && v !== undefined).sort(([a], [b]) => a.localeCompare(b)))
+    const same = (a: object | undefined, b: object) => !!a && content(a) === content(b)
+    await db.transaction('rw', db.tables, async () => {
+      const keep = new Set(before.items.map((i) => i.id))
+      for (const day of before.days) {
+        if (day.tripId !== tripId) continue
+        for (const item of await dayItems(day.id)) if (!keep.has(item.id)) await del('items', db.items, item.id)
+        if (!same(await db.days.get(day.id), day)) await put('days', db.days, day)
+      }
+      for (const item of before.items) {
+        if (item.tripId === tripId && !same(await db.items.get(item.id), item)) await put('items', db.items, { ...item, updatedAt: nowIso() })
+      }
+    })
   },
 
   async updateDay(id: string, patch: Partial<Pick<ItineraryDay, 'title' | 'notes' | 'destinationId'>>): Promise<void> {

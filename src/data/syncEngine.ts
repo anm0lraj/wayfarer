@@ -1,9 +1,20 @@
 import { db, type SyncOp } from './db'
 
-export interface SyncResult { id: number; status: 'ok' | 'conflict'; /** The server's copy, when it is newer than ours. */ current?: { id: string; updatedAt?: string } & Record<string, unknown> }
+/**
+ * The answer for one queued change. `refused`: the server will not take it (yet); it is parked, its `refusals` counted,
+ * and the changes behind it still go. `held`: not tried because an earlier change to the same record in this batch was
+ * refused (so the two are never applied out of order). The sender decides when a refused change is given up (`ok`).
+ */
+export interface SyncResult { id: number; status: 'ok' | 'conflict' | 'refused' | 'held'; /** The server's copy, when it is newer than ours. */ current?: { id: string; updatedAt?: string } & Record<string, unknown> }
 export type SendBatch = (ops: SyncOp[]) => Promise<SyncResult[]>
 
-export interface SyncSummary { sent: number; conflicts: number; failed: boolean; /** Why the last attempt failed, in words a person can pass on. */ error?: string }
+export interface SyncSummary {
+  sent: number; conflicts: number; failed: boolean
+  /** Changes the server refused this time; they stay queued and are retried on the next run. */
+  refused?: number
+  /** Why the last attempt failed, in words a person can pass on. */
+  error?: string
+}
 
 const BATCH = 50
 let running = false
@@ -37,8 +48,8 @@ async function applyConflict(op: SyncOp, current: NonNullable<SyncResult['curren
  * seen in WebKit's private browsing, where a record can be stored yet unreadable) can never be sent, and left in place
  * it would stop every change behind it from ever syncing, so it is removed (by its key, which is still readable).
  */
-export async function nextBatch(): Promise<{ ops: SyncOp[]; dropped: number }> {
-  const ordered = db.syncQueue.orderBy('id')
+export async function nextBatch(skip = 0): Promise<{ ops: SyncOp[]; dropped: number }> {
+  const ordered = db.syncQueue.orderBy('id').offset(skip)
   const [values, keys] = await Promise.all([ordered.clone().limit(BATCH).toArray(), ordered.clone().limit(BATCH).primaryKeys()])
   const unreadable = keys.filter((_, i) => !values[i])
   if (unreadable.length) {
@@ -48,18 +59,30 @@ export async function nextBatch(): Promise<{ ops: SyncOp[]; dropped: number }> {
   return { ops: values.filter((v): v is SyncOp => !!v), dropped: unreadable.length }
 }
 
-/** Sends the queue in order, in batches. Safe to call repeatedly; does nothing while offline or already running. */
+const keyOf = (op: SyncOp) => `${op.entity}/${op.entityId}`
+
+/**
+ * Sends the queue in order, in batches. Safe to call repeatedly; does nothing while offline or already running.
+ * A change the server refuses is parked (it stays at the front of the queue for the next run) and the run carries on
+ * past it, so one refused write never holds up the rest; later changes to the same record wait behind it. A failure to
+ * reach the server stops the run and everything stays queued.
+ */
 export async function syncNow(send: SendBatch = sendBatchToApi): Promise<SyncSummary> {
   const summary: SyncSummary = { sent: 0, conflicts: 0, failed: false }
   if (running || (typeof navigator !== 'undefined' && !navigator.onLine)) return summary
   running = true
+  let parked = 0 // changes left at the front of the queue in this run; every batch starts after them
+  const parkedKeys = new Set<string>()
   try {
     for (;;) {
-      const { ops, dropped } = await nextBatch()
-      if (ops.length === 0) {
+      const { ops: read, dropped } = await nextBatch(parked)
+      if (read.length === 0) {
         if (dropped) continue // there may be readable changes behind the ones just removed
         break
       }
+      const ops = read.filter((o) => !parkedKeys.has(keyOf(o)))
+      parked += read.length - ops.length
+      if (ops.length === 0) continue
       let results: SyncResult[]
       try {
         results = await send(ops)
@@ -74,6 +97,16 @@ export async function syncNow(send: SendBatch = sendBatchToApi): Promise<SyncSum
       for (const op of ops) {
         const r = byId.get(op.id!)
         if (!r) { summary.failed = true; return summary } // not acknowledged: keep it, and everything after it, for next time
+        if (r.status === 'refused' || r.status === 'held') {
+          if (r.status === 'refused') {
+            await db.syncQueue.update(op.id!, { refusals: (op.refusals ?? 0) + 1 })
+            summary.refused = (summary.refused ?? 0) + 1
+            summary.error = `Not allowed to sync ${summary.refused} ${summary.refused === 1 ? 'change' : 'changes'} yet`
+          }
+          parkedKeys.add(keyOf(op))
+          parked++
+          continue
+        }
         if (r.status === 'conflict' && r.current) { await applyConflict(op, r.current); summary.conflicts++ }
         await db.syncQueue.delete(op.id!)
         summary.sent++

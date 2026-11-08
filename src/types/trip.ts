@@ -42,6 +42,8 @@ export const itineraryDaySchema = z.object({
   title: z.string().optional(),
   destinationId: idSchema.optional(),
   notes: z.string().optional(),
+  /** Set by every write (`put` in repositories/shared.ts) so sync can tell the newer copy. Absent on rows from before it existed. */
+  updatedAt: isoDateTimeSchema.optional(),
 })
 export type ItineraryDay = z.infer<typeof itineraryDaySchema>
 
@@ -88,6 +90,8 @@ export const checklistItemSchema = z.object({
   autoRule: z.enum(['flight_booked', 'hotel_booked', 'activities_booked']).optional(),
   done: z.boolean(),
   dueDate: isoDateSchema.optional(),
+  /** As on days: stamped by every write, absent on older rows. */
+  updatedAt: isoDateTimeSchema.optional(),
 })
 export type ChecklistItem = z.infer<typeof checklistItemSchema>
 

@@ -1,6 +1,6 @@
 import { fareTableFor, INR_PER_UNIT, METRO, type LocalMode, type ModeFare } from '@/data/fares'
 import { haversineKm } from '@/lib/geo'
-import { endTime } from '@/features/itinerary/schedule'
+import { fromMinutes, toMinutes } from '@/features/itinerary/schedule'
 import type { GeoPoint, ItineraryItem, Money, NewItemInput } from '@/types'
 
 /** Straight-line distance × this ≈ distance by road. */
@@ -90,7 +90,7 @@ export const minutesText = (min: number): string => (min < 60 ? `${min} min` : `
 /** When a stop inserted at `atIndex` starts: as the stop before it ends, or 09:00 at the start of a day. */
 export function insertStartTime(dayItems: Array<Pick<ItineraryItem, 'startTime' | 'durationMin'>>, atIndex: number): string {
   const prev = dayItems[atIndex - 1]
-  return prev ? endTime(prev) : '09:00'
+  return prev ? fromMinutes(toMinutes(prev.startTime) + prev.durationMin) : '09:00' // a suggestion: kept on the same day
 }
 
 /** "₹200–₹300", or "₹30" when the fare is fixed. */

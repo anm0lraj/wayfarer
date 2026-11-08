@@ -31,12 +31,21 @@ function offsetMinutes(at: Date, timeZone: string): number {
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value)
   return (Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second')) - at.getTime()) / 60000
 }
-/** The instant at which the wall clock in `timeZone` reads `date` `time` (HH:mm). */
+const HALF_DAY_MS = 12 * 3_600_000
+/** The instant at which the wall clock in `timeZone` reads `date` `time` (HH:mm). Same DST handling as the app's `zonedIso`. */
 export function zonedMs(date: string, time: string, timeZone: string): number {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number]
   const [hh, mm] = time.split(':').map(Number) as [number, number]
-  const guess = Date.UTC(y, m - 1, d, hh, mm)
-  return guess - offsetMinutes(new Date(guess), timeZone) * 60000
+  const wall = Date.UTC(y, m - 1, d, hh, mm) // the wall-clock reading, as if it were UTC
+  // The offset in force can differ either side of a daylight-saving change, so try the offsets from half a day before and
+  // after: an offset is right when the instant it gives really has that offset. Two right answers = the repeated hour
+  // (clocks went back): take the first. None = the skipped hour (clocks went forward): read it with the offset from before
+  // the change, i.e. move it forward by the gap (02:30 → 03:30), as Temporal's 'compatible' does.
+  const before = offsetMinutes(new Date(wall - HALF_DAY_MS), timeZone)
+  const after = offsetMinutes(new Date(wall + HALF_DAY_MS), timeZone)
+  const valid = [...new Set([before, after])].map((o) => wall - o * 60000).filter((t) => wall - offsetMinutes(new Date(t), timeZone) * 60000 === t)
+  const instant = valid.length ? Math.min(...valid) : wall - before * 60000
+  return instant
 }
 
 /** `computeTripState` from the app: stored draft/archived are final, the rest follows the dates in the trip's timezone. */
