@@ -110,13 +110,13 @@ export function FlightSearch() {
       </form>
 
       {from === to ? (
-        <EmptyState title="Choose two different airports" />
+        <EmptyState art="plane" title="Choose two different airports" />
       ) : flights.isPending ? (
         <SkeletonGroup label="Searching flights" className="space-y-3"><Skeleton className="h-32" /><Skeleton className="h-32" /></SkeletonGroup>
       ) : flights.isError ? (
         <ErrorState title="Couldn’t load flights" description="Check your connection and try again." onRetry={() => void flights.refetch()} />
       ) : flights.data.length === 0 ? (
-        <EmptyState title="No flights found" description="The demo only has Mumbai ⇄ Bali on the trip dates. Try those, or another date." />
+        <EmptyState art="plane" title="No flights found" description="The demo only has Mumbai ⇄ Bali on the trip dates. Try those, or another date." />
       ) : (
         <section aria-label="Flight results" className="space-y-3">
           <p role="status" className="flex items-center gap-1 text-sm text-fg-muted">{flights.data.length} flights · {from} <ArrowRight aria-hidden className="size-3.5" /> {to}</p>

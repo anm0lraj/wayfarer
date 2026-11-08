@@ -41,7 +41,7 @@ describe('Memories timeline', () => {
 
   it('shows an empty state with a way forward', async () => {
     renderApp('/trips/trip-bali/memories')
-    expect(await screen.findByText('No memories yet')).toBeInTheDocument()
+    expect(await screen.findByText('Your story starts with one photo')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Add your first memory' })).toHaveAttribute('href', '/trips/trip-bali/memories/new')
   })
 

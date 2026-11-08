@@ -68,6 +68,6 @@ describe('routes render real screens', () => {
 
   it('unknown URLs get a helpful 404', async () => {
     renderApp('/definitely/not/here')
-    expect(await screen.findByText('We can’t find that page')).toBeInTheDocument()
+    expect(await screen.findByText('Looks like we took a wrong turn')).toBeInTheDocument()
   })
 })

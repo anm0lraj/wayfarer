@@ -10,11 +10,14 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { OptionCard } from '@/components/ui/OptionCard'
 import { Stepper } from '@/components/ui/Stepper'
+import { Spot, type SpotArt } from '@/components/illustrations/Spot'
 import { userRepo } from '@/data/repositories'
 import { INTEREST_LABELS } from '@/features/trips/create/interestLabels'
 import { accommodationTypeSchema, interestSchema, type AccommodationType, type BudgetTier, type Interest, type TravelerGroup, type User } from '@/types'
 
 const STEPS = [{ slug: 'you', label: 'About you' }, { slug: 'style', label: 'Style' }, { slug: 'interests', label: 'Interests' }, { slug: 'habits', label: 'Trips' }] as const
+
+const STEP_ART: SpotArt[] = ['globe', 'suitcase', 'camera', 'plane']
 
 const STYLES = ['Relaxed', 'Adventurous', 'Cultural', 'Foodie', 'Luxury'] as const
 const BUDGETS: Array<{ value: BudgetTier; label: string; hint: string }> = [
@@ -80,11 +83,14 @@ function Form({ user }: { user: User }) {
     <>
       <SkipLink />
       <main id="main" tabIndex={-1} className="mx-auto grid min-h-dvh max-w-xl place-items-center p-4 outline-none">
-        <section aria-labelledby="ob-h" className="w-full space-y-6 rounded-xl border border-border bg-surface p-6 shadow-md sm:p-8">
+        <section aria-labelledby="ob-h" className="w-full space-y-6 rounded-xl border border-border bg-surface p-6 shadow-lg sm:p-8">
           <Stepper steps={STEPS.map((s) => s.label)} current={index} />
-          <div>
-            <h1 id="ob-h" className="text-2xl font-bold">{['Welcome to Wayfarer', 'How do you like to travel?', 'What do you love?', 'Your usual trip'][index]}</h1>
-            <p className="mt-1 text-fg-muted">{['A few quick questions so we can suggest the right places. All optional.', 'This shapes budgets and suggestions.', 'Pick as many as you like.', 'Helps us size itineraries to fit you.'][index]}</p>
+          <div className="flex items-center gap-4">
+            <Spot art={STEP_ART[index]!} className="size-20 shrink-0 sm:size-24" />
+            <div className="min-w-0">
+              <h1 id="ob-h" className="text-3xl font-extrabold">{['Welcome to Wayfarer', 'What’s your travel vibe?', 'What gets you excited?', 'How do you usually roam?'][index]}</h1>
+              <p className="mt-1 text-fg-muted">{['Four quick questions and every suggestion fits you better. Skip anything you like.', 'This shapes budgets and the places we suggest.', 'Pick as many as you like. The more, the merrier.', 'Helps us size itineraries to fit your pace.'][index]}</p>
+            </div>
           </div>
 
           {index === 0 && (

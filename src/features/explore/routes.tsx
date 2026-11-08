@@ -45,7 +45,7 @@ export function Explore() {
 
   return (
     <>
-      <PageHeader title="Explore" description="Find your next trip" actions={<Button variant="secondary" asChild><Link to="/explore/itineraries">Traveller itineraries</Link></Button>} />
+      <PageHeader title="Explore" description="Where will your next story start?" actions={<Button variant="secondary" asChild><Link to="/explore/itineraries">Traveller itineraries</Link></Button>} />
       <div className="space-y-4">
         <SearchField label="Search destinations" placeholder="Where do you want to go?" value={q} onChange={(e) => update({ q: e.target.value })} />
         <div role="group" aria-label="Categories" className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
@@ -63,7 +63,7 @@ export function Explore() {
         )}
         {isError && <ErrorState title="Couldn’t load destinations" onRetry={() => void refetch()} />}
         {data && results.length === 0 && (
-          <EmptyState
+          <EmptyState art="globe"
             title={term ? `No destinations match “${q.trim()}”` : 'No destinations in this category yet'}
             description="Try a different spelling or clear your filters."
             action={<Button variant="secondary" onClick={() => update({ q: '', category: null })}>Clear filters</Button>}
@@ -104,7 +104,7 @@ export function DestinationDetails() {
   }
   if (destination.isError) return <ErrorState as="h1" title="Couldn’t load this destination" onRetry={() => void destination.refetch()} />
   if (!d) {
-    return <EmptyState as="h1" title="Destination not found" description="It may have been removed." action={<Button asChild><Link to="/explore">Back to Explore</Link></Button>} />
+    return <EmptyState as="h1" art="globe" title="Destination not found" description="It may have been removed." action={<Button asChild><Link to="/explore">Back to Explore</Link></Button>} />
   }
 
   const cityItineraries = (publicTrips.data ?? []).filter((t) => t.destinationIds.includes(d.id))
@@ -132,7 +132,7 @@ export function DestinationDetails() {
             {places.isPending && <Skeleton className="h-64" />}
             {places.isError && <ErrorState onRetry={() => void places.refetch()} />}
             {places.data && places.data.length === 0 && (
-              <EmptyState title="Recommendations are coming soon" description={`We’re still collecting places for ${d.name}. You can plan a trip now and add your own stops.`} />
+              <EmptyState art="pin" title="Recommendations are coming soon" description={`We’re still collecting places for ${d.name}. You can plan a trip now and add your own stops.`} />
             )}
             {places.data && places.data.length > 0 && (
               <Tabs defaultValue={firstTab}>

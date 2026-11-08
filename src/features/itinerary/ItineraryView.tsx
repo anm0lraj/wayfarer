@@ -101,7 +101,7 @@ export function ItineraryView() {
   if (plan.isError) return <ErrorState title="Couldn’t load the itinerary" onRetry={() => void plan.refetch()} />
   if (!day) {
     return 'itemId' in parsed
-      ? <EmptyState title="We can’t find that activity" description="It may have been deleted." action={<Button asChild><Link to={`${base}/day/1`}>Back to the itinerary</Link></Button>} />
+      ? <EmptyState art="pin" title="We can’t find that activity" description="It may have been deleted." action={<Button asChild><Link to={`${base}/day/1`}>Back to the itinerary</Link></Button>} />
       : <Navigate to={`${base}/day/1`} replace />
   }
 
@@ -196,7 +196,8 @@ export function ItineraryView() {
 
         {dayItemsEmpty ? (
           <EmptyState
-            title={`Nothing planned for Day ${day.dayNumber}`}
+            art="pin"
+            title={`Day ${day.dayNumber} is a blank page`}
             description="Add a place, or let the assistant draft your days — you’ll see a preview before anything changes."
             action={
               <div className="flex flex-wrap justify-center gap-2">

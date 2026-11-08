@@ -12,8 +12,8 @@ import { countdownLabel, dateInTimezone } from '@/lib/dates'
 import { useNow } from '@/lib/hooks/useNow'
 
 const TABS = [
-  { id: 'upcoming', label: 'Upcoming', match: (t: TripWithState) => !['completed', 'archived'].includes(t.effectiveState), empty: ['No upcoming trips', 'Start planning and your next trip will show up here.'] },
-  { id: 'past', label: 'Past', match: (t: TripWithState) => t.effectiveState === 'completed', empty: ['No past trips yet', 'Completed trips and their memories live here.'] },
+  { id: 'upcoming', label: 'Upcoming', match: (t: TripWithState) => !['completed', 'archived'].includes(t.effectiveState), empty: ['Your next adventure starts here', 'Pick a place you’ve been dreaming about and we’ll sketch out the days together.'] },
+  { id: 'past', label: 'Past', match: (t: TripWithState) => t.effectiveState === 'completed', empty: ['Your travel stories will live here', 'Finished trips and their memories are kept here to relive and share.'] },
   { id: 'archived', label: 'Archived', match: (t: TripWithState) => t.effectiveState === 'archived', empty: ['Nothing archived', 'Archive a trip from its overview to tidy up without deleting it.'] },
 ] as const
 
@@ -26,7 +26,7 @@ export function TripsList() {
 
   return (
     <>
-      <PageHeader title="Trips" actions={<Button asChild><Link to="/trips/new/destination"><Plus aria-hidden className="size-5" /> Plan a Trip</Link></Button>} />
+      <PageHeader title="Trips" description="Every adventure, from first idea to last photo." actions={<Button asChild><Link to="/trips/new/destination"><Plus aria-hidden className="size-5" /> Plan a Trip</Link></Button>} />
       {trips.isPending && <SkeletonGroup label="Loading trips" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="h-64" /><Skeleton className="h-64" /></SkeletonGroup>}
       {trips.isError && <ErrorState title="Couldn’t load your trips" onRetry={() => void trips.refetch()} />}
       {trips.data && (

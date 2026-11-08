@@ -53,7 +53,7 @@ describe('Explore feed', () => {
 
   it('shows saved trips, and an empty state when there are none', async () => {
     const first = renderApp('/saved')
-    expect(await screen.findByText('Nothing saved yet')).toBeInTheDocument()
+    expect(await screen.findByText('Your wishlist is waiting')).toBeInTheDocument()
     first.dispose()
   })
 })
@@ -191,7 +191,7 @@ describe('Profile', () => {
     expect(within(stats as HTMLElement).getByText('Countries').previousSibling).toHaveTextContent('2') // Indonesia, India
     expect(await screen.findByRole('link', { name: /5 Days in Bali/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: 'Published' }))
-    expect(await screen.findByText('Nothing published')).toBeInTheDocument()
+    expect(await screen.findByText('Share a trip, inspire a traveller')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: 'Memories' }))
     expect(await screen.findByRole('link', { name: 'Sunset at Baga Beach' })).toBeInTheDocument()
   })
