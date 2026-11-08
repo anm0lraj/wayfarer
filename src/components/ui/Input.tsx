@@ -1,4 +1,4 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'react'
+import { forwardRef, useId, type InputHTMLAttributes } from 'react'
 import { Search } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -23,7 +23,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, hint, er
         aria-invalid={!!error}
         aria-describedby={describedBy}
         className={cn(
-          'min-h-touch w-full rounded-md border bg-surface px-3.5 text-base text-fg shadow-sm transition-colors duration-fast placeholder:text-fg-muted hover:border-primary/70 focus-visible:border-primary',
+          'min-h-touch w-full rounded-md border bg-surface px-3.5 text-base text-fg shadow-sm transition-colors duration-fast placeholder:text-fg-muted hover:border-primary/70 focus-visible:border-primary read-only:bg-surface-2 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-fg-muted disabled:hover:border-border-strong',
           error ? 'border-error' : 'border-border-strong',
           className,
         )}
@@ -36,7 +36,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, hint, er
 })
 Input.displayName = 'Input'
 
-export const SearchField = forwardRef<HTMLInputElement, Omit<InputProps, 'label'> & { label?: string; trailing?: ReactNode }>(
+/** Rounded search input with a leading magnifier; the label is kept for screen readers only. */
+export const SearchField = forwardRef<HTMLInputElement, Omit<InputProps, 'label'> & { label?: string }>(
   ({ label = 'Search', className, ...props }, ref) => (
     <div className="relative">
       <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-primary" />

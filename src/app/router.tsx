@@ -88,12 +88,13 @@ export const routes: RouteObject[] = [
               { path: 'settings', lazy: lazyDefault(() => import('@/features/settings/routes')) },
               { path: 'settings/:section', lazy: lazyDefault(() => import('@/features/settings/routes')) },
               { path: 'notifications', lazy: lazyDefault(() => import('@/features/notifications/routes')) },
-              ...(import.meta.env.DEV ? [{ path: '_design', lazy: lazyDefault(() => import('./routes/DesignGallery')) }] : []),
             ],
           },
           { path: '*', element: <NotFound /> },
         ],
       },
+      // The design-system library (/_design): development builds only, so it never reaches the production bundle.
+      ...(import.meta.env.DEV ? [{ path: '_design/*', lazy: lazyNamed(() => import('@/features/design-system/routes'), 'DesignSystem') }] : []),
       // Onboarding is its own centred card, outside the shell.
       { path: 'onboarding/:step?', lazy: lazyNamed(() => import('@/features/onboarding/routes'), 'Onboarding') },
     ],

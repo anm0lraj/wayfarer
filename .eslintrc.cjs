@@ -15,5 +15,7 @@ module.exports = {
   },
   overrides: [
     { files: ['src/services/maps/**', 'vite.config.ts', 'e2e/**'], rules: { 'no-restricted-imports': 'off' } },
+    // Design-system docs and the dev-only library export doc objects and examples next to small demo components.
+    { files: ['**/*.docs.tsx', 'src/features/design-system/**'], rules: { 'react-refresh/only-export-components': 'off' } },
   ],
 }

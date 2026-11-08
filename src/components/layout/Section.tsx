@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -12,11 +12,12 @@ export function Section({ title, description, to, linkLabel = 'See all', childre
   children: ReactNode
   className?: string
 }) {
+  const headingId = useId()
   return (
-    <section aria-label={title} className={cn('space-y-3', className)}>
+    <section aria-labelledby={headingId} className={cn('space-y-3', className)}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-2xl font-bold">{title}</h2>
+          <h2 id={headingId} className="text-2xl font-bold">{title}</h2>
           {description && <p className="text-sm text-fg-muted">{description}</p>}
         </div>
         {to && (

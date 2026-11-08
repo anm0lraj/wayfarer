@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn'
 /** Step progress indicator for multi-step flows. Announces "Step 2 of 6: Dates". */
 export function Stepper({ steps, current, className }: { steps: string[]; current: number; className?: string }) {
   return (
-    <nav aria-label="Progress" className={className}>
+    <div role="group" aria-label="Progress" className={className}>
       <p className="sr-only" aria-live="polite">Step {current + 1} of {steps.length}: {steps[current]}</p>
       <ol className="flex items-center gap-1.5" aria-hidden>
         {steps.map((label, i) => (
@@ -23,6 +23,6 @@ export function Stepper({ steps, current, className }: { steps: string[]; curren
           </li>
         ))}
       </ol>
-    </nav>
+    </div>
   )
 }
