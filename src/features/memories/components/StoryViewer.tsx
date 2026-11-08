@@ -100,7 +100,7 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
         <button type="button" tabIndex={-1} aria-hidden onClick={prev} className="absolute inset-y-24 left-0 w-1/3" />
         <button type="button" tabIndex={-1} aria-hidden onClick={next} className="absolute inset-y-24 right-0 w-2/3" />
 
-        <div className="scrim-text pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-3 px-5 pt-12 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="scrim-text pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-3 px-5 pt-12 [--scrim-fade:3rem] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {slide.sticker && <p aria-hidden className="text-6xl drop-shadow">{slide.sticker}</p>}
           {slide.text && <p className="text-2xl font-bold leading-snug drop-shadow">{slide.text}</p>}
           {memory?.caption && memory.kind !== 'text' && <p className="text-sm opacity-90">{memory.caption}</p>}

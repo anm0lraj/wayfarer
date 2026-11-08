@@ -28,7 +28,7 @@ export function ImageCard({ src, alt, title, subtitle, meta, badge, ratio = '4/3
     <div className={cn('relative overflow-hidden rounded-lg bg-surface-2', ratios[ratio], className)}>
       <img {...responsiveImage(src, sizes)} alt={alt} loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover" />
       {badge && <div className="absolute left-3 top-3">{badge}</div>}
-      <div className="scrim-text absolute inset-x-0 bottom-0 space-y-0.5 px-4 pb-4 pt-12 text-white">
+      <div className="scrim-text absolute inset-x-0 bottom-0 space-y-0.5 px-4 pb-3.5 pt-5 text-white">
         <p className="truncate text-lg font-semibold leading-tight">{title}</p>
         {subtitle && <p className="line-clamp-2 text-sm leading-snug text-white/90">{subtitle}</p>}
         {meta && <p className="truncate text-sm font-medium leading-snug text-white">{meta}</p>}
