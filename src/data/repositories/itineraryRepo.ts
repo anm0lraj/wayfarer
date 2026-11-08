@@ -206,6 +206,28 @@ export const itineraryRepo = {
     await refreshLegs(snapshot.dayId)
   },
 
+  /**
+   * Puts days back exactly as they were in `before` (from `listDays`/`listItems` of the trip): their titles and notes,
+   * and their items with the same content and order; items added to those days since are removed. One transaction.
+   * Rewritten rows get a fresh `updatedAt` so sync treats the Undo as the newest edit.
+   */
+  async restorePlan(tripId: string, before: { days: ItineraryDay[]; items: ItineraryItem[] }): Promise<void> {
+    await requireTripAccess(tripId, 'edit')
+    const content = (o: object) => JSON.stringify(Object.entries(o).filter(([k, v]) => k !== 'updatedAt' && v !== undefined).sort(([a], [b]) => a.localeCompare(b)))
+    const same = (a: object | undefined, b: object) => !!a && content(a) === content(b)
+    await db.transaction('rw', db.tables, async () => {
+      const keep = new Set(before.items.map((i) => i.id))
+      for (const day of before.days) {
+        if (day.tripId !== tripId) continue
+        for (const item of await dayItems(day.id)) if (!keep.has(item.id)) await del('items', db.items, item.id)
+        if (!same(await db.days.get(day.id), day)) await put('days', db.days, day)
+      }
+      for (const item of before.items) {
+        if (item.tripId === tripId && !same(await db.items.get(item.id), item)) await put('items', db.items, { ...item, updatedAt: nowIso() })
+      }
+    })
+  },
+
   async updateDay(id: string, patch: Partial<Pick<ItineraryDay, 'title' | 'notes' | 'destinationId'>>): Promise<void> {
     const day = await db.days.get(id)
     if (!day) throw new Error('Day not found')

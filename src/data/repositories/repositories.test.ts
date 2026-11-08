@@ -146,6 +146,22 @@ describe('AI actions go through repositories', () => {
     await expect(applyAIAction('trip-bali', { type: 'OPTIMIZE_ROUTE', dayNumber: 2, itemIds: baliDay1 })).rejects.toThrow('not on Day 2')
     expect(await db.items.toArray()).toEqual(before)
   })
+  it('CREATE_ITINERARY counts only the days that fit the trip, and Undo restores the exact previous days and items', async () => {
+    const plan = async () => {
+      const strip = <T extends { updatedAt?: string }>(rows: T[]) => rows.map(({ updatedAt: _u, ...r }) => r)
+      return { days: strip(await itineraryRepo.listDays('trip-bali')), items: strip(await itineraryRepo.listItems('trip-bali')) }
+    }
+    const before = await plan()
+    const item = { title: 'Rice terrace walk', startTime: '16:00', durationMin: 60, category: 'sightseeing' as const }
+    const days = Array.from({ length: 7 }, (_, i) => ({ title: `New day ${i + 1}`, items: [item] })) // the trip has 5 days
+    const res = await applyAIAction('trip-bali', { type: 'CREATE_ITINERARY', days })
+    expect(res.summary).toBe('Created a 5-day itinerary')
+    const after = await plan()
+    expect(after.days.map((d) => d.title)).toEqual(['New day 1', 'New day 2', 'New day 3', 'New day 4', 'New day 5'])
+    expect(after.items).toHaveLength(before.items.length + 5)
+    await res.undo()
+    expect(await plan()).toEqual(before)
+  })
   it('rejects malformed model output', async () => {
     await expect(applyAIAction('trip-bali', { type: 'DROP_TABLE' })).rejects.toThrow()
     await expect(applyAIAction('trip-bali', { type: 'MOVE_ACTIVITY', itemId: 'x', toDayNumber: 0, position: 0 })).rejects.toThrow()
