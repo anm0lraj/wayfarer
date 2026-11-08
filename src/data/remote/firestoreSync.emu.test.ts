@@ -8,8 +8,16 @@ import { del, put } from '../repositories/shared'
 import { syncNow } from '../syncEngine'
 
 // The Firestore the code under test talks to; each test chooses whose it is, so the real security rules apply.
-const current = vi.hoisted(() => ({ db: undefined as unknown }))
-vi.mock('@/services/firebase/firestore', () => ({ getDb: () => current.db }))
+const current = vi.hoisted(() => ({ db: undefined as unknown, onRemoteCall: undefined as undefined | (() => void) }))
+// `onRemoteCall` runs once, as the first request goes out: a way to act locally while a download is in flight.
+vi.mock('@/services/firebase/firestore', () => ({
+  getDb: () => {
+    const hook = current.onRemoteCall
+    current.onRemoteCall = undefined
+    hook?.()
+    return current.db
+  },
+}))
 
 import { fetchRemoteProfile, pullFromFirestore, sendBatchToFirestore } from './firestoreSync'
 
@@ -209,6 +217,31 @@ describe('pulling remote changes', () => {
     await put('items', db.items, item('My unsent edit', '2026-10-09T00:00:00.000Z') as never)
     await pullFromFirestore(people.editor.uid)
     expect((await db.items.get('i1'))?.title).toBe('My unsent edit')
+  })
+
+  it('does not bring back something deleted here while the download was in flight', async () => {
+    await ownerCreatesSharedTrip()
+    await onDevice('editor')
+    await pullFromFirestore(people.editor.uid)
+    await db.syncQueue.clear()
+    let deleted: Promise<void> | undefined
+    current.onRemoteCall = () => { deleted = del('items', db.items, 'i1') }
+    await pullFromFirestore(people.editor.uid)
+    await deleted
+    expect(await db.items.get('i1')).toBeUndefined()
+    expect(await db.syncQueue.count()).toBe(1) // the delete is still on its way to the server
+  })
+
+  it('does not remove something added here while the download was in flight', async () => {
+    await ownerCreatesSharedTrip()
+    await onDevice('editor')
+    await pullFromFirestore(people.editor.uid)
+    await db.syncQueue.clear()
+    let added: Promise<void> | undefined
+    current.onRemoteCall = () => { added = put('items', db.items, { ...item('Just added'), id: 'i9' } as never) }
+    await pullFromFirestore(people.editor.uid)
+    await added
+    expect(await db.items.get('i9')).toMatchObject({ title: 'Just added' })
   })
 
   it('removes a trip locally once it has been deleted remotely, but keeps one with unsent changes', async () => {

@@ -197,13 +197,17 @@ export async function sendBatchToFirestore(ops: SyncOp[]): Promise<SyncResult[]>
 
 const localTable = (name: string) => db.table(name) as { get(id: string): Promise<Row | undefined>; put(v: unknown): Promise<unknown>; where(k: string): { equals(v: unknown): { toArray(): Promise<Row[]> } }; bulkDelete(ids: string[]): Promise<unknown> }
 
-/** Ids of things the device has changed but not yet sent: remote copies must never overwrite those. */
+/**
+ * Ids of things the device has changed or deleted but not yet sent: remote copies must never overwrite, re-create or
+ * remove those. Read inside the transaction that applies a download (see `applyRemote`), never once up front: an edit
+ * or delete made while the download was in flight must count too.
+ */
 async function pendingIds(): Promise<Set<string>> {
   const ops = await db.syncQueue.toArray()
   return new Set(ops.map((o) => `${o.entity}/${o.entityId}`))
 }
 
-/** Take the remote copy when it is newer than ours (or we have none), unless we have an unsent edit to it. */
+/** Take the remote copy when it is newer than ours (or we have none), unless we have an unsent edit or delete of it. */
 async function adopt(entity: string, remote: Row, pending: Set<string>): Promise<boolean> {
   if (pending.has(`${entity}/${remote.id}`)) return false
   const table = localTable(entity)
@@ -215,6 +219,27 @@ async function adopt(entity: string, remote: Row, pending: Set<string>): Promise
   await table.put(entity === 'trips' ? withoutMembers(remote) : remote)
   return true
 }
+
+/**
+ * Applies downloaded rows of one table in one transaction with the sync queue, so no local write (which queues itself in
+ * the same transaction, see `put`/`del`) can slip between the check and the write. With `inTrip`, local rows of that
+ * trip the server no longer has are removed, unless they have unsent changes. Returns how many local records changed.
+ */
+async function applyRemote(entity: string, rows: Row[], inTrip?: string): Promise<number> {
+  return db.transaction('rw', db.table(entity), db.syncQueue, async () => {
+    const pending = await pendingIds()
+    let changed = 0
+    for (const row of rows) if (await adopt(entity, row, pending)) changed++
+    if (inTrip) {
+      const remoteIds = new Set(rows.map((r) => r.id))
+      const gone = (await localTable(entity).where('tripId').equals(inTrip).toArray()).filter((r) => !remoteIds.has(r.id) && !pending.has(`${entity}/${r.id}`))
+      if (gone.length) { await localTable(entity).bulkDelete(gone.map((r) => r.id)); changed += gone.length }
+    }
+    return changed
+  })
+}
+
+const rowsOf = (snap: Awaited<ReturnType<typeof getDocs>>) => snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) }) as Row)
 
 /** The signed-in person's profile as stored remotely, if any (used on a new device before one is created locally). */
 export async function fetchRemoteProfile(uid: string): Promise<User | undefined> {
@@ -228,45 +253,40 @@ export async function fetchRemoteProfile(uid: string): Promise<User | undefined>
  * unless there are unsent local changes to it.
  */
 export async function pullFromFirestore(uid: string): Promise<number> {
-  const pending = await pendingIds()
   let changed = 0
 
   const tripSnap = await getDocs(query(collection(getDb(), 'trips'), where(`members.${uid}`, 'in', ['owner', 'editor', 'viewer'])))
   const remoteTripIds = new Set(tripSnap.docs.map((d) => d.id))
 
   for (const t of tripSnap.docs) {
-    if (await adopt('trips', { id: t.id, ...t.data() } as Row, pending)) changed++
+    changed += await applyRemote('trips', [{ id: t.id, ...t.data() } as Row])
     for (const name of TRIP_CHILDREN) {
-      const snap = await getDocs(collection(getDb(), `trips/${t.id}/${name}`))
-      const remoteIds = new Set<string>()
-      for (const d of snap.docs) {
-        remoteIds.add(d.id)
-        if (await adopt(name, { id: d.id, ...d.data() } as Row, pending)) changed++
-      }
-      const gone = (await localTable(name).where('tripId').equals(t.id).toArray()).filter((r) => !remoteIds.has(r.id) && !pending.has(`${name}/${r.id}`))
-      if (gone.length) { await localTable(name).bulkDelete(gone.map((r) => r.id)); changed += gone.length }
+      changed += await applyRemote(name, rowsOf(await getDocs(collection(getDb(), `trips/${t.id}/${name}`))), t.id)
     }
   }
 
   // Trips we hold for this person that the server no longer lists.
-  const mine = await db.trips.toArray()
-  for (const trip of mine) {
-    const ours = trip.ownerId === uid || (await db.collaborators.where('[tripId+userId]').equals([trip.id, uid]).count()) > 0
-    if (!ours || remoteTripIds.has(trip.id) || pending.has(`trips/${trip.id}`)) continue
-    for (const name of TRIP_CHILDREN) {
-      const rows = await localTable(name).where('tripId').equals(trip.id).toArray()
-      await localTable(name).bulkDelete(rows.map((r) => r.id))
+  changed += await db.transaction('rw', [db.trips, db.collaborators, db.syncQueue, ...TRIP_CHILDREN.map((n) => db.table(n))], async () => {
+    const pending = await pendingIds()
+    let removed = 0
+    for (const trip of await db.trips.toArray()) {
+      const ours = trip.ownerId === uid || (await db.collaborators.where('[tripId+userId]').equals([trip.id, uid]).count()) > 0
+      if (!ours || remoteTripIds.has(trip.id) || pending.has(`trips/${trip.id}`)) continue
+      for (const name of TRIP_CHILDREN) {
+        const rows = await localTable(name).where('tripId').equals(trip.id).toArray()
+        await localTable(name).bulkDelete(rows.map((r) => r.id))
+      }
+      await db.trips.delete(trip.id)
+      removed++
     }
-    await db.trips.delete(trip.id)
-    changed++
-  }
+    return removed
+  })
 
   for (const name of USER_COLLECTIONS) {
-    const snap = await getDocs(collection(getDb(), `users/${uid}/${name}`))
-    for (const d of snap.docs) if (await adopt(name, { id: d.id, ...d.data() } as Row, pending)) changed++
+    changed += await applyRemote(name, rowsOf(await getDocs(collection(getDb(), `users/${uid}/${name}`))))
   }
 
   const profile = await fetchRemoteProfile(uid)
-  if (profile && (await adopt('users', profile as unknown as Row, pending))) changed++
+  if (profile) changed += await applyRemote('users', [profile as unknown as Row])
   return changed
 }
