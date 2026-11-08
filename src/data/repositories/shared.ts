@@ -29,8 +29,15 @@ export async function requireTripAccess(tripId: string, action: TripAction): Pro
   if (!can(await getRole(tripId), action)) throw new PermissionError(action)
 }
 
+/**
+ * Tables whose rows have no `updatedAt` set by their repository: `put` stamps it, so sync (adopt and conflicts, newer
+ * wins) can compare copies. Rows written before this have none; any copy with a timestamp beats one without.
+ */
+const STAMPED = new Set(['days', 'checklist'])
+
 /** Writes an entity to the local table and queues the change for sync. */
 export async function put<T extends { id: string }>(entity: string, table: { put(v: T): Promise<unknown> }, value: T) {
+  if (STAMPED.has(entity)) value = { ...value, updatedAt: nowIso() }
   await table.put(value)
   await enqueue(entity, value.id, 'put', value)
 }

@@ -199,7 +199,9 @@ async function adopt(entity: string, remote: Row, pending: Set<string>): Promise
   const table = localTable(entity)
   const local = await table.get(remote.id)
   if (local && local.updatedAt && remote.updatedAt && local.updatedAt >= remote.updatedAt) return false
-  if (local && !remote.updatedAt) return false // records without a timestamp are written once; keep what we have
+  // A copy without a timestamp (written once, or a day/checklist row from before they had one) never replaces ours; one with
+  // a timestamp replaces a local copy without one.
+  if (local && !remote.updatedAt) return false
   await table.put(entity === 'trips' ? withoutMembers(remote) : remote)
   return true
 }

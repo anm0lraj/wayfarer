@@ -152,6 +152,33 @@ describe('pulling remote changes', () => {
     expect(await db.items.get('i1')).toMatchObject({ title: 'Temple' })
   })
 
+  it('brings checklist ticks and day titles to another device, also over rows stored before they had a timestamp', async () => {
+    await ownerCreatesSharedTrip()
+    // Written by an older app version: no updatedAt.
+    const day = { id: 'd1', tripId: 't1', dayNumber: 1, date: '2026-10-12' }
+    const chk = { id: 'k1', tripId: 't1', label: 'Passport', type: 'custom', done: false }
+    await sendBatchToFirestore([
+      { id: 1, entity: 'days', entityId: 'd1', op: 'put', payload: day, createdAt: 0, attempts: 0 },
+      { id: 2, entity: 'checklist', entityId: 'k1', op: 'put', payload: chk, createdAt: 0, attempts: 0 },
+    ])
+    await onDevice('editor')
+    await pullFromFirestore(people.editor.uid)
+    expect(await db.checklist.get('k1')).toMatchObject({ done: false })
+
+    await onDevice('owner')
+    await put('checklist', db.checklist, { ...chk, done: true } as never)
+    await put('days', db.days, { ...day, title: 'Arrival' } as never)
+    await flush()
+
+    current.db = people.editor.db // the editor's device, still holding the old rows
+    setActorId(people.editor.uid)
+    await db.checklist.put(chk as never)
+    await db.days.put(day as never)
+    expect(await pullFromFirestore(people.editor.uid)).toBeGreaterThanOrEqual(2)
+    expect(await db.checklist.get('k1')).toMatchObject({ done: true })
+    expect(await db.days.get('d1')).toMatchObject({ title: 'Arrival' })
+  })
+
   it('does not hand a stranger anyone else’s trip', async () => {
     await ownerCreatesSharedTrip()
     await onDevice('stranger')

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from './db'
-import { itineraryRepo } from './repositories'
+import { checklistRepo, itineraryRepo } from './repositories'
 import { resetDemoData } from './seed'
 import { setActorId, DEMO_USER_ID } from './actor'
 import { syncNow, type SendBatch } from './syncEngine'
@@ -74,6 +74,35 @@ describe('syncNow', () => {
     const send = vi.fn(ack)
     expect((await syncNow(send)).sent).toBe(120)
     expect(send.mock.calls.map((c) => c[0].length)).toEqual([50, 50, 20])
+  })
+})
+
+/** Checklist ticks and day titles had no `updatedAt`, so newer-wins could not tell copies apart and they never synced. */
+describe('checklist ticks and day titles', () => {
+  it('are queued with a timestamp', async () => {
+    await checklistRepo.toggle('chk-bali-4')
+    await itineraryRepo.updateDay('day-1', { title: 'Landing day' })
+    const [tick, day] = (await db.syncQueue.orderBy('id').toArray()).map((o) => o.payload as { updatedAt?: string })
+    expect(tick).toMatchObject({ id: 'chk-bali-4', done: true, updatedAt: expect.any(String) })
+    expect(day).toMatchObject({ id: 'day-1', title: 'Landing day', updatedAt: expect.any(String) })
+  })
+
+  it('lose a conflict to a newer server copy, including a row stored before it had a timestamp', async () => {
+    const old = (await db.checklist.get('chk-bali-5'))!
+    expect(old.updatedAt).toBeUndefined() // seeded rows predate the field
+    await checklistRepo.toggle('chk-bali-5')
+    await db.checklist.put(old) // as if the local row were still the old, unstamped one
+    const newer = { ...old, done: true, label: 'Visa sorted', updatedAt: '2099-01-01T00:00:00.000Z' }
+    const result = await syncNow(async (ops) => ops.map((o) => ({ id: o.id!, status: 'conflict' as const, current: newer })))
+    expect(result.conflicts).toBe(1)
+    expect(await db.checklist.get('chk-bali-5')).toMatchObject({ done: true, label: 'Visa sorted' })
+  })
+
+  it('keep a local edit that is newer than the server’s copy', async () => {
+    await itineraryRepo.updateDay('day-2', { title: 'Mine' })
+    const older = { ...(await db.days.get('day-2'))!, title: 'Theirs', updatedAt: '2000-01-01T00:00:00.000Z' }
+    await syncNow(async (ops) => ops.map((o) => ({ id: o.id!, status: 'conflict' as const, current: older })))
+    expect((await db.days.get('day-2'))!.title).toBe('Mine')
   })
 })
 
