@@ -4,6 +4,7 @@ import { Chip } from '@/components/ui/Chip'
 import { announce } from '@/lib/a11y/announce'
 import { cn } from '@/lib/cn'
 import type { Example } from './doc'
+import { rich } from './ui'
 
 export type PreviewTheme = 'light' | 'dark'
 type ThemeChoice = PreviewTheme | 'both'
@@ -116,7 +117,7 @@ export function Preview({ docId, example, code }: { docId: string; example: Exam
     <section aria-labelledby={titleId} className="space-y-3" id={`example-${example.id}`}>
       <div>
         <h3 id={titleId} className="text-lg font-bold">{example.title}</h3>
-        {example.description && <p className="text-sm text-fg-muted">{example.description}</p>}
+        {example.description && <p className="text-sm text-fg-muted">{rich(example.description)}</p>}
       </div>
       <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-3 py-2">

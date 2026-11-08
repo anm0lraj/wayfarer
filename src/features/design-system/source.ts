@@ -51,16 +51,16 @@ export function exampleSource(raw: string, id: string): string | undefined {
     const end = raw.indexOf('\n', i)
     body = raw.slice(i, end < 0 ? undefined : end).replace(/,\s*$/, '')
   }
-  body = body.trim()
-  // `render: () => <SheetDemo />` → show the demo component itself, which holds the state.
-  const demo = body.match(/^<([A-Z]\w*)\s*\/>$/)
+  body = cleanSnippet(body.trim())
+  // `render: () => <SheetDemo wide="dialog" />` → show the demo component itself, which holds the state.
+  const demo = body.match(/^<([A-Z]\w*)\b[^<>]*\/>$/)
   if (demo) {
     const start = raw.indexOf(`function ${demo[1]}(`)
     if (start >= 0) {
       const brace = raw.indexOf(') {', start)
       const end = brace < 0 ? -1 : balanced(raw, brace + 2)
-      if (end > 0) return raw.slice(start, end + 1)
+      if (end > 0) return `${raw.slice(start, end + 1)}${/\s\w+=/.test(body) ? `\n\n// Used as:\n${body}` : ''}`
     }
   }
-  return cleanSnippet(body)
+  return body
 }
