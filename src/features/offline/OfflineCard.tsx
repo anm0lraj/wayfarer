@@ -7,7 +7,8 @@ import { Card } from '@/components/ui/Card'
 import type { TripWithState } from '@/data/queries/trips'
 import { makeAvailableOffline, removeOfflineMark, summariseOffline, type OfflineSummary } from './offlineTrip'
 
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+/** "1 memory", "3 memories", "2 stays". */
+const plural = (n: number, w: string) => `${n} ${n === 1 ? w : w.endsWith('y') && !/[aeiou]y$/.test(w) ? `${w.slice(0, -1)}ies` : `${w}s`}`
 
 /** Overview card for spec §29: keep this trip usable with no connection. */
 export function OfflineCard({ trip }: { trip: TripWithState }) {

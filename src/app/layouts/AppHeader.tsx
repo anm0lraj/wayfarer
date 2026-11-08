@@ -25,11 +25,11 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface/90 pt-safe backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex min-h-touch items-center gap-2 font-bold sm:hidden">
+        <Link to="/" className="flex min-h-touch items-center gap-2 font-display text-lg font-extrabold tracking-tight text-primary sm:hidden">
           <img src="/icon.svg" alt="" className="size-7 rounded-md" /> Wayfarer
         </Link>
         <form role="search" onSubmit={onSearch} className="hidden w-full max-w-md sm:block">
-          <SearchField label="Search destinations" placeholder="Where do you want to go?" value={query} onChange={(e) => setQuery(e.target.value)} className="rounded-full bg-surface-2 pl-10" />
+          <SearchField label="Search destinations" placeholder="Where do you want to go?" value={query} onChange={(e) => setQuery(e.target.value)} className="bg-surface-2 shadow-none" />
         </form>
         <div className="ml-auto flex items-center gap-1">
           <Link to="/explore" aria-label="Search destinations" className={`${iconButton} sm:hidden`}><Search aria-hidden className="size-5" /></Link>

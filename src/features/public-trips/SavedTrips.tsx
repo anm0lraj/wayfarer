@@ -11,7 +11,7 @@ export function SavedTrips() {
   const saved = useSavedTrips()
   return (
     <>
-      <PageHeader title="Saved trips" description="Itineraries you’ve bookmarked. Copy one when you’re ready to plan it." />
+      <PageHeader title="Saved trips" description="Itineraries you’ve bookmarked. Copy one when you’re ready to go." />
       {saved.isPending && (
         <SkeletonGroup label="Loading saved trips" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => <Skeleton key={i} className="aspect-[4/3]" />)}
@@ -20,8 +20,9 @@ export function SavedTrips() {
       {saved.isError && <ErrorState title="Couldn’t load your saved trips" onRetry={() => void saved.refetch()} />}
       {saved.data && saved.data.length === 0 && (
         <EmptyState
-          title="Nothing saved yet"
-          description="Tap the bookmark on any itinerary to keep it here."
+          art="pin"
+          title="Your wishlist is waiting"
+          description="Tap the bookmark on any itinerary you love and it will be right here when you’re ready to go."
           action={<Button asChild><Link to="/explore/itineraries">Browse itineraries</Link></Button>}
         />
       )}

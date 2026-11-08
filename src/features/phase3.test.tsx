@@ -69,7 +69,7 @@ describe('Itinerary: viewing', () => {
   it('has an empty state for a day with nothing planned', async () => {
     const trip = await tripRepo.create({ title: '2 Days in Goa', destinationIds: ['goa'], startDate: '2027-03-01', endDate: '2027-03-02', timezone: 'Asia/Kolkata', travellers: { group: 'solo', count: 1 }, budget: { tier: 'economy' }, interests: [], planningStyle: 'manual' })
     renderApp(`/trips/${trip.id}/itinerary/day/1`)
-    expect(await screen.findByText('Nothing planned for Day 1')).toBeInTheDocument()
+    expect(await screen.findByText('Day 1 is a blank page')).toBeInTheDocument()
   })
 
   it('shows a not-found state for an unknown activity', async () => {

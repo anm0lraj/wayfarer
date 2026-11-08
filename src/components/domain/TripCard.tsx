@@ -9,8 +9,9 @@ import { fetchPriority } from '@/lib/fetchPriority'
 import type { Trip, TripState } from '@/types'
 import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
-const tone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning' | 'error'> = {
-  draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'error', completed: 'neutral', archived: 'neutral',
+// Live (`active`) is the light-orange "happening now" badge; the others sit on a white pill over the photo.
+const tone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning' | 'error' | 'accent'> = {
+  draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'accent', completed: 'neutral', archived: 'neutral',
 }
 
 interface TripCardProps {
@@ -32,19 +33,19 @@ export function TripCard({ trip, state, countdown, progress, className, priority
   return (
     <Link
       to={`/trips/${trip.id}`}
-      className={cn('group block overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md', className)}
+      className={cn('lift group block overflow-hidden rounded-lg border border-border bg-surface shadow-sm', className)}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-2">
-        <img {...responsiveImage(trip.coverImage, CARD_SIZES)} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
-        <Badge tone={tone[state]} className="absolute left-3 top-3 bg-surface/95 shadow-sm backdrop-blur">
-          {state === 'active' && <span aria-hidden className="size-1.5 rounded-full bg-error motion-safe:animate-pulse" />}
+        <img {...responsiveImage(trip.coverImage, CARD_SIZES)} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+        <Badge tone={tone[state]} className={cn('absolute left-3 top-3 shadow-sm', state !== 'active' && 'bg-surface/95')}>
+          {state === 'active' && <span aria-hidden className="size-2 rounded-full bg-accent motion-safe:animate-pulse" />}
           {stateLabel[state]}
         </Badge>
       </div>
-      <div className="space-y-2 p-3.5">
+      <div className="space-y-2 p-4">
         <div className="flex items-baseline justify-between gap-2">
-          <h3 className="truncate text-lg font-semibold leading-snug">{trip.title}</h3>
-          {countdown && <span className="shrink-0 text-sm font-semibold text-primary">{countdown}</span>}
+          <h3 className="truncate text-xl font-bold leading-snug">{trip.title}</h3>
+          {countdown && <span className="shrink-0 text-sm font-bold text-primary">{countdown}</span>}
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted">
           <span className="inline-flex items-center gap-1.5"><CalendarDays aria-hidden className="size-4" />{formatDateRange(trip.startDate, trip.endDate)} · {days} {days === 1 ? 'day' : 'days'}</span>

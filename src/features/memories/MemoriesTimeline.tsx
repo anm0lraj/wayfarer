@@ -90,7 +90,8 @@ export function MemoriesTimeline() {
 
       {all.length === 0 ? (
         <EmptyState
-          title="No memories yet"
+          art="camera"
+          title="Your story starts with one photo"
           description={trip.effectiveState === 'active' ? 'Snap a photo, jot a note or record a voice note — it’s filed under today’s activity automatically.' : 'Photos, notes and voice notes from your trip will be collected here, day by day.'}
           action={canAdd ? <Button asChild><Link to={`${base}/memories/new`}>Add your first memory</Link></Button> : undefined}
         />

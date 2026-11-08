@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 
 const listClass = 'relative flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
 const triggerClass =
-  'inline-flex min-h-touch shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-4 text-base font-medium text-fg-muted transition-colors hover:text-fg data-[state=active]:border-primary data-[state=active]:text-fg'
+  'inline-flex min-h-touch shrink-0 items-center whitespace-nowrap rounded-t-sm border-b-[3px] border-transparent px-4 text-base font-semibold text-fg-muted transition-colors duration-fast hover:border-primary/30 hover:text-fg data-[state=active]:border-primary data-[state=active]:text-primary'
 // Route tabs on phones: smaller type and padding, sharing the width, so the five trip tabs fit a 390px screen.
 const phoneLinkClass = 'flex-1 justify-center px-2 text-sm sm:flex-none sm:justify-start sm:px-4 sm:text-base'
 
@@ -84,7 +84,7 @@ export function TabNav({ children, label, className }: { children: React.ReactNo
 export function TabLink({ className, ...props }: NavLinkProps) {
   return (
     <NavLink
-      className={({ isActive }) => cn(triggerClass, phoneLinkClass, isActive && 'border-primary text-fg', typeof className === 'string' && className)}
+      className={({ isActive }) => cn(triggerClass, phoneLinkClass, isActive && 'border-primary text-primary', typeof className === 'string' && className)}
       {...props}
     />
   )

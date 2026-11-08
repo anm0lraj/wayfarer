@@ -21,7 +21,7 @@ describe('when nothing has been shared yet', () => {
 
   it('the full feed explains it, without a pointless "Clear filters" button', async () => {
     renderApp('/explore/itineraries')
-    expect(await screen.findByText('Nothing shared yet')).toBeInTheDocument()
+    expect(await screen.findByText('Be the first to share a trip')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Your trips' })).toBeInTheDocument()
   })

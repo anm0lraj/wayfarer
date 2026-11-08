@@ -105,7 +105,7 @@ export default function MapRoute() {
       </div>
 
       {allItems.length === 0 ? (
-        <EmptyState title="Nothing to show on the map yet" description="Stops you add to the itinerary appear here as numbered pins with a route between them." action={<Button asChild><Link to={`/trips/${trip.id}/itinerary`}>Plan your days</Link></Button>} />
+        <EmptyState art="pin" title="Your map is waiting for pins" description="Stops you add to the itinerary appear here as numbered pins with a route between them." action={<Button asChild><Link to={`/trips/${trip.id}/itinerary`}>Plan your days</Link></Button>} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <TripMap

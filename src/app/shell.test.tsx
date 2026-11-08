@@ -90,7 +90,7 @@ describe('app shell', () => {
 
   it('renders 404 for unknown routes', async () => {
     renderAt('/definitely/not/a/route')
-    expect(await screen.findByText('We can’t find that page')).toBeInTheDocument()
+    expect(await screen.findByText('Looks like we took a wrong turn')).toBeInTheDocument()
   })
 })
 

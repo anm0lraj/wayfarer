@@ -31,7 +31,7 @@ import {
 } from './liveStatus'
 import { useLiveLocation } from './useLiveLocation'
 
-const statusTone = { upcoming: 'neutral', on_the_way: 'primary', in_progress: 'warning', completed: 'success', skipped: 'neutral' } as const
+const statusTone = { upcoming: 'neutral', on_the_way: 'primary', in_progress: 'accent', completed: 'success', skipped: 'neutral' } as const
 
 function StatusBadge({ live }: { live: LiveItem }) {
   const Icon = STATUS_ICON[live.status]
@@ -73,7 +73,8 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
   if (!day || dayItems.length === 0) {
     return (
       <EmptyState
-        title="Nothing planned for today"
+        art="camera"
+        title="A free day to wander"
         description="Enjoy the free time, or add something to do."
         action={<Button asChild><Link to={`/trips/${trip.id}/itinerary${day ? `/day/${day.dayNumber}` : ''}`}>Open itinerary</Link></Button>}
       />
@@ -95,8 +96,8 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
   return (
     <div className="space-y-5">
       <header>
-        <p className="flex items-center gap-2 text-fg-muted"><MapPin aria-hidden className="size-4" /> Live trip · Day {day.dayNumber} of {plan.days.length}</p>
-        <h1 className="text-3xl font-bold sm:text-4xl">You’re in {place}</h1>
+        <Badge tone="accent"><MapPin aria-hidden className="size-4" /> Live trip · Day {day.dayNumber} of {plan.days.length}</Badge>
+        <h1 className="mt-2 text-4xl font-extrabold">You’re in {place}</h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-lg text-fg-muted">
           <span>{firstUntouched && snap.next ? `${greetingFor(now, trip.timezone)}. Your first activity starts at ${formatClock(snap.next.item.startTime)}.` : allDone ? 'All done for today.' : `${greetingFor(now, trip.timezone)}.`}</span>
           {weather && <span className="inline-flex items-center gap-2"><WeatherChip condition={weather.condition} tempC={weather.highC} />{weather.rainChancePct >= 40 && <span>{weather.rainChancePct}% rain</span>}</span>}
@@ -113,13 +114,19 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
           )}
 
           {focus && (
-            <Card className="space-y-4 p-5 sm:p-6">
+            // Happening now = the light orange `live` card (dark text, orange details); "Next up" stays a calm white card.
+            <Card className={cn('space-y-4 p-5 sm:p-6', snap.current && 'border-live-border bg-live')}>
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">{snap.current ? 'Happening now' : 'Next up'}</h2>
-                <StatusBadge live={focus} />
+                <h2>
+                  <Badge tone={snap.current ? 'accent' : 'primary'} className="px-3 py-1">
+                    {snap.current && <span aria-hidden className="size-2 rounded-full bg-accent motion-safe:animate-pulse" />}
+                    {snap.current ? 'Happening now' : 'Next up'}
+                  </Badge>
+                </h2>
+                {!snap.current && <StatusBadge live={focus} />}
               </div>
               <div>
-                <p className="text-2xl font-bold sm:text-3xl">{focus.item.title}</p>
+                <p className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">{focus.item.title}</p>
                 <p className="mt-1 text-lg text-fg-muted">
                   {formatClock(focus.item.startTime)}
                   {snap.current ? ` · ends in ${humanMinutes(minutesUntil(focus.end, now))}` : ` · in ${humanMinutes(minutesUntil(focus.start, now))}`}
@@ -156,7 +163,7 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
             <Card className="space-y-2 p-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-semibold">Up next: {snap.next.item.title}</h2>
-                <span className="text-fg-muted">{formatClock(snap.next.item.startTime)}</span>
+                <span className="shrink-0 whitespace-nowrap text-fg-muted">{formatClock(snap.next.item.startTime)}</span>
               </div>
               {nextPoint && (
                 <Button asChild variant="secondary"><a href={maps.links.deepLink(nextPoint, 'directions', snap.next.item.title)} target="_blank" rel="noopener noreferrer"><Navigation aria-hidden className="size-4" /> Navigate to Next</a></Button>
@@ -194,7 +201,7 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
                       type="button"
                       onClick={() => setStatusFor(l.item.id)}
                       aria-label={`${formatClock(l.item.startTime)} ${l.item.title}, ${l.overdue ? 'time has passed' : STATUS_LABEL[l.status].toLowerCase()}. Change status`}
-                      className={cn('flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2', isFocus && 'bg-primary/5')}
+                      className={cn('flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2', isFocus && (snap.current ? 'bg-live' : 'bg-primary/5'))}
                     >
                       <span className={cn('grid size-10 shrink-0 place-items-center rounded-full', meta.tone)}><meta.icon aria-hidden className="size-5" /></span>
                       <span className="min-w-0 flex-1">

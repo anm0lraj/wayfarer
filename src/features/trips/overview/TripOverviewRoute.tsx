@@ -70,11 +70,17 @@ function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
       )
     case 'active':
       return (
-        <Card className="space-y-3 border-secondary/40 bg-secondary/10 p-5">
-          <h2 className="flex items-center gap-2 text-xl font-semibold"><Radio aria-hidden className="size-5 text-secondary motion-safe:animate-pulse" /> Your trip is live{day ? ` — Day ${day}` : ''}</h2>
-          <p className="text-fg-muted">Live Trip shows today’s plan, the next stop and directions in one simple view.</p>
-          <Button asChild size="lg"><Link to={`${base}/live`}>Open Live Trip <ArrowRight aria-hidden className="size-5" /></Link></Button>
-        </Card>
+        // Happening now: the light orange `live` panel (dark text, orange icon) with the normal blue action.
+        <section aria-labelledby="live-now-h" className="space-y-3 rounded-xl border border-live-border bg-live p-5 sm:p-6">
+          <h2 id="live-now-h" className="flex items-center gap-2.5 text-2xl font-extrabold">
+            <span aria-hidden className="grid size-10 place-items-center rounded-full bg-surface text-secondary shadow-sm"><Radio className="size-5 motion-safe:animate-pulse" strokeWidth={2.4} /></span>
+            Your trip is live{day ? ` — Day ${day}` : ''}
+          </h2>
+          <p className="text-fg-muted">Today’s plan, your next stop and directions, all in one glanceable view.</p>
+          <Button asChild size="lg">
+            <Link to={`${base}/live`}>Open Live Trip <ArrowRight aria-hidden className="size-5" /></Link>
+          </Button>
+        </section>
       )
     case 'completed':
       return (

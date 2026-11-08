@@ -63,7 +63,7 @@ test('demo date simulator makes the Live entry appear', async ({ page }) => {
 
 test('unknown URLs show the 404 state', async ({ page }) => {
   await page.goto('/no/such/page')
-  await expect(page.getByText('We can’t find that page')).toBeVisible()
+  await expect(page.getByText('Looks like we took a wrong turn')).toBeVisible()
 })
 
 // A scrolling row whose hidden (sr-only) children sit outside it used to widen the whole page on phones.
