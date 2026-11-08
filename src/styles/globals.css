@@ -17,9 +17,9 @@
     min-height: 100dvh;
     overscroll-behavior-y: none;
   }
-  /* Headings speak in the display face (Bricolage Grotesque); everything else stays Inter. */
-  h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; letter-spacing: -0.015em; text-wrap: balance; }
-  h1 { letter-spacing: -0.025em; }
+  /* Plus Jakarta Sans throughout; headings go through --font-display, with slightly tighter tracking as they grow. */
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 { line-height: 1.15; letter-spacing: -0.02em; }
   :focus-visible { outline: 3px solid rgb(var(--focus)); outline-offset: 2px; border-radius: 4px; }
   ::selection { background: rgb(var(--primary) / 0.25); }
   @media (prefers-reduced-motion: reduce) {

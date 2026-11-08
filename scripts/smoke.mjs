@@ -62,7 +62,7 @@ await check('web app manifest', async () => { const r = await get('/manifest.web
 for (const file of ['/sw.js', '/push-sw.js']) {
   await check(`${file} is JavaScript`, async () => { const r = await get(file); return expectStatus(r, 200) ?? (/javascript/.test(type(r)) ? undefined : `content-type ${type(r)} (is the SPA rewrite catching it?)`) })
 }
-await check('font is a font, not the app', async () => { const r = await get('/fonts/inter-latin.woff2'); return expectStatus(r, 200) ?? (/font|octet/.test(type(r)) ? undefined : `content-type ${type(r)}`) })
+await check('font is a font, not the app', async () => { const r = await get('/fonts/plus-jakarta-sans-latin.woff2'); return expectStatus(r, 200) ?? (/font|octet/.test(type(r)) ? undefined : `content-type ${type(r)}`) })
 
 const home = probeText
 const script = /src="(\/assets\/index-[^"]+\.js)"/.exec(home)?.[1]

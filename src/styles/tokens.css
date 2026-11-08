@@ -1,18 +1,11 @@
 /*
- * Inter (SIL Open Font License 1.1), self-hosted: a variable font, so one file per script covers every weight. Serving it
- * ourselves removes a render-blocking request to Google and two third-party hosts from the security policy. Scripts other
- * than Latin fall back to the system font. 'swap' shows text at once in the fallback, then switches.
+ * Plus Jakarta Sans (SIL Open Font License 1.1, licence in public/fonts/OFL-PlusJakartaSans.txt) for everything:
+ * headings and body. Self-hosted variable font (weight 200–800), so one file per script covers every weight and no
+ * third-party font host is in the security policy. Latin + Latin Extended; other scripts fall back to the system font.
+ * 'swap' shows text at once in the fallback, then switches. Only the Latin file is preloaded (index.html).
  */
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-
-/*
- * Bricolage Grotesque (SIL Open Font License 1.1, licence in public/fonts/OFL-BricolageGrotesque.txt), self-hosted like
- * Inter: the display face for headings only (h1–h3 and `font-display`). Variable in weight (200–800) and optical size,
- * so big headings get its lively display cut automatically and small ones stay sturdy. Latin + Latin Extended.
- */
-@font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/bricolage-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
-@font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/bricolage-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 
 /* Design tokens. Colors are space-separated RGB channels so Tailwind can apply alpha. */
 :root {
@@ -45,9 +38,9 @@
   --on-error: 255 255 255;
   --focus: 26 80 240;
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Headings only. Body, controls, prices and data stay in Inter. */
-  --font-display: 'Bricolage Grotesque', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Headings (h1–h3, `font-display`): the same family today; kept separate so headings can change face on their own. */
+  --font-display: var(--font-sans);
 
   --text-xs: clamp(0.6875rem, 0.67rem + 0.08vw, 0.75rem);
   --text-sm: clamp(0.78125rem, 0.76rem + 0.1vw, 0.84375rem);

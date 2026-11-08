@@ -32,11 +32,10 @@ export function CreditsPage() {
         ))}
       </ul>
       <section aria-labelledby="fonts-h" className="max-w-2xl space-y-2 leading-relaxed">
-        <h2 id="fonts-h" className="text-2xl font-bold">Fonts</h2>
+        <h2 id="fonts-h" className="text-2xl font-bold">Font</h2>
         <p>
-          Text is set in <a className={link} href="https://rsms.me/inter/" rel="noopener" target="_blank">Inter</a> by Rasmus Andersson, headings in{' '}
-          <a className={link} href="https://github.com/ateliertriay/bricolage" rel="noopener" target="_blank">Bricolage Grotesque</a> by Mathieu Triay. Both are
-          shared under the <a className={link} href="https://openfontlicense.org/" rel="license noopener" target="_blank">SIL Open Font License 1.1</a>.
+          Wayfarer is set in <a className={link} href="https://github.com/tokotype/PlusJakartaSans" rel="noopener" target="_blank">Plus Jakarta Sans</a> by
+          Tokotype (Gumpita Rahayu), shared under the <a className={link} href="https://openfontlicense.org/" rel="license noopener" target="_blank">SIL Open Font License 1.1</a>.
           The illustrations are drawn for Wayfarer.
         </p>
       </section>
