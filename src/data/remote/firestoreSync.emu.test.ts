@@ -5,6 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActorId } from '../actor'
 import { db } from '../db'
 import { del, put } from '../repositories/shared'
+import { syncNow } from '../syncEngine'
 
 // The Firestore the code under test talks to; each test chooses whose it is, so the real security rules apply.
 const current = vi.hoisted(() => ({ db: undefined as unknown }))
@@ -106,8 +107,23 @@ describe('sending local changes', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     await put('items', db.items, item('Mine', '2026-10-04T00:00:00.000Z') as never)
     await db.syncQueue.toCollection().modify({ refusals: 3 })
-    await expect(sendBatchToFirestore(await db.syncQueue.toArray())).rejects.toThrow()
-    expect(await db.syncQueue.count()).toBe(1) // still queued
+    const [op] = await db.syncQueue.toArray()
+    expect(await sendBatchToFirestore([op!])).toEqual([{ id: op!.id, status: 'refused' }]) // parked by the sync engine, not dropped
+  })
+
+  it('a refused change at the head of the queue does not hold up the ones behind it', async () => {
+    await ownerCreatesSharedTrip()
+    await onDevice('viewer')
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    await put('items', db.items, item('Not allowed', '2026-10-03T08:00:00.000Z') as never)
+    await put('notifications', db.notifications, { id: 'n1', userId: people.viewer.uid, title: 'Mine', createdAt: T0 } as never)
+    await put('items', db.items, item('Still not allowed', '2026-10-03T09:00:00.000Z') as never)
+    const summary = await syncNow(sendBatchToFirestore)
+    expect(summary).toMatchObject({ sent: 1, refused: 1, failed: false })
+    expect(await remote(`users/${people.viewer.uid}/notifications/n1`, 'viewer')).toMatchObject({ title: 'Mine' })
+    // The refused edit is parked with its refusal counted; the later edit to the same activity waits behind it.
+    const left = await db.syncQueue.orderBy('id').toArray()
+    expect(left.map((o) => [o.entityId, o.refusals ?? 0])).toEqual([['i1', 1], ['i1', 0]])
   })
 
   it('reports a conflict, with the server’s copy, when someone else edited the same thing more recently', async () => {

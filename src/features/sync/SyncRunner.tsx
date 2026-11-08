@@ -41,7 +41,8 @@ export function SyncRunner() {
           error = err instanceof Error ? ((err as { code?: string }).code ? `${(err as { code?: string }).code}: ${err.message}` : err.message) : String(err)
         }
       }
-      useSyncState.setState({ syncing: false, lastFailed: failed, lastError: failed ? error : undefined, lastSyncedAt: failed ? useSyncState.getState().lastSyncedAt : Date.now() })
+      const stuck = failed || !!result.refused // refused changes stay queued: say so, but keep pulling
+      useSyncState.setState({ syncing: false, lastFailed: stuck, lastError: stuck ? error : undefined, lastSyncedAt: failed ? useSyncState.getState().lastSyncedAt : Date.now() })
       if (conflicts > 0 && !cancelled) {
         void qc.invalidateQueries()
         toast({ title: `${conflicts} ${conflicts === 1 ? 'change was' : 'changes were'} replaced by a newer version`, description: 'Another device edited the same thing more recently, so we kept that one.' })

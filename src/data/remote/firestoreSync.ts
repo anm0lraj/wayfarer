@@ -146,36 +146,46 @@ async function sendOne(op: SyncOp, uid: string): Promise<SyncResult> {
 
 /**
  * Sends queued changes straight to Firestore, in order, as the signed-in person. The security rules decide whether each
- * one is allowed. Stops at the first failure and returns what succeeded; the sync engine keeps the rest queued.
+ * one is allowed. A refused change does not stop the batch: it is answered `refused` (the sync engine parks it and
+ * counts the refusal) and later changes to the same document `held`. Stops at the first other failure (network, server)
+ * and returns what was answered so far; the sync engine keeps the rest queued.
  */
 export async function sendBatchToFirestore(ops: SyncOp[]): Promise<SyncResult[]> {
   const uid = getActorId()
   if (!uid) throw new Error('Not signed in')
   const results: SyncResult[] = []
+  const refused: SyncOp[] = []
+  const held = new Set<string>()
   let wrote = 0 // real writes that went through in this batch: proof the person can write at all
   for (const op of ops) {
+    const key = `${op.entity}/${op.entityId}`
+    if (held.has(key)) { results.push({ id: op.id!, status: 'held' }); continue }
     try {
       const result = await sendOne(op, uid)
       results.push(result)
       if (docPathFor(op, uid)) wrote++
     } catch (e) {
-      // The rules said no. That may be permanent (a viewer editing) or a setup problem (rules not deployed yet), so retry a
-      // few times before giving up on the change; dropping it at once could lose work to a misconfiguration.
       if ((e as { code?: string }).code === 'permission-denied') {
-        const refusals = op.refusals ?? 0
-        // Give up on a change only when the rules clearly object to *it*: others in this batch went through, or it has
-        // been refused many times. If everything is refused, the likelier cause is setup (rules not deployed), so keep the
-        // work and keep trying.
-        if ((refusals >= REFUSED_RETRIES && wrote > 0) || refusals >= REFUSED_GIVE_UP) {
-          results.push({ id: op.id!, status: 'ok' })
-          console.warn(`Not allowed to sync ${op.entity}/${op.entityId}; dropped.`)
-          continue
-        }
-        await db.syncQueue.update(op.id!, { refusals: refusals + 1 })
-        console.warn(`Not allowed to sync ${op.entity}/${op.entityId} yet (refusal ${refusals + 1} of ${REFUSED_RETRIES + 1}).`)
+        refused.push(op)
+        held.add(key)
+        results.push({ id: op.id!, status: 'refused' })
+        continue
       }
       if (results.length === 0) throw e
       break
+    }
+  }
+  // The rules said no. That may be permanent (a viewer editing) or a setup problem (rules not deployed yet), so a refused
+  // change is retried a few times before it is dropped; dropping it at once could lose work to a misconfiguration. Give up
+  // only when the rules clearly object to *it*: others in this batch went through, or it has been refused many times.
+  for (const op of refused) {
+    const refusals = op.refusals ?? 0
+    const r = results.find((x) => x.id === op.id)!
+    if ((refusals >= REFUSED_RETRIES && wrote > 0) || refusals >= REFUSED_GIVE_UP) {
+      r.status = 'ok'
+      console.warn(`Not allowed to sync ${op.entity}/${op.entityId}; dropped.`)
+    } else {
+      console.warn(`Not allowed to sync ${op.entity}/${op.entityId} yet (refusal ${refusals + 1} of ${REFUSED_RETRIES + 1}).`)
     }
   }
   return results
