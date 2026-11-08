@@ -107,7 +107,7 @@ describe('Firestore media adapter', () => {
 
   it('seed keys never touch Firestore', async () => {
     as('owner')
-    expect(await firestoreMediaService.getUrl('seed:bali')).toMatch(/^data:image\/svg/)
+    expect(await firestoreMediaService.getUrl('seed:bali')).toMatch(/^(\/photos\/|data:image\/svg)/) // the bundled photo, or its illustration
     await expect(firestoreMediaService.publish('seed:bali')).resolves.toBeUndefined()
   })
 })
