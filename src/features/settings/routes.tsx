@@ -143,7 +143,7 @@ export default function SettingsRoute() {
 
           <Card id="notifications" className="scroll-mt-20 space-y-4 p-5 sm:p-6">
             <div><h2 className="text-lg font-semibold">Notifications</h2><p className="mt-1 max-w-prose text-fg-muted">Choose which reminders you get. They always appear in the app; system notifications need your permission.</p></div>
-            <PushPermissionCard />
+            <PushPermissionCard inset />
             <PushDeviceStatus />
             <NotificationSettings />
           </Card>

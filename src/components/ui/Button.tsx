@@ -19,8 +19,6 @@ const button = cva(
     variants: {
       variant: {
         primary: 'bg-primary text-primary-fg shadow-primary hover:bg-primary/90 motion-safe:hover:-translate-y-px',
-        // Bright orange for "happening now" actions (Live Trip): always dark ink on the fill.
-        accent: 'bg-accent text-accent-fg shadow-accent hover:brightness-105 motion-safe:hover:-translate-y-px',
         secondary: 'border border-border-strong bg-surface text-fg shadow-sm hover:border-primary hover:text-primary',
         ghost: 'text-fg hover:bg-primary/10 hover:text-primary',
         danger: 'bg-error text-error-fg shadow-sm hover:bg-error/90',

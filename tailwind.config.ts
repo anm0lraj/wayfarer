@@ -16,6 +16,7 @@ export default {
         primary: { DEFAULT: c('primary'), fg: c('on-primary') },
         secondary: { DEFAULT: c('secondary'), fg: c('on-secondary') },
         accent: { DEFAULT: c('accent'), fg: c('on-accent') },
+        live: { DEFAULT: c('live-bg'), border: c('live-border') },
         success: { DEFAULT: c('success'), fg: c('on-success') },
         warning: { DEFAULT: c('warning'), fg: c('on-warning') },
         error: { DEFAULT: c('error'), fg: c('on-error') },

@@ -31,19 +31,19 @@ function greeting(now: Date) {
 function LiveBanner({ trip }: { trip: TripWithState }) {
   const day = currentDayNumber(trip, useNow())
   return (
-    // Bright orange = happening now: the one place on Home that should grab the eye, with dark ink for contrast.
-    <Link to={`/trips/${trip.id}/live`} className="lift flex items-center gap-4 rounded-xl bg-accent p-4 text-accent-fg shadow-accent sm:p-5">
-      <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-accent-fg/10">
+    // Happening now: the light orange `live` panel (dark text, orange icon), with the normal blue action.
+    <Link to={`/trips/${trip.id}/live`} className="lift flex items-center gap-4 rounded-xl border border-live-border bg-live p-4 text-fg shadow-sm sm:p-5">
+      <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-surface text-secondary shadow-sm">
         <Radio className="size-6 motion-safe:animate-pulse" strokeWidth={2.4} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-display text-xl font-extrabold leading-tight">You’re on {trip.title}{day ? ` — Day ${day}` : ''}</span>
-        <span className="mt-0.5 block text-sm font-medium text-accent-fg/80">Today’s plan, your next stop and directions, one tap away</span>
+        <span className="mt-0.5 block text-sm text-fg-muted">Today’s plan, your next stop and directions, one tap away</span>
       </span>
-      <span aria-hidden className="hidden min-h-touch shrink-0 items-center gap-1 rounded-full bg-white px-5 font-bold text-accent-fg shadow-sm sm:inline-flex">
+      <span aria-hidden className="hidden min-h-touch shrink-0 items-center gap-1 rounded-md bg-primary px-4 font-semibold text-primary-fg shadow-primary sm:inline-flex">
         Open Live Trip <ChevronRight className="size-4" />
       </span>
-      <ChevronRight aria-hidden className="size-6 shrink-0 sm:hidden" />
+      <ChevronRight aria-hidden className="size-6 shrink-0 text-fg-muted sm:hidden" />
     </Link>
   )
 }
@@ -112,6 +112,8 @@ export default function HomeRoute() {
 
       <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
         <div className="min-w-0 space-y-8 lg:col-span-8">
+          {/* While a trip is live and nothing else is coming up, the live banner says it all: no "plan a trip" empty state under it. */}
+          {!(active && upcoming.length === 0) && (
           <Section title="Upcoming trips" to="/trips" linkLabel="All trips">
             {trips.isPending && (
               <SkeletonGroup label="Loading trips" className="grid gap-3 sm:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="hidden h-64 sm:block" /></SkeletonGroup>
@@ -134,6 +136,7 @@ export default function HomeRoute() {
               </ul>
             )}
           </Section>
+          )}
 
           <Section title="Explore" description="Places travellers can’t stop talking about" to="/explore">
             {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}

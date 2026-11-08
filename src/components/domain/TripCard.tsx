@@ -9,7 +9,7 @@ import { fetchPriority } from '@/lib/fetchPriority'
 import type { Trip, TripState } from '@/types'
 import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
-// Live (`active`) is the solid orange "happening now" badge; the others sit on a white pill over the photo.
+// Live (`active`) is the light-orange "happening now" badge; the others sit on a white pill over the photo.
 const tone: Record<TripState, 'neutral' | 'primary' | 'success' | 'warning' | 'error' | 'accent'> = {
   draft: 'neutral', planning: 'primary', ready: 'success', upcoming: 'success', active: 'accent', completed: 'neutral', archived: 'neutral',
 }
@@ -38,7 +38,7 @@ export function TripCard({ trip, state, countdown, progress, className, priority
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-2">
         <img {...responsiveImage(trip.coverImage, CARD_SIZES)} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
         <Badge tone={tone[state]} className={cn('absolute left-3 top-3 shadow-sm', state !== 'active' && 'bg-surface/95')}>
-          {state === 'active' && <span aria-hidden className="size-2 rounded-full bg-accent-fg motion-safe:animate-pulse" />}
+          {state === 'active' && <span aria-hidden className="size-2 rounded-full bg-accent motion-safe:animate-pulse" />}
           {stateLabel[state]}
         </Badge>
       </div>

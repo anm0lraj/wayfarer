@@ -70,14 +70,14 @@ function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
       )
     case 'active':
       return (
-        // Happening now: a bright orange panel with dark ink, so it is the first thing seen on the page.
-        <section aria-labelledby="live-now-h" className="space-y-3 rounded-xl bg-accent p-5 text-accent-fg shadow-accent sm:p-6">
+        // Happening now: the light orange `live` panel (dark text, orange icon) with the normal blue action.
+        <section aria-labelledby="live-now-h" className="space-y-3 rounded-xl border border-live-border bg-live p-5 sm:p-6">
           <h2 id="live-now-h" className="flex items-center gap-2.5 text-2xl font-extrabold">
-            <span aria-hidden className="grid size-10 place-items-center rounded-full bg-accent-fg/10"><Radio className="size-5 motion-safe:animate-pulse" strokeWidth={2.4} /></span>
+            <span aria-hidden className="grid size-10 place-items-center rounded-full bg-surface text-secondary shadow-sm"><Radio className="size-5 motion-safe:animate-pulse" strokeWidth={2.4} /></span>
             Your trip is live{day ? ` — Day ${day}` : ''}
           </h2>
-          <p className="font-medium text-accent-fg/80">Today’s plan, your next stop and directions, all in one glanceable view.</p>
-          <Button asChild size="lg" className="bg-white text-accent-fg shadow-md hover:bg-white/90">
+          <p className="text-fg-muted">Today’s plan, your next stop and directions, all in one glanceable view.</p>
+          <Button asChild size="lg">
             <Link to={`${base}/live`}>Open Live Trip <ArrowRight aria-hidden className="size-5" /></Link>
           </Button>
         </section>

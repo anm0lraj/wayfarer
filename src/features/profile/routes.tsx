@@ -77,11 +77,12 @@ function TabBody({ tab }: { tab: Tab }) {
 
 /** `/profile/:tab` — who you are, your travel stats, and your trips, published itineraries, saved and memories. */
 export default function Profile() {
-  const { tab = 'trips' } = useParams()
+  const { tab } = useParams()
   const session = useSession()
   const trips = useTrips()
   const destinations = useDestinations()
   const memories = useRecentMemories(500)
+  // `/profile` opens My trips at its own URL, so that tab reads as the current one.
   if (!TABS.includes(tab as Tab)) return <Navigate to="/profile/trips" replace />
 
   const user = session?.user

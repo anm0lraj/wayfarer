@@ -17,12 +17,12 @@ function useNavItems(): NavItem[] {
 
 /*
  * Active states: phone and tablet put a blue pill behind the current icon; the desktop sidebar fills the whole row in
- * Electric Blue. Live Trip is always orange ("happening now"): a bright orange pill with dark ink around its icon and a
+ * Electric Blue. Live Trip is always orange ("happening now"): a light orange pill around a deep-orange icon and a
  * deep-orange label, so it stands out whichever page is open.
  */
 const pill = 'grid h-8 w-14 place-items-center rounded-full transition-colors duration-fast'
 const iconPill = (isActive: boolean, live?: boolean) =>
-  cn(pill, live ? 'bg-accent text-accent-fg shadow-accent' : isActive ? 'bg-primary/[0.12] text-primary' : 'group-hover:bg-surface-2')
+  cn(pill, live ? cn('bg-live text-secondary', isActive && 'ring-1 ring-inset ring-secondary/50') : isActive ? 'bg-primary/[0.12] text-primary' : 'group-hover:bg-surface-2')
 const navLabel = (isActive: boolean, live?: boolean) =>
   cn('text-xs', isActive || live ? 'font-bold' : 'font-medium', live ? 'text-secondary' : isActive ? 'text-primary' : 'text-fg-muted')
 
@@ -91,7 +91,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                   'relative flex min-h-touch items-center gap-3 rounded-md px-3 font-semibold transition-colors duration-fast',
                   collapsed && 'justify-center px-0',
                   live
-                    ? isActive ? 'bg-accent text-accent-fg shadow-accent' : 'text-secondary hover:bg-accent/15'
+                    ? isActive ? 'bg-live text-secondary ring-1 ring-inset ring-secondary/50' : 'text-secondary hover:bg-live'
                     : isActive ? 'bg-primary text-primary-fg shadow-primary' : 'text-fg-muted hover:bg-primary/10 hover:text-primary',
                 )
               }

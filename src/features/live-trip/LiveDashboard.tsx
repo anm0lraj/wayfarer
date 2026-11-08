@@ -96,7 +96,7 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
   return (
     <div className="space-y-5">
       <header>
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-sm font-bold text-accent-fg"><MapPin aria-hidden className="size-4" /> Live trip · Day {day.dayNumber} of {plan.days.length}</p>
+        <Badge tone="accent"><MapPin aria-hidden className="size-4" /> Live trip · Day {day.dayNumber} of {plan.days.length}</Badge>
         <h1 className="mt-2 text-4xl font-extrabold">You’re in {place}</h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-lg text-fg-muted">
           <span>{firstUntouched && snap.next ? `${greetingFor(now, trip.timezone)}. Your first activity starts at ${formatClock(snap.next.item.startTime)}.` : allDone ? 'All done for today.' : `${greetingFor(now, trip.timezone)}.`}</span>
@@ -114,18 +114,20 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
           )}
 
           {focus && (
-            // Happening now = the bright orange card with dark ink; "Next up" stays a calm white card with a blue tag.
-            <Card className={cn('space-y-4 p-5 sm:p-6', snap.current && 'border-transparent bg-accent text-accent-fg shadow-accent')}>
+            // Happening now = the light orange `live` card (dark text, orange details); "Next up" stays a calm white card.
+            <Card className={cn('space-y-4 p-5 sm:p-6', snap.current && 'border-live-border bg-live')}>
               <div className="flex items-center justify-between gap-3">
-                <h2 className={cn('inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold', snap.current ? 'bg-accent-fg text-accent' : 'bg-primary text-primary-fg')}>
-                  {snap.current && <span aria-hidden className="size-2 rounded-full bg-accent motion-safe:animate-pulse" />}
-                  {snap.current ? 'Happening now' : 'Next up'}
+                <h2>
+                  <Badge tone={snap.current ? 'accent' : 'primary'} className="px-3 py-1">
+                    {snap.current && <span aria-hidden className="size-2 rounded-full bg-accent motion-safe:animate-pulse" />}
+                    {snap.current ? 'Happening now' : 'Next up'}
+                  </Badge>
                 </h2>
                 {!snap.current && <StatusBadge live={focus} />}
               </div>
               <div>
                 <p className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">{focus.item.title}</p>
-                <p className={cn('mt-1 text-lg', snap.current ? 'font-medium text-accent-fg/80' : 'text-fg-muted')}>
+                <p className="mt-1 text-lg text-fg-muted">
                   {formatClock(focus.item.startTime)}
                   {snap.current ? ` · ends in ${humanMinutes(minutesUntil(focus.end, now))}` : ` · in ${humanMinutes(minutesUntil(focus.start, now))}`}
                 </p>
@@ -141,14 +143,14 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
                 )}
                 {!snap.current && !focusPoint && <Button size="lg" disabled className="sm:col-span-2"><Navigation aria-hidden className="size-5" /> No location for this stop</Button>}
                 {snap.current && focus === snap.current && (
-                  <Button size="lg" className="bg-white text-accent-fg shadow-md hover:bg-white/90" onClick={() => setStatus(focus.item, 'completed')}><Check aria-hidden className="size-5" /> Mark done</Button>
+                  <Button size="lg" onClick={() => setStatus(focus.item, 'completed')}><Check aria-hidden className="size-5" /> Mark done</Button>
                 )}
                 {!snap.current && (
                   <Button size="lg" variant="secondary" onClick={() => setStatus(focus.item, focus.status === 'on_the_way' ? 'in_progress' : 'on_the_way')}>
                     {focus.status === 'on_the_way' ? <><Play aria-hidden className="size-5" /> I’ve arrived</> : <><Footprints aria-hidden className="size-5" /> I’m on my way</>}
                   </Button>
                 )}
-                <Button size="lg" variant="secondary" className={cn(snap.current && 'border-accent-fg/50 bg-transparent text-accent-fg shadow-none hover:border-accent-fg hover:bg-accent-fg/10 hover:text-accent-fg')} onClick={() => setStatus(focus.item, 'skipped')}><SkipForward aria-hidden className="size-5" /> Skip</Button>
+                <Button size="lg" variant="secondary" onClick={() => setStatus(focus.item, 'skipped')}><SkipForward aria-hidden className="size-5" /> Skip</Button>
               </div>
             </Card>
           )}
@@ -199,7 +201,7 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
                       type="button"
                       onClick={() => setStatusFor(l.item.id)}
                       aria-label={`${formatClock(l.item.startTime)} ${l.item.title}, ${l.overdue ? 'time has passed' : STATUS_LABEL[l.status].toLowerCase()}. Change status`}
-                      className={cn('flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2', isFocus && (snap.current ? 'bg-accent/15 hover:bg-accent/25' : 'bg-primary/5'))}
+                      className={cn('flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2', isFocus && (snap.current ? 'bg-live' : 'bg-primary/5'))}
                     >
                       <span className={cn('grid size-10 shrink-0 place-items-center rounded-full', meta.tone)}><meta.icon aria-hidden className="size-5" /></span>
                       <span className="min-w-0 flex-1">

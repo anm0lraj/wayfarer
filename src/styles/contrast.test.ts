@@ -41,11 +41,15 @@ describe.each(['light', 'dark'] as const)('WCAG AA contrast — %s theme', (them
   }
   // Neutral and solid badges carry their own opaque fill, so the background behind them doesn't matter.
   text('neutral badge text (fg on surface-2)', t.fg!, t['surface-2']!)
-  text('solid primary badge', t['on-primary']!, t.primary!)
   // Bright orange is a fill, never text: its label must be the dark ink, and orange *text* is the deeper `secondary`.
   text('accent fill label (ink on bright orange)', t['on-accent']!, t.accent!)
-  // Muted ink on the bright orange live card (on-accent at 80%).
-  text('muted ink on the live (accent) card', over(t['on-accent']!, 0.8, t.accent!), t.accent!)
+  // "Happening now" panels (live banner, overview live panel, Live Trip card, demo-date strip) use the light `live-bg`
+  // with normal text, a deep-orange (`secondary`) badge/icon and blue links; the accent badge is `secondary` on `live-bg`.
+  text('text on the live panel', t.fg!, t['live-bg']!)
+  text('muted text on the live panel', t['fg-muted']!, t['live-bg']!)
+  text('accent (live) badge text and orange icons on the live panel', t.secondary!, t['live-bg']!)
+  text('link (primary) on the live panel', t.primary!, t['live-bg']!)
+  text('live panel icon (secondary) on its white disc', t.secondary!, t.surface!, 3)
   text('focus ring against the page', t.focus!, t.bg!, 3)
   // WCAG 1.4.11: the edge of an input or button must be visible against what it sits on.
   text('input/button border against surface', t['border-strong'] ?? t.border!, t.surface!, 3)
