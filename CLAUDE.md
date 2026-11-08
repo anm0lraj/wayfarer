@@ -57,7 +57,7 @@ Full product spec: @docs/PRODUCT_SPEC.md (read the relevant sections before buil
 - Timing rules live in `features/itinerary/schedule.ts` (warnings, busy-day, re-time). The seeded Bali trip is tested to have **no** warnings, so keep fixtures realistic.
 - Maps: screens use `TripMap` + the `MapProvider` interface only. MapLibre forces `position: relative` on its container — keep the container inside an absolutely positioned wrapper (see `TripMap.tsx`); jsdom can't catch a collapsed map, so e2e checks its height.
 - Split view (itinerary beside map) = desktop, or tablet in landscape (`useSplitView`). Portrait tablet gets a collapsible map strip; phones get a separate Map tab.
-- AI: the assistant only *proposes*. Every action is Zod-validated in `useChat`, shown as a card, applied via `applyAIAction` on click (destructive ones ask again), and undoable. Chat state is persisted per conversation; the desktop docked panel width/open state is in `panelStore`.
+- AI: the assistant only *proposes*. `applyAIAction(tripId, …)` refuses an action whose activity ids are not in that trip (or, for a reorder, not on that day) before writing anything. Every action is Zod-validated in `useChat`, shown as a card, applied via `applyAIAction` on click (destructive ones ask again), and undoable. Chat state is persisted per conversation; the desktop docked panel width/open state is in `panelStore`.
 - Tests that need a map use `createFakeMap()` (`src/test/fakeMap.ts`) through `renderApp(path, { maps })`.
 
 ## Phase 4 notes

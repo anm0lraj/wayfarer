@@ -135,6 +135,17 @@ describe('AI actions go through repositories', () => {
     await res.undo()
     expect((await itineraryRepo.listItems('trip-bali')).some((i) => i.title === 'Sunset viewpoint')).toBe(false)
   })
+  it('rejects an action naming an activity from another trip, and applies nothing', async () => {
+    const goaItem = (await db.items.where('tripId').equals('trip-goa').first())!
+    const baliDay1 = (await db.items.where('dayId').equals('day-1').toArray()).map((i) => i.id)
+    const before = await db.items.toArray()
+    await expect(applyAIAction('trip-bali', { type: 'REMOVE_ACTIVITY', itemId: goaItem.id })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'MOVE_ACTIVITY', itemId: goaItem.id, toDayNumber: 2, position: 0 })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'MOVE_ACTIVITY', itemId: 'item-nope', toDayNumber: 2, position: 0 })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'REORDER_ITINERARY', dayNumber: 1, itemIds: [goaItem.id, ...baliDay1] })).rejects.toThrow('not part of this trip')
+    await expect(applyAIAction('trip-bali', { type: 'OPTIMIZE_ROUTE', dayNumber: 2, itemIds: baliDay1 })).rejects.toThrow('not on Day 2')
+    expect(await db.items.toArray()).toEqual(before)
+  })
   it('rejects malformed model output', async () => {
     await expect(applyAIAction('trip-bali', { type: 'DROP_TABLE' })).rejects.toThrow()
     await expect(applyAIAction('trip-bali', { type: 'MOVE_ACTIVITY', itemId: 'x', toDayNumber: 0, position: 0 })).rejects.toThrow()

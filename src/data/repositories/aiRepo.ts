@@ -60,23 +60,35 @@ export async function applyAIAction(tripId: string, raw: unknown): Promise<Appli
     if (!d) throw new Error(`Day ${n} is not part of this trip`)
     return d
   }
+  // Ids come from the model: an activity it names must belong to this trip (and, for a reorder, to that day), or nothing
+  // is applied. Without this a proposal could act on another trip the traveller can edit.
+  const itemOf = async (id: string) => {
+    const item = await db.items.get(id)
+    if (!item || item.tripId !== tripId) throw new Error('That activity is not part of this trip')
+    return item
+  }
+  const dayItemIds = async (dayId: string, dayNumber: number, ids: string[]) => {
+    for (const id of ids) if ((await itemOf(id)).dayId !== dayId) throw new Error(`That activity is not on Day ${dayNumber}`)
+  }
   switch (action.type) {
     case 'ADD_ACTIVITY': {
       const item = await itineraryRepo.addItem(tripId, dayByNumber(action.dayNumber).id, { ...action.item, source: 'ai' })
       return { summary: `Added “${item.title}” to Day ${action.dayNumber}`, undo: async () => void (await itineraryRepo.removeItem(item.id)) }
     }
     case 'REMOVE_ACTIVITY': {
+      await itemOf(action.itemId)
       const removed = await itineraryRepo.removeItem(action.itemId)
       return { summary: `Removed “${removed.title}”`, undo: () => itineraryRepo.restoreItem(removed) }
     }
     case 'MOVE_ACTIVITY': {
-      const before = (await db.items.get(action.itemId))!
+      const before = await itemOf(action.itemId)
       await itineraryRepo.moveItem(action.itemId, dayByNumber(action.toDayNumber).id, action.position)
       return { summary: `Moved “${before.title}” to Day ${action.toDayNumber}`, undo: () => itineraryRepo.moveItem(before.id, before.dayId, before.position) }
     }
     case 'REORDER_ITINERARY':
     case 'OPTIMIZE_ROUTE': {
       const day = dayByNumber(action.dayNumber)
+      await dayItemIds(day.id, action.dayNumber, action.itemIds)
       const prev = (await db.items.where('dayId').equals(day.id).toArray()).sort((a, b) => a.position - b.position).map((i) => i.id)
       await itineraryRepo.reorder(day.id, action.itemIds)
       return {
