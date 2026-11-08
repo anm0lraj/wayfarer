@@ -1,13 +1,13 @@
 import { db } from '@/data/db'
 import { getBlob, putBlob } from '@/data/blobStore'
 import { plainBlob } from '@/lib/media/plainBlob'
-import { placeholderImage } from '@/lib/placeholder'
 import { LOCAL_MEDIA_LIMITS } from './limits'
+import { seedImage } from './seedImage'
 import type { StorageService } from './types'
 
 const urlCache = new Map<string, string>()
 
-/** Local blob storage in IndexedDB. Seed keys (`seed:<id>:<label>`) resolve to generated placeholder images. */
+/** Local blob storage in IndexedDB. Seed keys (`seed:<id>:<label>`) resolve to the id's stock photo (or its illustration). */
 export const storageService: StorageService = {
   limits: LOCAL_MEDIA_LIMITS,
 
@@ -24,10 +24,7 @@ export const storageService: StorageService = {
   },
 
   async getUrl(key) {
-    if (key.startsWith('seed:')) {
-      // `seed:<id>:<caption>`: the caption steers the scene ("Fish thali" draws food, "Painted houses" a town).
-      return placeholderImage(key.slice('seed:'.length))
-    }
+    if (key.startsWith('seed:')) return seedImage(key)
     const cached = urlCache.get(key)
     if (cached) return cached
     const blob = await getBlob(key)

@@ -23,6 +23,7 @@ import { formatMoney } from '@/lib/money'
 import { shareLink } from '@/lib/share'
 import { clock } from '@/services/clock/clock'
 import type { DestinationCategory, Place } from '@/types'
+import { responsiveImage } from '@/lib/photos/responsive'
 
 export function Explore() {
   const [params, setParams] = useSearchParams()
@@ -113,8 +114,8 @@ export function DestinationDetails() {
   return (
     <div className="space-y-8">
       <section aria-label={d.name} className="relative -mx-4 overflow-hidden bg-surface-2 sm:mx-0 sm:rounded-lg">
-        <img src={d.heroImage} alt="" className="aspect-[16/10] w-full object-cover sm:aspect-[21/8]" />
-        <div className="scrim-text absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 px-4 pb-4 pt-12 text-white sm:px-6 sm:pb-6">
+        <img {...responsiveImage(d.heroImage, '100vw')} alt="" className="aspect-[16/10] w-full object-cover sm:aspect-[21/8]" />
+        <div className="scrim-text absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 px-4 pb-4 pt-5 text-white sm:px-6 sm:pb-6">
           <div>
             <p className="text-sm text-white/85">{[d.region, d.country].filter(Boolean).join(', ')}</p>
             <h1 className="text-3xl font-bold sm:text-4xl">{d.name}</h1>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchPriority } from '@/lib/fetchPriority'
 import { formatMoney } from '@/lib/money'
 import type { PublicTrip } from '@/types'
+import { FEED_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 /** Another traveller's published itinerary: cover, title, creator, length, budget and saves. */
 export function PublicTripCard({ trip, priority, headingLevel = 3 }: { trip: PublicTrip; priority?: boolean; /** 2 when the cards sit right under the page's h1. */ headingLevel?: 2 | 3 }) {
@@ -11,7 +12,7 @@ export function PublicTripCard({ trip, priority, headingLevel = 3 }: { trip: Pub
   return (
     <Link to={`/t/${trip.slug}`} className="group block overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md">
       <div className="aspect-[16/10] overflow-hidden bg-surface-2">
-        <img src={trip.coverImage} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
+        <img {...responsiveImage(trip.coverImage, FEED_SIZES)} alt="" loading={priority ? 'eager' : 'lazy'} {...fetchPriority(priority ? 'high' : undefined)} decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
       </div>
       <div className="space-y-1.5 p-3.5">
         <Heading className="line-clamp-2 text-base font-semibold leading-snug">{trip.title}</Heading>

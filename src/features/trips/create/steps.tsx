@@ -16,6 +16,7 @@ import { clock } from '@/services/clock/clock'
 import { interestSchema, type BudgetTier, type TravelerGroup } from '@/types'
 import { INTEREST_LABELS } from './interestLabels'
 import { GROUP_DEFAULT_COUNT, MAX_TRAVELLERS, suggestBudget, type TripDraft } from './schema'
+import { thumbnail } from '@/lib/photos/responsive'
 
 const useDraftForm = () => useFormContext<TripDraft>()
 
@@ -76,7 +77,7 @@ export function DestinationStep() {
                   {matches.map((d) => (
                     <li key={d.id}>
                       <button type="button" onClick={() => { onChange([...value, d.id]); setTerm('') }} className="flex min-h-touch w-full items-center gap-3 rounded-lg border border-border bg-surface p-2 text-left hover:bg-surface-2">
-                        <img src={d.heroImage} alt="" className="size-12 shrink-0 rounded-md object-cover" />
+                        <img src={thumbnail(d.heroImage)} alt="" className="size-12 shrink-0 rounded-md object-cover" />
                         <span className="min-w-0 flex-1"><span className="block font-medium">{d.name}</span><span className="block truncate text-sm text-fg-muted">{d.region ?? d.country}</span></span>
                         <Plus aria-hidden className="size-4 text-fg-muted" /><span className="sr-only">Add {d.name}</span>
                       </button>

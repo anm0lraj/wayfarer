@@ -38,6 +38,7 @@ export const routes: RouteObject[] = [
           { path: 'signin', element: <SignIn /> },
           { path: 'privacy', lazy: lazyNamed(legal, 'PrivacyPage') },
           { path: 'terms', lazy: lazyNamed(legal, 'TermsPage') },
+          { path: 'credits', lazy: lazyNamed(() => import('@/features/legal/CreditsPage'), 'CreditsPage') },
         ],
       },
       // Explore is browsable when signed out; the shell and nav still apply.

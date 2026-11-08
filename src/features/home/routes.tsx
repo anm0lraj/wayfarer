@@ -19,6 +19,7 @@ import { currentDayNumber } from '@/features/trips/tripState'
 import { countdownLabel, dateInTimezone } from '@/lib/dates'
 import { useNow } from '@/lib/hooks/useNow'
 import type { Memory } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 const PLANNING_STATES = new Set(['draft', 'planning', 'ready', 'upcoming'])
 
@@ -45,7 +46,7 @@ function MemoryThumb({ memory }: { memory: Memory }) {
   const url = useMediaUrl(memory.mediaKey)
   return (
     <Link to={`/trips/${memory.tripId}/memories`} className="group relative block aspect-square overflow-hidden rounded-lg bg-surface-2">
-      {url && <img src={url} alt={memory.caption ? '' : 'Trip photo'} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />}
+      {url && <img {...responsiveImage(url, CARD_SIZES)} alt={memory.caption ? '' : 'Trip photo'} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />}
       {memory.caption && <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-2 py-1 text-xs font-medium text-white">{memory.caption}</span>}
     </Link>
   )

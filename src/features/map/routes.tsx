@@ -19,6 +19,7 @@ import type { MapMarker } from '@/services/maps/types'
 import type { GeoPoint, ItineraryDay, ItineraryItem, Place } from '@/types'
 import { TripMap } from './TripMap'
 import { dayMarkers, placeMarkerKind, useHotelMarkers, useItemPoints, useNearbyPlaces } from './useMapData'
+import { thumbnail } from '@/lib/photos/responsive'
 
 const NO_DAYS: ItineraryDay[] = []
 
@@ -116,7 +117,7 @@ export default function MapRoute() {
             {selectedNearby && (
               <article aria-label={selectedNearby.name} className="space-y-2 rounded-lg border border-primary/50 bg-surface p-3 shadow-sm">
                 <div className="flex gap-3">
-                  <img src={selectedNearby.images[0]} alt="" className="size-14 shrink-0 rounded-md object-cover" />
+                  <img src={thumbnail(selectedNearby.images[0])} alt="" className="size-14 shrink-0 rounded-md object-cover" />
                   <div className="min-w-0">
                     <h3 className="font-semibold">{selectedNearby.name}</h3>
                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-fg-muted">

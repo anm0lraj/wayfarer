@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { formatMoney } from '@/lib/money'
 import { stayTotal } from './filters'
 import type { Hotel } from '@/types'
+import { responsiveImage } from '@/lib/photos/responsive'
 
 /** Image, name, rating, price/night, total for the stay, distance and a few amenities (spec §16). */
 export function HotelCard({ hotel, nights, to, saved }: { hotel: Hotel; nights: number; to: string; saved?: boolean }) {
   return (
     <li>
       <article className="relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface sm:flex-row">
-        <img src={hotel.images[0]} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover sm:aspect-auto sm:w-56 sm:shrink-0" />
+        <img {...responsiveImage(hotel.images[0], '(min-width: 640px) 224px, 100vw')} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover sm:aspect-auto sm:w-56 sm:shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">

@@ -19,6 +19,7 @@ import type { MapMarker } from '@/services/maps/types'
 import type { GeoPoint, PublicTrip } from '@/types'
 import { PublicTripActions } from './components/PublicTripActions'
 import { UseItinerarySheet } from './components/UseItinerarySheet'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 type Snapshot = PublicTrip['snapshot']
 
@@ -26,7 +27,7 @@ function Photo({ mediaUrl, caption }: { mediaUrl: string; caption?: string }) {
   const url = useMediaUrl(mediaUrl)
   return (
     <figure className="overflow-hidden rounded-lg bg-surface-2">
-      {url ? <img src={url} alt={caption ?? 'Trip photo'} loading="lazy" className="aspect-[4/3] w-full object-cover" /> : <Skeleton className="aspect-[4/3] w-full" />}
+      {url ? <img {...responsiveImage(url, CARD_SIZES)} alt={caption ?? 'Trip photo'} loading="lazy" className="aspect-[4/3] w-full object-cover" /> : <Skeleton className="aspect-[4/3] w-full" />}
       {caption && <figcaption className="px-3 py-2 text-sm text-fg-muted">{caption}</figcaption>}
     </figure>
   )
@@ -107,7 +108,7 @@ function Loaded({ trip }: { trip: PublicTrip }) {
   return (
     <article className="space-y-8">
       <div className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-xl">
-        <img src={trip.coverImage} alt="" {...fetchPriority('high')} className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
+        <img {...responsiveImage(trip.coverImage, '100vw')} alt="" {...fetchPriority('high')} className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
       </div>
 
       <header className="space-y-3">
