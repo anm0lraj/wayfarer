@@ -8,7 +8,7 @@ export function Stepper({ steps, current, className }: { steps: string[]; curren
       <p className="sr-only" aria-live="polite">Step {current + 1} of {steps.length}: {steps[current]}</p>
       <ol className="flex items-center gap-1.5" aria-hidden>
         {steps.map((label, i) => (
-          <li key={label} className="flex flex-1 items-center gap-1.5">
+          <li key={label} className="flex flex-1 items-center gap-1.5 last:flex-none">
             <span
               className={cn(
                 'grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold',

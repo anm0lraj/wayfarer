@@ -76,7 +76,9 @@ const tabNav = defineDoc({
         className: { type: 'string', required: false, description: 'Extra classes on the strip.' },
       },
     }),
-    part<typeof TabLink, NavLinkProps>('TabLink', TabLink, { inherits: 'React Router NavLink props: to, end… The current route gets aria-current="page" and the blue underline.', props: {} }),
+    part<typeof TabLink, NavLinkProps>('TabLink', TabLink, { inherits: 'React Router NavLink props: to, end… The current route gets aria-current="page" and the blue underline.', props: {
+      current: { type: 'boolean', required: false, description: 'Marks the tab current on a route its link doesn’t match (Memories while a story is open or being made).' },
+    } }),
   ],
   examples: [
     {

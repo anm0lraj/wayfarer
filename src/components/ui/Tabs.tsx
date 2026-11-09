@@ -1,6 +1,6 @@
 import * as RadixTabs from '@radix-ui/react-tabs'
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef } from 'react'
-import { NavLink, useLocation, type NavLinkProps } from 'react-router-dom'
+import { Link, NavLink, useLocation, type NavLinkProps } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 
 const listClass = 'relative flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
@@ -81,7 +81,20 @@ export function TabNav({ children, label, className }: { children: React.ReactNo
   )
 }
 
-export function TabLink({ className, ...props }: NavLinkProps) {
+/**
+ * A tab that follows the URL. `current` marks it as the current tab on a route its own link doesn't cover (Memories
+ * while a story is open), with the same look and aria-current="page".
+ */
+export function TabLink({ className, current, ...props }: NavLinkProps & { current?: boolean }) {
+  if (current) {
+    const { to, children, replace, state } = props
+    const content = typeof children === 'function' ? children({ isActive: true, isPending: false, isTransitioning: false }) : children
+    return (
+      <Link to={to} replace={replace} state={state} aria-current="page" className={cn(triggerClass, phoneLinkClass, 'border-primary text-primary', typeof className === 'string' && className)}>
+        {content}
+      </Link>
+    )
+  }
   return (
     <NavLink
       className={({ isActive }) => cn(triggerClass, phoneLinkClass, isActive && 'border-primary text-primary', typeof className === 'string' && className)}

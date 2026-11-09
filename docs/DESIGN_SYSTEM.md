@@ -58,7 +58,7 @@ Plus Jakarta Sans (variable, 200–800, self-hosted, SIL OFL 1.1) for everything
 | `text-lg` | `clamp(1rem, 0.95rem + 0.2vw, 1.0625rem)` | 16 px | 17 px | Large buttons, sub-headings |
 | `text-base` | `clamp(0.875rem, 0.85rem + 0.15vw, 0.9375rem)` | 14.2 px | 15 px | Body, inputs, buttons |
 | `text-sm` | `clamp(0.78125rem, 0.76rem + 0.1vw, 0.84375rem)` | 12.6 px | 13.5 px | Captions, badges, chips |
-| `text-xs` | `clamp(0.6875rem, 0.67rem + 0.08vw, 0.75rem)` | 11 px | 11.9 px | Labels, nav labels |
+| `text-xs` | `0.75rem` | 12 px | 12 px | Labels, nav labels, badges, end times (the floor: no text smaller than 12 px) |
 
 Weights: 400 body · 500 muted emphasis, nav labels · 600 buttons, chips, badges, labels · 700 h2–h3, card titles, prices · 800 h1, empty-state titles. Line height: body 1.55; h1–h3 1.2 (h1 1.15) with −0.01em tracking (h1 −0.02em) and `text-wrap: balance`. Numbers that align or change in place use `tabular-nums`.
 
@@ -102,7 +102,7 @@ Each has a page at `/_design/components/<id>` with live variants and states, a p
 | Feedback | Skeleton (`skeleton`) | card, list | `SkeletonGroup label` | shapes aria-hidden; group role=status “Loading …” |
 | Feedback | States (`states`) | EmptyState (art), ErrorState (+ retry), OfflineState | `title`, `description`, `action`, `as`, `art`, `onRetry` | error role=alert, offline role=status |
 | Feedback | OfflineBanner (`offline-banner`) | live (only while offline) | — | role=status |
-| Feedback | Toast (`toast`) | plain, with Undo, with description | `toast({ title, description, action, durationMs })` | Radix toast region (F8), title announced |
+| Feedback | Toast (`toast`) | plain, with Undo, with description | `toast({ title, description, action, durationMs })` | Radix toast region (F8), announced once (polite); above the phone nav, bottom-left on desktop; 10 s with an action |
 | Navigation | App navigation (`navigation`) | BottomNav 390, NavRail 820, Sidebar 1440 (+ collapse) | Sidebar `collapsed`, `onToggle` | nav “Primary”, aria-current, aria-expanded |
 | Navigation | TabNav (`tab-nav`) | trip workspace links | `label`, TabLink = NavLink props | nav landmark of links, aria-current |
 | Navigation | Stepper (`stepper`) | first, middle, last step | `steps`, `current` | role=group “Progress”, aria-live step text |

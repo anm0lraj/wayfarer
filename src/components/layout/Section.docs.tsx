@@ -17,7 +17,7 @@ const section = defineDoc({
   title: 'Section and CardRow',
   group: 'containers',
   source: 'src/components/layout/Section.tsx',
-  summary: 'Section: a titled block (h2) with an optional “See all” link. CardRow: a snap-scrolling row on phones that becomes a 2 / 3 / 4-column grid on tablet and desktop, so cards never need to know where they sit.',
+  summary: 'Section: a titled block (h2) with an optional “See all” link. CardRow: a snap-scrolling row on phones that becomes a grid on wider screens (2 columns from 640 px, 3 from 768 px, 2 in the 1024–1279 px desktop main column, 3 from 1280 px; it is built for the 8/12 main column beside an aside), so cards never need to know where they sit. Section heading rows are always 44 px tall, so sections side by side line up.',
   parts: [
     part('Section', Section, {
       props: {

@@ -206,9 +206,11 @@ export function LiveDashboard({ trip, plan }: { trip: TripWithState; plan: TripP
                       <span className={cn('grid size-10 shrink-0 place-items-center rounded-full', meta.tone)}><meta.icon aria-hidden className="size-5" /></span>
                       <span className="min-w-0 flex-1">
                         <span className={cn('block text-lg font-medium', (l.status === 'completed' || l.status === 'skipped') && 'text-fg-muted line-through')}>{l.item.title}</span>
-                        <span className="block text-fg-muted">{formatClock(l.item.startTime)}</span>
+                        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="text-fg-muted">{formatClock(l.item.startTime)}</span>
+                          <StatusBadge live={l} />
+                        </span>
                       </span>
-                      <StatusBadge live={l} />
                       <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-muted" />
                     </button>
                   </li>

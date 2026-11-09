@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav, NavRail, Sidebar } from '../nav/Navigation'
 import { useSidebarCollapsed } from '../nav/useSidebarCollapsed'
@@ -20,6 +21,12 @@ import { cn } from '@/lib/cn'
 export function AppShell() {
   const [collapsed, toggle] = useSidebarCollapsed()
   const { pathname } = useLocation()
+  // Tells shell-wide fixed layers (toasts, see globals.css) where the navigation is.
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.shell = collapsed ? 'sidebar-collapsed' : 'sidebar'
+    return () => { delete root.dataset.shell }
+  }, [collapsed])
   return (
     <div className="min-h-dvh">
       <SkipLink />

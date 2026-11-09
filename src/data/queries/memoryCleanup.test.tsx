@@ -73,3 +73,17 @@ describe('deleting a memory', () => {
     expect(remove).not.toHaveBeenCalled()
   })
 })
+
+describe('the Undo toast for a deleted photo', () => {
+  it('closes when the photo is removed, even if the toast was paused by hover or focus', async () => {
+    const m = await aPhotoMemory()
+    const { result } = setup()
+    vi.useRealTimers()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    await act(async () => { await result.current.remove(m) })
+    expect(useToastStore.getState().items.some((t) => t.title === 'Memory deleted')).toBe(true)
+    await act(async () => { vi.advanceTimersByTime(UNDO_WINDOW_MS) })
+    expect(remove).toHaveBeenCalled()
+    expect(useToastStore.getState().items.some((t) => t.title === 'Memory deleted')).toBe(false)
+  })
+})
