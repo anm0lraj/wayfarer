@@ -60,6 +60,9 @@ Vercel → project → Settings → Environment Variables → add each for **Pro
 | `CRON_SECRET` | **secret** | a new long random string (not the dev one) |
 | `GEMINI_API_KEY` | **secret** | a **separate** key for production; use a paid-tier key before real people rely on it (the free tier may use prompts to improve Google's products) |
 | `AI_DAILY_LIMIT` | config | optional, credits per person per day (default 20) |
+| `VITE_PLACE_PHOTOS` | config | `live` only once the two Unsplash variables below are set and Unsplash production access is granted (demo keys allow 50 searches an hour); otherwise leave it out (`mock`) |
+| `UNSPLASH_ACCESS_KEY` | **secret** | a **fresh** Unsplash Access Key for production (not the preview one) |
+| `UNSPLASH_APP_NAME` | config | the app's name at Unsplash for the credit links, e.g. `travel_planner_app` |
 
 The preview scope keeps its own values. Never copy a secret between scopes.
 
@@ -137,3 +140,4 @@ These are free or demo services fine for a small beta, but not for a public laun
    check "Send a test" works → delete the old key in Google Cloud → IAM → Service accounts → Keys.
 2. `CRON_SECRET`: set the new value in Vercel and in the GitHub secret together, redeploy.
 3. `GEMINI_API_KEY`: create a new key, replace it in Vercel, redeploy, delete the old key.
+   `UNSPLASH_ACCESS_KEY` the same way (Unsplash → Your apps → the app → regenerate the keys).
