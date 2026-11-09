@@ -12,7 +12,7 @@ Conventions: ids are strings (`trip_x7k2…`), dates are `YYYY-MM-DD`, times are
 | Destination | `id` | — |
 | Trip | `ownerId`, `destinationIds[]`, `publicTripId?`, `copiedFromPublicTripId?` | User, Destination, PublicTrip |
 | ItineraryDay | `tripId`, `dayNumber`, `destinationId?` | Trip, Destination |
-| ItineraryItem | `tripId`, `dayId`, `placeId?`, `bookingId?`, `position` | Trip, ItineraryDay, Place, Booking |
+| ItineraryItem | `tripId`, `dayId`, `placeId?`, `bookingId?`, `position`, `autoPhoto?` (found photo + credit, embedded) | Trip, ItineraryDay, Place, Booking |
 | Place / Restaurant | `destinationId` (Restaurant is a Place with `kind: 'restaurant'`) | Destination |
 | Hotel | `destinationId` | Destination |
 | Flight | — (catalog entry) | — |

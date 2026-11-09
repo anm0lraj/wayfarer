@@ -70,7 +70,7 @@ export const itineraryRepo = {
   },
 
   /** Appends to the day, or inserts at `atIndex` (clamped) and shifts the stops after it down. */
-  async addItem(tripId: string, dayId: string, input: NewItemInput & Partial<Pick<ItineraryItem, 'source' | 'image' | 'notes'>>, atIndex?: number): Promise<ItineraryItem> {
+  async addItem(tripId: string, dayId: string, input: NewItemInput & Partial<Pick<ItineraryItem, 'source' | 'image' | 'notes' | 'autoPhoto'>>, atIndex?: number): Promise<ItineraryItem> {
     await requireTripAccess(tripId, 'edit')
     const existing = await dayItems(dayId)
     const index = atIndex === undefined ? existing.length : Math.max(0, Math.min(Math.floor(atIndex), existing.length))

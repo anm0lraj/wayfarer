@@ -24,6 +24,7 @@ export function photoIdOf(src: string | undefined | null): string | undefined {
  * any other image is passed through unchanged. `sizes` is how wide the image is drawn (CSS `sizes` syntax).
  */
 export function responsiveImage(src: string | undefined, sizes: string): { src: string | undefined; srcSet?: string; sizes?: string } {
+  if (isUnsplash(src)) return { src: unsplashAt(src, 1280), srcSet: PHOTO_WIDTHS.map((w) => `${unsplashAt(src, w)} ${w}w`).join(', '), sizes }
   const id = photoIdOf(src)
   if (!id) return { src }
   return { src: photoPath(id), srcSet: PHOTO_WIDTHS.map((w) => `${photoPath(id, w)} ${w}w`).join(', '), sizes }
@@ -31,8 +32,25 @@ export function responsiveImage(src: string | undefined, sizes: string): { src: 
 
 /** The small rendition, for thumbnails (a 56–80 px picture never needs the 1280 px file). */
 export function thumbnail(src: string | undefined): string | undefined {
+  if (isUnsplash(src)) return unsplashAt(src, 640)
   const id = photoIdOf(src)
   return id ? photoPath(id, 640) : src
+}
+
+/**
+ * Photos found on Unsplash for new places (features/place-photos) are hotlinked from its image CDN, which resizes on
+ * request: the same address with another `w` is the other width (Unsplash asks apps to keep its other parameters).
+ */
+const isUnsplash = (src: string | undefined): src is string => !!src && src.startsWith('https://images.unsplash.com/')
+function unsplashAt(src: string, width: number): string {
+  try {
+    const u = new URL(src)
+    u.searchParams.set('w', String(width))
+    if (!u.searchParams.has('fm')) u.searchParams.set('fm', 'webp')
+    return u.toString()
+  } catch {
+    return src
+  }
 }
 
 /**

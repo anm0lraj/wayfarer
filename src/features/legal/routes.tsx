@@ -7,7 +7,7 @@ import { env } from '@/config/env'
  * in step when a service, a stored field or a provider changes). They are a plain-language draft written for a small
  * beta, not legal advice: have them reviewed for the operator's own situation before a public launch.
  */
-export const LEGAL_UPDATED = '6 November 2026'
+export const LEGAL_UPDATED = '9 November 2026'
 
 function Doc({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -59,6 +59,7 @@ export function PrivacyPage() {
         'Map pictures are loaded from OpenStreetMap’s servers, which see your IP address and which area of the map you are looking at.',
         'When you search for a place or address while adding an activity, the text you type and the approximate area of your trip are sent to OpenStreetMap’s Nominatim geocoder. Dropping a pin on the map sends that spot’s coordinates to the same service to find its name. It receives no name or account details, and we never ask for your device’s location here.',
         'Weather forecasts come from Open-Meteo, and road routes from the OSRM project. They receive the coordinates of the place or stops being looked up, not your name or account.',
+        'When you add an activity at a place of your own (one you searched for or pinned on the map), we look for a photo of it on Unsplash: the place’s name and the trip’s destination are sent to Unsplash through our server, never your name or account. The photo is then loaded by your browser, and by the browser of anyone viewing a page you publish, from Unsplash’s image servers, which see the viewer’s IP address. Each photo shows its photographer’s credit.',
         'Your position is used only on your device, when you press “Use my location”. We do not store it.',
       ]} />
 
