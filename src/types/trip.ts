@@ -3,6 +3,7 @@ import {
   budgetTierSchema, geoPointSchema, idSchema, interestSchema, isoDateSchema, isoDateTimeSchema, moneySchema,
   timeSchema, timestampsSchema, travelerGroupSchema, visibilitySchema,
 } from './common'
+import { autoPhotoSchema } from './placePhoto'
 
 /** States that are persisted. `upcoming`, `active`, `completed` are derived from dates (see features/trips/tripState). */
 export const storedTripStateSchema = z.enum(['draft', 'planning', 'ready', 'archived'])
@@ -74,6 +75,8 @@ export const itineraryItemSchema = z
     distanceFromPrevKm: z.number().nonnegative().optional(),
     travelTimeFromPrevMin: z.number().int().nonnegative().optional(),
     image: z.string().optional(),
+    /** A photo found automatically for a custom place with no catalogue photo (see features/place-photos). */
+    autoPhoto: autoPhotoSchema.optional(),
     notes: z.string().optional(),
     bookingId: idSchema.optional(),
     status: itemStatusSchema,
