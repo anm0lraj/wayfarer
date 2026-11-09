@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildSeed } from '@/data/seedData'
-import { dayLoad, endDayOffset, endTime, fromMinutes, retime, scheduleWarnings, suggestNextStart, toMinutes } from './schedule'
+import { dayLoad, endClock, endDayOffset, endTime, fromMinutes, retime, scheduleWarnings, suggestNextStart, toMinutes } from './schedule'
 import type { ItineraryItem } from '@/types'
 
 const item = (id: string, startTime: string, durationMin: number, travel?: number, title = id): ItineraryItem =>
@@ -14,11 +14,13 @@ describe('time helpers', () => {
     expect(endTime(item('a', '13:00', 75))).toBe('14:15')
   })
   it('shows an end after midnight as the next day instead of clamping it to 23:59', () => {
-    expect(endTime(item('a', '22:00', 180))).toBe('01:00 +1 day')
+    expect(endTime(item('a', '22:00', 180))).toBe('01:00 next day')
     expect(endDayOffset(item('a', '22:00', 180))).toBe(1)
-    expect(endTime(item('a', '23:00', 60))).toBe('00:00 +1 day')
+    expect(endTime(item('a', '23:00', 60))).toBe('00:00 next day')
     expect(endTime(item('a', '22:59', 60))).toBe('23:59')
-    expect(endTime(item('a', '23:30', 1440 + 120))).toBe('01:30 +2 days')
+    expect(endTime(item('a', '23:30', 1440 + 120))).toBe('01:30 2 days later')
+    expect(endClock(item('a', '22:00', 180))).toEqual({ clock: '01:00', days: 1 })
+    expect(endClock(item('a', '13:00', 75))).toEqual({ clock: '14:15', days: 0 })
   })
 })
 

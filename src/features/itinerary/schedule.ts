@@ -18,11 +18,19 @@ export const fromMinutes = (total: number): string => hhmm(Math.max(0, Math.min(
 export const endDayOffset = (item: Pick<ItineraryItem, 'startTime' | 'durationMin'>): number =>
   Math.floor((toMinutes(item.startTime) + item.durationMin) / DAY_MIN)
 
-/** When a stop ends, as a wall clock; past midnight it says so: 22:00 + 3 h → "01:00 +1 day". */
+/** When a stop ends: the wall clock on its own and how many days after its start day (22:00 + 3 h → 01:00, 1). */
+export const endClock = (item: Pick<ItineraryItem, 'startTime' | 'durationMin'>): { clock: string; days: number } => ({
+  clock: hhmm((toMinutes(item.startTime) + item.durationMin) % DAY_MIN),
+  days: endDayOffset(item),
+})
+
+/** Words for a day offset after the start day: "next day", "2 days later". */
+export const dayOffsetLabel = (days: number): string => (days === 1 ? 'next day' : `${days} days later`)
+
+/** When a stop ends, as text; past midnight it says so: 22:00 + 3 h → "01:00 next day". Screens show it with `EndTime`. */
 export const endTime = (item: Pick<ItineraryItem, 'startTime' | 'durationMin'>): string => {
-  const days = endDayOffset(item)
-  const clock = hhmm((toMinutes(item.startTime) + item.durationMin) % DAY_MIN)
-  return days ? `${clock} +${days} ${days === 1 ? 'day' : 'days'}` : clock
+  const { clock, days } = endClock(item)
+  return days ? `${clock} ${dayOffsetLabel(days)}` : clock
 }
 
 export interface ScheduleWarning {

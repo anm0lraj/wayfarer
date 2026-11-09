@@ -8,7 +8,8 @@ import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/cn'
 import type { ItineraryDay, ItineraryItem } from '@/types'
 import { CATEGORY_META } from '../categoryMeta'
-import { endTime, type ScheduleWarning } from '../schedule'
+import type { ScheduleWarning } from '../schedule'
+import { EndTime } from './EndTime'
 
 export interface ItemCardActions {
   onOpen: (item: ItineraryItem) => void
@@ -65,7 +66,7 @@ export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?
         <div className="flex gap-2">
           <div className="w-12 shrink-0 pt-3 text-right">
             <p className="text-sm font-semibold tabular-nums">{item.startTime}</p>
-            <p className="text-xs tabular-nums text-fg-muted">{endTime(item)}</p>
+            <p className="text-xs text-fg-muted"><span className="sr-only">until </span><EndTime item={item} /></p>
           </div>
           <div className={cn('flex min-w-0 flex-1 items-stretch rounded-lg border bg-surface shadow-sm', selected ? 'border-primary ring-2 ring-primary/30' : 'border-border')}>
             <button
