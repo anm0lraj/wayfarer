@@ -91,6 +91,22 @@
   }
 }
 
+/* Where toasts sit (Toaster.tsx). AppShell sets data-shell on <html>: phones keep them above the bottom nav, tablets
+   beside the rail, desktops beside the sidebar (bottom-left, clear of the docked assistant on the right). Without the
+   shell (public pages, onboarding) they sit at the bottom, above the home indicator. */
+:root {
+  --toast-left: 0px;
+  --toast-bottom: calc(var(--safe-bottom) + 1rem);
+}
+:root[data-shell] { --toast-bottom: calc(var(--nav-h) + var(--safe-bottom) + 0.75rem); }
+@media (min-width: 640px) {
+  :root[data-shell] { --toast-left: var(--rail-w); --toast-bottom: calc(var(--safe-bottom) + 1.5rem); }
+}
+@media (min-width: 1024px) {
+  :root[data-shell='sidebar'] { --toast-left: var(--sidebar-w); }
+  :root[data-shell='sidebar-collapsed'] { --toast-left: var(--sidebar-w-collapsed); }
+}
+
 /* Map pins are drawn 32px; give them the same 44px tap area as every other control. The marker element is already
    absolutely positioned by MapLibre, so the pseudo-element can extend from it. */
 .maplibregl-marker:is(button)::after {

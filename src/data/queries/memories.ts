@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { memoryRepo, storyRepo } from '../repositories'
 import { processMemoryUploads } from '../uploadQueue'
-import { toast } from '@/components/feedback/toast'
+import { dismissToast, toast, toastDuration } from '@/components/feedback/toast'
 import { useServices } from '@/services'
 import type { Memory, Story } from '@/types'
 
@@ -27,7 +27,8 @@ export function useMemoryRefresh() {
 }
 
 /** A little longer than the toast's own 6 s, so a late tap on Undo still finds the photo. */
-export const UNDO_WINDOW_MS = 8000
+/** The Undo toast's lifetime; the stored photo is deleted (and the toast closed) once it has passed. */
+export const UNDO_WINDOW_MS = toastDuration.action
 
 export function useMemoryActions(tripId: string) {
   const refresh = useMemoryRefresh()
@@ -37,9 +38,14 @@ export function useMemoryActions(tripId: string) {
       await memoryRepo.remove(m.id)
       await refresh(tripId)
       // The stored photo has to survive the Undo, so it is only deleted once that window has closed.
-      const cleanup = m.mediaKey ? setTimeout(() => void storage.remove(m.mediaKey!).catch(() => undefined), UNDO_WINDOW_MS) : undefined
-      toast({
+      // The toast pauses while hovered or focused, so it is closed here too: Undo is never offered after the photo is gone.
+      let toastId = 0
+      const cleanup = m.mediaKey
+        ? setTimeout(() => { dismissToast(toastId); void storage.remove(m.mediaKey!).catch(() => undefined) }, UNDO_WINDOW_MS)
+        : undefined
+      toastId = toast({
         title: 'Memory deleted',
+        durationMs: UNDO_WINDOW_MS,
         action: { label: 'Undo', onClick: () => { clearTimeout(cleanup); void memoryRepo.restore(m).then(() => refresh(tripId)) } },
       })
     },
