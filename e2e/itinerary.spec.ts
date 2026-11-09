@@ -105,6 +105,14 @@ test.describe('itinerary and map', () => {
     await expect(page.getByRole('dialog', { name: 'Add to Day 1' })).toBeHidden()
     await expect(page.getByRole('list', { name: 'Day 1 activities' })).toContainText('Beach picnic')
 
+    // A photo of the new place is found in the background (the demo adapter answers from the catalogue) and credited.
+    const openDetails = page.getByRole('button', { name: 'Open details for Beach picnic' }) // beside the map; elsewhere the card opens them
+    await ((await openDetails.count()) ? openDetails : page.getByRole('list', { name: 'Day 1 activities' }).getByText('Beach picnic', { exact: true })).click()
+    const details = page.getByRole('dialog', { name: 'Beach picnic' })
+    await expect(details.getByText(/^Photo by .+ on Wikimedia Commons/)).toBeVisible()
+    await expect(details.locator('img[src^="/photos/p-seminyak-beach-"]')).toBeVisible()
+    await page.keyboard.press('Escape')
+
     // On the map (needs WebGL; the list above is the part that works everywhere).
     const hasWebGL = await page.evaluate(() => { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')) })
     test.skip(!hasWebGL, 'This browser build has no WebGL, so the map cannot draw')
