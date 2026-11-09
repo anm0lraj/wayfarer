@@ -117,7 +117,7 @@ export function CreateTrip() {
             <div className="flex-1" key={step}><Body /></div>
             <div className="sticky bottom-0 -mx-5 mt-6 flex gap-3 border-t border-border bg-surface px-5 py-3">
               <Button type="button" variant="secondary" className="flex-1 sm:flex-none" disabled={creating} onClick={() => (index === 0 ? close() : goTo(index - 1))}>{index === 0 ? 'Cancel' : 'Back'}</Button>
-              <Button type="submit" className="flex-1" disabled={creating}>{creating ? 'Creating your trip…' : last ? 'Create trip' : 'Next'}</Button>
+              <Button type="submit" className="flex-1 sm:ml-auto sm:min-w-40 sm:flex-none" disabled={creating}>{creating ? 'Creating your trip…' : last ? 'Create trip' : 'Next'}</Button>
             </div>
           </form>
         </div>

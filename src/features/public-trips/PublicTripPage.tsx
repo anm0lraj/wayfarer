@@ -20,6 +20,7 @@ import type { GeoPoint, PublicTrip } from '@/types'
 import { PublicTripActions } from './components/PublicTripActions'
 import { UseItinerarySheet } from './components/UseItinerarySheet'
 import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
+import { placeName } from '@/lib/places'
 
 type Snapshot = PublicTrip['snapshot']
 
@@ -62,7 +63,7 @@ function DayList({ snap, onPick }: { snap: Snapshot; onPick: (dayNumber: number)
           <section key={day.id} aria-labelledby={`day-${day.id}`}>
             <div className="mb-2 flex items-center justify-between gap-3">
               <h3 id={`day-${day.id}`} className="text-lg font-semibold">Day {day.dayNumber}{day.title ? ` — ${day.title}` : ''}</h3>
-              <Button size="sm" variant="ghost" onClick={() => onPick(day.dayNumber)}><MapPin aria-hidden className="size-4" /> Show on map</Button>
+              <Button size="sm" variant="ghost" className="shrink-0 whitespace-nowrap" onClick={() => onPick(day.dayNumber)}><MapPin aria-hidden className="size-4" /> Show on map</Button>
             </div>
             <ol className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
               {items.map((item) => {
@@ -113,7 +114,7 @@ function Loaded({ trip }: { trip: PublicTrip }) {
 
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          {dest && <Badge tone="primary"><MapPin aria-hidden className="size-3.5" />{dest.name}, {dest.country}</Badge>}
+          {dest && <Badge tone="primary"><MapPin aria-hidden className="size-3.5" />{placeName(dest)}</Badge>}
           <Badge>{trip.travelStyle}</Badge>
           {trip.visibility === 'link' && <Badge tone="warning">Unlisted — only people with the link</Badge>}
         </div>

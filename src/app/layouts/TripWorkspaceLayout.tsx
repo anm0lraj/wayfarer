@@ -19,6 +19,7 @@ import { stateLabel } from '@/features/trips/tripState'
 import { dateInTimezone, formatDateRange } from '@/lib/dates'
 import { clock } from '@/services/clock/clock'
 import { PermissionError } from '@/lib/permissions'
+import { placeName } from '@/lib/places'
 import type { TripState } from '@/types'
 
 // The assistant panel is only needed once opened on desktop, so it stays out of the main bundle.
@@ -40,7 +41,7 @@ function TripHeaderMeta({ trip }: { trip: TripWithState }) {
   const planning = ['draft', 'planning', 'ready', 'upcoming'].includes(trip.effectiveState)
   return (
     <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-fg-muted">
-      <span>{destination.data ? `${destination.data.name}, ${destination.data.country} · ` : ''}{formatDateRange(trip.startDate, trip.endDate)} · {trip.travellers.count} travellers</span>
+      <span>{destination.data ? `${placeName(destination.data)} · ` : ''}{formatDateRange(trip.startDate, trip.endDate)} · {trip.travellers.count} travellers</span>
       {w && <WeatherChip condition={w.condition} tempC={w.highC} />}
       {planning && plan.data && (
         <span className="flex items-center gap-2">
@@ -107,6 +108,8 @@ function Workspace({ trip }: { trip: TripWithState }) {
   const phone = !useMediaQuery('(min-width: 640px)')
   const onOverview = useMatch({ path: '/trips/:tripId', end: true }) !== null
   const compact = phone && !onOverview
+  // Stories are made from memories and live under them in the tabs, though their URLs are /stories/….
+  const inStories = useMatch('/trips/:tripId/stories/*') !== null
   return (
     <div className={docked ? 'flex items-start gap-3' : undefined}>
       <div className="min-w-0 flex-1">
@@ -134,7 +137,7 @@ function Workspace({ trip }: { trip: TripWithState }) {
           <TabLink to={`${base}/itinerary`}>Itinerary</TabLink>
           <TabLink to={`${base}/map`}>Map</TabLink>
           <TabLink to={`${base}/bookings`}>Bookings</TabLink>
-          <TabLink to={`${base}/memories`}>Memories</TabLink>
+          <TabLink to={`${base}/memories`} current={inStories}>Memories</TabLink>
         </TabNav>
         <Outlet context={trip} />
       </div>

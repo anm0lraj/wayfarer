@@ -15,7 +15,8 @@ export function Section({ title, description, to, linkLabel = 'See all', childre
   const headingId = useId()
   return (
     <section aria-labelledby={headingId} className={cn('space-y-3', className)}>
-      <div className="flex items-end justify-between gap-3">
+      {/* min-h-touch: every heading row is as tall as one with a "See all" link, so side-by-side sections line up. */}
+      <div className="flex min-h-touch items-end justify-between gap-3">
         <div className="min-w-0">
           <h2 id={headingId} className="text-2xl font-bold">{title}</h2>
           {description && <p className="text-sm text-fg-muted">{description}</p>}
@@ -39,7 +40,7 @@ export function CardRow({ children, className }: { children: ReactNode; classNam
   return (
     <ul
       className={cn(
-        'relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4',
+        'relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 min-[768px]:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3',
         '[&>li]:w-[72%] [&>li]:shrink-0 [&>li]:snap-start sm:[&>li]:w-auto',
         className,
       )}

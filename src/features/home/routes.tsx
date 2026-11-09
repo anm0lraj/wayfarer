@@ -20,6 +20,7 @@ import { countdownLabel, dateInTimezone } from '@/lib/dates'
 import { useNow } from '@/lib/hooks/useNow'
 import type { Memory } from '@/types'
 import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
+import { cn } from '@/lib/cn'
 
 const PLANNING_STATES = new Set(['draft', 'planning', 'ready', 'upcoming'])
 
@@ -96,6 +97,10 @@ export default function HomeRoute() {
     { id: 'share', label: 'Share this trip', to: `/trips/${t.id}/share`, trip: t },
   ])
 
+  const showUpcoming = !(active && upcoming.length === 0)
+  // Thumbnails fill whole rows: four photos make two rows of two rather than three and an orphan.
+  const memoryCols = (memories.data?.length ?? 0) % 3 === 1 ? 'grid-cols-2 lg:grid-cols-2' : 'grid-cols-3 lg:grid-cols-3'
+
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -110,10 +115,12 @@ export default function HomeRoute() {
 
       <InvitationsCard />
 
-      <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
-        <div className="min-w-0 space-y-8 lg:col-span-8">
-          {/* While a trip is live and nothing else is coming up, the live banner says it all: no "plan a trip" empty state under it. */}
-          {!(active && upcoming.length === 0) && (
+      {/* Phones and tablets read top to bottom: your trip, what to do next, then inspiration. On desktop the
+          next steps sit in a right-hand column beside the trip and the inspiration rows. */}
+      <div className="space-y-8 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-8 lg:gap-y-8 lg:space-y-0">
+        {/* While a trip is live and nothing else is coming up, the live banner says it all: no "plan a trip" empty state under it. */}
+        {showUpcoming && (
+        <div className="min-w-0 lg:col-span-8 lg:row-start-1">
           <Section title="Upcoming trips" to="/trips" linkLabel="All trips">
             {trips.isPending && (
               <SkeletonGroup label="Loading trips" className="grid gap-3 sm:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="hidden h-64 sm:block" /></SkeletonGroup>
@@ -136,25 +143,10 @@ export default function HomeRoute() {
               </ul>
             )}
           </Section>
-          )}
-
-          <Section title="Explore" description="Places travellers can’t stop talking about" to="/explore">
-            {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}
-            {destinations.isError && <ErrorState onRetry={() => void destinations.refetch()} />}
-            {destinations.data && <CardRow className="xl:grid-cols-3">{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
-          </Section>
-
-          <Section title="Inspiration" description="Real trips by real travellers. Borrow a plan and make it yours." to="/explore/itineraries">
-            {publicTrips.isPending && <SkeletonGroup label="Loading itineraries" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="h-60" /><Skeleton className="h-60" /></SkeletonGroup>}
-            {publicTrips.isError && <ErrorState title="Couldn’t load itineraries" onRetry={() => void publicTrips.refetch()} />}
-            {publicTrips.data && publicTrips.data.length > 0 && <CardRow>{publicTrips.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</CardRow>}
-            {publicTrips.data?.length === 0 && (
-              <EmptyState title="No shared itineraries yet" description="When travellers publish their trips they appear here. Publish one of yours to be the first." action={<Button asChild variant="secondary"><Link to="/trips">Your trips</Link></Button>} />
-            )}
-          </Section>
         </div>
+        )}
 
-        <aside className="min-w-0 space-y-8 lg:col-span-4">
+        <aside className="min-w-0 space-y-8 lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1">
           {(trips.isPending || upcoming.length > 0) && (
             <Section title="Continue planning">
               {trips.isPending ? (
@@ -177,12 +169,29 @@ export default function HomeRoute() {
             {memories.isPending ? (
               <Skeleton className="h-32" />
             ) : memories.data && memories.data.length > 0 ? (
-              <ul className="grid grid-cols-3 gap-2">{memories.data.map((m) => <li key={m.id}><MemoryThumb memory={m} /></li>)}</ul>
+              <ul className={cn('grid gap-2 sm:grid-cols-6', memoryCols)}>{memories.data.map((m) => <li key={m.id}><MemoryThumb memory={m} /></li>)}</ul>
             ) : (
               <Card className="flex items-center gap-3 p-4 text-sm text-fg-muted"><ImageIcon aria-hidden className="size-5 shrink-0" /> Snap a photo on your trip and it lands right here.</Card>
             )}
           </Section>
         </aside>
+
+        <div className={cn('min-w-0 space-y-8 lg:col-span-8', showUpcoming ? 'lg:row-start-2' : 'lg:row-start-1')}>
+          <Section title="Explore" description="Places travellers can’t stop talking about" to="/explore">
+            {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}
+            {destinations.isError && <ErrorState onRetry={() => void destinations.refetch()} />}
+            {destinations.data && <CardRow>{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
+          </Section>
+
+          <Section title="Inspiration" description="Real trips by real travellers. Borrow a plan and make it yours." to="/explore/itineraries">
+            {publicTrips.isPending && <SkeletonGroup label="Loading itineraries" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="h-60" /><Skeleton className="h-60" /></SkeletonGroup>}
+            {publicTrips.isError && <ErrorState title="Couldn’t load itineraries" onRetry={() => void publicTrips.refetch()} />}
+            {publicTrips.data && publicTrips.data.length > 0 && <CardRow>{publicTrips.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</CardRow>}
+            {publicTrips.data?.length === 0 && (
+              <EmptyState title="No shared itineraries yet" description="When travellers publish their trips they appear here. Publish one of yours to be the first." action={<Button asChild variant="secondary"><Link to="/trips">Your trips</Link></Button>} />
+            )}
+          </Section>
+        </div>
       </div>
     </div>
   )

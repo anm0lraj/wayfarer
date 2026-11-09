@@ -57,7 +57,7 @@ export function Explore() {
 
       <div className="mt-6" aria-live="polite">
         {isPending && (
-          <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 min-[768px]:grid-cols-3">
             {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[4/3]" />)}
           </SkeletonGroup>
         )}
@@ -70,7 +70,7 @@ export function Explore() {
           />
         )}
         {results.length > 0 && (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ul className="grid gap-3 sm:grid-cols-2 min-[768px]:grid-cols-3">
             {results.map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i < 2} /></li>)}
           </ul>
         )}
@@ -124,10 +124,45 @@ export function DestinationDetails() {
         </div>
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-12">
-        <div className="min-w-0 space-y-8 lg:col-span-8">
+      {/* Phones read overview → at a glance → things to do; desktop keeps the facts in a right-hand column. */}
+      <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
+        <div className="min-w-0 lg:col-span-8 lg:row-start-1">
           <Section title="Overview"><p className="max-w-prose text-fg-muted">{d.overview}</p></Section>
+        </div>
 
+        <aside className="min-w-0 space-y-6 lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1">
+          <section aria-label="At a glance" className="space-y-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
+            <h2 className="text-lg font-semibold">At a glance</h2>
+            <dl className="space-y-3 text-sm">
+              <div className="flex gap-3"><Calendar aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><div><dt className="text-fg-muted">Best time to visit</dt><dd className="font-medium">{d.bestTimeToVisit}</dd></div></div>
+              <div className="flex gap-3"><Wallet aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><div><dt className="text-fg-muted">Estimated budget</dt><dd className="font-medium">{formatMoney(d.estimatedDailyBudget)} per person, per day</dd></div></div>
+              <div className="flex gap-3"><Clock aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><div><dt className="text-fg-muted">Time zone</dt><dd className="font-medium">{d.timezone.replace('_', ' ')}</dd></div></div>
+            </dl>
+          </section>
+
+          <section aria-label="Weather" className="space-y-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
+            <h2 className="text-lg font-semibold">Weather, next 5 days</h2>
+            {forecast.isPending && <Skeleton className="h-16" />}
+            {forecast.isError && <p className="text-sm text-fg-muted">Weather isn’t available right now.</p>}
+            {forecast.data && (
+              <ul className="grid grid-cols-5 gap-1 text-center text-xs">
+                {forecast.data.map((f) => (
+                  <li key={f.date} className="space-y-1 rounded-md bg-surface-2 py-2">
+                    <p className="text-fg-muted">{new Date(f.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short' })}</p>
+                    <WeatherChip condition={f.condition} tempC={f.highC} className="flex-col !gap-0.5 font-medium" />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-label="Travel tips" className="space-y-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
+            <h2 className="text-lg font-semibold">Travel tips</h2>
+            <ul className="list-disc space-y-2 pl-5 text-sm text-fg-muted">{d.travelTips.map((t) => <li key={t}>{t}</li>)}</ul>
+          </section>
+        </aside>
+
+        <div className="min-w-0 space-y-8 lg:col-span-8 lg:row-start-2">
           <Section title="Things to do" description="Save places you like, or add them straight to a trip">
             {places.isPending && <Skeleton className="h-64" />}
             {places.isError && <ErrorState onRetry={() => void places.refetch()} />}
@@ -167,37 +202,6 @@ export function DestinationDetails() {
           )}
         </div>
 
-        <aside className="min-w-0 space-y-6 lg:col-span-4">
-          <section aria-label="At a glance" className="space-y-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
-            <h2 className="text-lg font-semibold">At a glance</h2>
-            <dl className="space-y-3 text-sm">
-              <div className="flex gap-3"><Calendar aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><div><dt className="text-fg-muted">Best time to visit</dt><dd className="font-medium">{d.bestTimeToVisit}</dd></div></div>
-              <div className="flex gap-3"><Wallet aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><div><dt className="text-fg-muted">Estimated budget</dt><dd className="font-medium">{formatMoney(d.estimatedDailyBudget)} per person, per day</dd></div></div>
-              <div className="flex gap-3"><Clock aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><div><dt className="text-fg-muted">Time zone</dt><dd className="font-medium">{d.timezone.replace('_', ' ')}</dd></div></div>
-            </dl>
-          </section>
-
-          <section aria-label="Weather" className="space-y-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
-            <h2 className="text-lg font-semibold">Weather, next 5 days</h2>
-            {forecast.isPending && <Skeleton className="h-16" />}
-            {forecast.isError && <p className="text-sm text-fg-muted">Weather isn’t available right now.</p>}
-            {forecast.data && (
-              <ul className="grid grid-cols-5 gap-1 text-center text-xs">
-                {forecast.data.map((f) => (
-                  <li key={f.date} className="space-y-1 rounded-md bg-surface-2 py-2">
-                    <p className="text-fg-muted">{new Date(f.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short' })}</p>
-                    <WeatherChip condition={f.condition} tempC={f.highC} className="flex-col !gap-0.5 font-medium" />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section aria-label="Travel tips" className="space-y-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
-            <h2 className="text-lg font-semibold">Travel tips</h2>
-            <ul className="list-disc space-y-2 pl-5 text-sm text-fg-muted">{d.travelTips.map((t) => <li key={t}>{t}</li>)}</ul>
-          </section>
-        </aside>
       </div>
 
       <AddToTripSheet place={addTarget} onClose={() => setAddTarget(null)} />

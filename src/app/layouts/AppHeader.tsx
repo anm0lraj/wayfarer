@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useMatch, useNavigate } from 'react-router-dom'
 import { Bell, Search } from 'lucide-react'
 import { SyncIndicator } from '@/features/sync/SyncIndicator'
 import { useUnreadCount } from '@/data/queries/notifications'
@@ -15,6 +15,8 @@ export function AppHeader() {
   const navigate = useNavigate()
   const unread = useUnreadCount()
   const [query, setQuery] = useState('')
+  // Explore has its own, larger search field; a second one in the header would be the same search twice.
+  const onExplore = useMatch({ path: '/explore', end: true }) !== null
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault()
@@ -28,7 +30,7 @@ export function AppHeader() {
         <Link to="/" className="flex min-h-touch items-center gap-2 font-display text-lg font-extrabold tracking-tight text-primary sm:hidden">
           <img src="/icon.svg" alt="" className="size-7 rounded-md" /> Wayfarer
         </Link>
-        <form role="search" onSubmit={onSearch} className="hidden w-full max-w-md sm:block">
+        <form role="search" onSubmit={onSearch} className={onExplore ? 'hidden' : 'hidden w-full max-w-md sm:block'}>
           <SearchField label="Search destinations" placeholder="Where do you want to go?" value={query} onChange={(e) => setQuery(e.target.value)} className="bg-surface-2 shadow-none" />
         </form>
         <div className="ml-auto flex items-center gap-1">

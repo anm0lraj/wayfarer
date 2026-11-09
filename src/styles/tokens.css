@@ -13,7 +13,8 @@
   /* Headings (h1–h3, `font-display`): the same family today; kept separate so headings can change face on their own. */
   --font-display: var(--font-sans);
 
-  --text-xs: clamp(0.6875rem, 0.67rem + 0.08vw, 0.75rem);
+  /* Never below 12 px: the smallest text (times, badges, nav labels) stays legible on phones. */
+  --text-xs: 0.75rem;
   --text-sm: clamp(0.78125rem, 0.76rem + 0.1vw, 0.84375rem);
   --text-base: clamp(0.875rem, 0.85rem + 0.15vw, 0.9375rem);
   --text-lg: clamp(1rem, 0.95rem + 0.2vw, 1.0625rem);
