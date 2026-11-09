@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { bookingRepo, catalogRepo, itineraryRepo } from '@/data/repositories'
 import { LocationPicker } from '@/features/map/LocationPicker'
+import { PlacePhotoFigure } from '@/features/place-photos/PlacePhotoFigure'
+import { useItemPhoto } from '@/features/place-photos/useItemPhoto'
 import { useQuery } from '@tanstack/react-query'
 import { useServices } from '@/services'
 import { itemCategorySchema, timeSchema, type Booking, type CustomLocation, type GeoPoint, type ItineraryDay, type ItineraryItem, type Trip } from '@/types'
@@ -57,6 +59,7 @@ export function ActivitySheet({ trip, item, day, open, onClose, actions, booking
   const [reservation, setReservation] = useState({ name: '', ref: '' })
   const [location, setLocation] = useState<CustomLocation>()
   const [nameOnly, setNameOnly] = useState<string>()
+  const photo = useItemPhoto(item, place)
 
   useEffect(() => {
     if (!item) return
@@ -98,6 +101,7 @@ export function ActivitySheet({ trip, item, day, open, onClose, actions, booking
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title={item.title} description={`Day ${day.dayNumber} · ${item.startTime}–${endTime(item)} · ${meta.label}`}>
       <form noValidate onSubmit={(e) => void save(e)} className="space-y-4">
+        {photo && <PlacePhotoFigure photo={photo} seed={item.id} />}
         <Input label="Name" error={form.formState.errors.title?.message} {...form.register('title')} />
         <div className="grid grid-cols-2 gap-3">
           <Input label="Start time" type="time" error={form.formState.errors.startTime?.message} {...form.register('startTime')} />

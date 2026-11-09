@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http'
 import { loadEnv, type Plugin } from 'vite'
 
 /**
- * Serves the Vercel functions in `api/ai/` and `api/push/` from the Vite dev server, so the real assistant (and the
+ * Serves the Vercel functions in `api/ai/`, `api/push/`, `api/account/` and `api/place-photos.ts` from the Vite dev server, so the real assistant (and the
  * test notification) can be tried locally with `npm run dev` (no `vercel dev` needed). It only exists while developing; on Vercel the same files run as functions.
  * Server-side settings such as `GEMINI_API_KEY` come from `.env.development.local` (git-ignored) and are put into
  * `process.env` for the handlers only, never into the browser bundle (they have no VITE_ prefix).
@@ -24,7 +24,7 @@ export function localApi(): Plugin {
 
       server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url ?? '/', 'http://localhost')
-        if (!/^\/api\/(ai|push|account)\/[a-z-]+$/.test(url.pathname)) return next()
+        if (!/^\/api\/((ai|push|account)\/[a-z-]+|place-photos)$/.test(url.pathname)) return next()
         try {
           const mod = (await server.ssrLoadModule(`${url.pathname}.ts`)) as Record<string, ((r: Request) => Promise<Response>) | undefined>
           const handler = mod[req.method ?? 'GET']

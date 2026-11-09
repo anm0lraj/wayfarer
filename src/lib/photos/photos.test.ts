@@ -57,6 +57,17 @@ describe('responsive helpers', () => {
     expect(photoIdOf('https://wayfarer.example/photos/p-tanah-lot-640.webp')).toBe('p-tanah-lot')
     expect(photoIdOf('/photos/../x-1280.webp')).toBeUndefined()
   })
+
+  it('size an Unsplash photo through its CDN, keeping Unsplash’s own parameters', () => {
+    const src = 'https://images.unsplash.com/photo-1?ixid=abc&w=1280&fm=webp&q=60'
+    expect(responsiveImage(src, '50vw')).toEqual({
+      src,
+      srcSet: 'https://images.unsplash.com/photo-1?ixid=abc&w=640&fm=webp&q=60 640w, https://images.unsplash.com/photo-1?ixid=abc&w=1280&fm=webp&q=60 1280w',
+      sizes: '50vw',
+    })
+    expect(thumbnail(src)).toBe('https://images.unsplash.com/photo-1?ixid=abc&w=640&fm=webp&q=60')
+    expect(thumbnail('https://images.unsplash.com/photo-2?ixid=x')).toBe('https://images.unsplash.com/photo-2?ixid=x&w=640&fm=webp')
+  })
 })
 
 describe('installImageFallback', () => {

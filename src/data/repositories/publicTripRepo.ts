@@ -115,7 +115,7 @@ export const publicTripRepo = {
       for (const it of items) {
         await itineraryRepo.addItem(trip.id, target.id, {
           title: it.title, startTime: it.startTime, durationMin: it.durationMin, category: it.category, placeId: it.placeId,
-          description: it.description, estimatedCost: it.estimatedCost, customLocation: it.customLocation, source: 'template', image: it.image,
+          description: it.description, estimatedCost: it.estimatedCost, customLocation: it.customLocation, source: 'template', image: it.image, autoPhoto: it.autoPhoto,
         })
       }
     }

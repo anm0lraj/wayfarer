@@ -16,6 +16,7 @@ import { useTripPlan } from '@/data/queries/plan'
 import { useTrip, type TripWithState } from '@/data/queries/trips'
 import { useForecast } from '@/data/queries/weather'
 import { stateLabel } from '@/features/trips/tripState'
+import { PlacePhotoRunner } from '@/features/place-photos/PlacePhotoRunner'
 import { dateInTimezone, formatDateRange } from '@/lib/dates'
 import { clock } from '@/services/clock/clock'
 import { PermissionError } from '@/lib/permissions'
@@ -137,6 +138,7 @@ function Workspace({ trip }: { trip: TripWithState }) {
           <TabLink to={`${base}/memories`}>Memories</TabLink>
         </TabNav>
         <Outlet context={trip} />
+        <PlacePhotoRunner tripId={trip.id} />
       </div>
       {docked && <Suspense fallback={<div className="hidden w-[400px] lg:block" aria-hidden />}><AIPanel trip={trip} /></Suspense>}
     </div>

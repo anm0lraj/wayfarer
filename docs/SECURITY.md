@@ -10,7 +10,7 @@ penetration test. It lists what protects what, what was found, what was fixed, a
 | Trips, itineraries, memories, photos | Firestore `trips/*` | Members of the trip, by role (owner / editor / viewer) |
 | Profile, settings, assistant chats, devices | Firestore `users/{uid}/*` | That person only |
 | Published pages | `publicTrips`, `publicSlugs` | Anyone reads; only the publisher writes |
-| Service-account key, `CRON_SECRET`, `GEMINI_API_KEY` | Vercel **Sensitive** variables | Server functions only; never in the bundle |
+| Service-account key, `CRON_SECRET`, `GEMINI_API_KEY`, `UNSPLASH_ACCESS_KEY` | Vercel **Sensitive** variables | Server functions only; never in the bundle |
 | Assistant allowance | `users/{uid}/usage/{day}` | Can only go up |
 
 ## Trust boundaries and what holds each one
@@ -22,6 +22,10 @@ penetration test. It lists what protects what, what was found, what was fixed, a
 - **Browser ↔ our functions.** Every function that does something for a person (`api/ai/*`, `api/push/test`, `api/account/delete`)
   verifies the Firebase ID token with Firebase and takes the account id from that answer, never from the request. Bodies are
   size-capped and schema-checked. The scheduled sweep answers only to `CRON_SECRET` (constant-time comparison).
+  `api/place-photos` (Unsplash search) needs the same token wherever Firebase is configured, takes only a short place name and
+  area, and its download event only calls `https://api.unsplash.com/photos/<id>/download` (so it can't be used as an open proxy).
+  Found photos stored on items (and so on published pages) are Zod-checked: image addresses only from `/photos/` or
+  `images.unsplash.com`, credit links only `https://`.
 - **Server ↔ Firebase with the service account.** It bypasses the rules, so only three places use it (`api/push/sweep`, `api/push/test`,
   `api/account/delete`) and each acts for exactly one person or for the schedule. Account deletion also needs a sign-in from
   the last 10 minutes.
@@ -64,7 +68,7 @@ without `rel`; no server request whose address comes from user input; the sign-i
 2. **Budgets and alerts** (finding 10): set a Google Cloud budget on `wayfarer-prod` with email alerts at 50/90/100 %, and a Gemini
    quota cap; consider a per-user limit on documents.
 3. **Rotate secrets** at launch and whenever someone with access leaves: service-account key (Firebase → Service accounts →
-   generate, update Vercel, delete the old key), `CRON_SECRET`, `GEMINI_API_KEY`. Use separate values for Preview and Production.
+   generate, update Vercel, delete the old key), `CRON_SECRET`, `GEMINI_API_KEY`, `UNSPLASH_ACCESS_KEY`. Use separate values for Preview and Production.
 4. **GitHub**: turn on secret scanning and push protection, Dependabot alerts, and require the three CI jobs on `main`.
 5. **Vercel**: upgrade to Pro (Hobby is non-commercial), add a rate-limit rule for `/api/*`, and keep Production environment
    variables Sensitive.

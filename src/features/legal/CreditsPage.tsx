@@ -31,6 +31,14 @@ export function CreditsPage() {
           </li>
         ))}
       </ul>
+      <section aria-labelledby="unsplash-h" className="max-w-2xl space-y-2 leading-relaxed">
+        <h2 id="unsplash-h" className="text-2xl font-bold">Photos of your own places</h2>
+        <p>
+          When you add an activity at a place of your own, Wayfarer may find a photo of it on <a className={link} href="https://unsplash.com/?utm_source=travel_planner_app&utm_medium=referral" rel="noopener" target="_blank">Unsplash</a>.
+          Those photos are shown straight from Unsplash, under the <a className={link} href="https://unsplash.com/license" rel="license noopener" target="_blank">Unsplash License</a>,
+          and each one is credited to its photographer wherever it appears (“Photo by … on Unsplash”).
+        </p>
+      </section>
       <section aria-labelledby="fonts-h" className="max-w-2xl space-y-2 leading-relaxed">
         <h2 id="fonts-h" className="text-2xl font-bold">Font</h2>
         <p>
