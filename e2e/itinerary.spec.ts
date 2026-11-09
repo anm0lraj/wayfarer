@@ -106,6 +106,10 @@ test.describe('itinerary and map', () => {
     await expect(page.getByRole('list', { name: 'Day 1 activities' })).toContainText('Beach picnic')
 
     // A photo of the new place is found in the background (the demo adapter answers from the catalogue) and credited.
+    // On a phone the "Added" toast (with Undo) can sit over the new card, so close it first, as a traveller would.
+    const toasts = page.getByRole('region', { name: /Notifications/ })
+    for (const close of await toasts.getByRole('button', { name: 'Dismiss' }).all()) await close.click()
+    await expect(toasts.getByRole('listitem')).toHaveCount(0)
     const openDetails = page.getByRole('button', { name: 'Open details for Beach picnic' }) // beside the map; elsewhere the card opens them
     await ((await openDetails.count()) ? openDetails : page.getByRole('list', { name: 'Day 1 activities' }).getByText('Beach picnic', { exact: true })).click()
     const details = page.getByRole('dialog', { name: 'Beach picnic' })
