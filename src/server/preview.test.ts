@@ -38,9 +38,11 @@ describe('link preview tags', () => {
     expect(tags).toContain('twitter:card" content="summary_large_image"')
   })
 
-  it('use the trip’s photo as the picture, or the Wayfarer card when the cover is an illustration', () => {
+  it('use the trip’s photo or stock photo as the picture, or the Wayfarer card when the cover is an illustration', () => {
     expect(buildHead(trip({ coverImage: JPEG_COVER }), 'x', 'https://w.test').tags).toContain('og:image" content="https://w.test/api/og-image?slug=x"')
     expect(buildHead(trip({ coverImage: 'data:image/svg+xml;utf8,<svg/>' }), 'x', 'https://w.test').tags).toContain('og:image" content="https://w.test/og-default.png"')
+    expect(buildHead(trip({ coverImage: '/photos/bali-cover-1280.webp' }), 'x', 'https://w.test').tags).toContain('og:image" content="https://w.test/photos/bali-cover-1280.webp"')
+    expect(buildHead(trip({ coverImage: '/photos/../secret-1280.webp' }), 'x', 'https://w.test').tags).toContain('og-default.png')
     expect(coverIsPhoto(JPEG_COVER)).toBe(true)
     expect(coverIsPhoto('data:image/svg+xml;utf8,<svg/>')).toBe(false)
     expect(decodeCover(JPEG_COVER)).toMatchObject({ type: 'image/jpeg' })
@@ -63,6 +65,16 @@ describe('link preview tags', () => {
     expect(out).not.toContain('<title>Wayfarer</title>')
     expect(out.match(/<meta name="description"/g)).toHaveLength(1)
     expect(out).toContain('<script type="module" src="/src/app/main.tsx"></script>')
+    expect(out).toContain('id="root"')
+  })
+
+  it('keep dollar signs a person wrote as they are, with no replacement patterns', () => {
+    const title = 'Trip for $$ and $& $1 $` $\''
+    const description = 'Budget $$$ under $500'
+    const head = buildHead(trip({ title, description }), 'x', 'https://w.test')
+    const out = injectHead(indexHtml, head)
+    expect(out).toContain(`<title>${escapeHtml(head.title)}</title>`)
+    expect(out).toContain(escapeHtml(description))
     expect(out).toContain('id="root"')
   })
 

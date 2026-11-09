@@ -60,7 +60,7 @@ export function TripChecklist() {
                 <span className={cn(item.done && 'text-fg-muted line-through')}>
                   <span className="sr-only">{item.done ? 'Done: ' : 'Not done: '}</span>{item.label}
                 </span>
-                {!item.done && <Link className="text-sm font-semibold text-primary hover:underline" to={`${base}/${autoTarget[item.autoRule]}`}>Add</Link>}
+                {!item.done && <Link className="-mr-2 inline-flex min-h-touch min-w-touch items-center justify-center px-2 text-sm font-semibold text-primary hover:underline" to={`${base}/${autoTarget[item.autoRule]}`} aria-label={`Add: ${item.label}`}>Add</Link>}
                 {item.done && <span className="text-sm text-fg-muted">From your saved bookings</span>}
               </p>
             ) : (

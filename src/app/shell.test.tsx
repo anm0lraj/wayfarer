@@ -54,12 +54,33 @@ describe('app shell', () => {
     expect(screen.getByText(/Demo date/)).toBeInTheDocument()
   })
 
+  it('marks only Live Trip as the current page while on Live Trip', async () => {
+    useClockStore.setState({ simulatedNow: '2026-10-13T10:00:00+08:00' })
+    renderAt('/trips/trip-bali/live')
+    await screen.findAllByRole('link', { name: /^Live/ })
+    for (const nav of screen.getAllByRole('navigation', { name: 'Primary' })) {
+      const current = within(nav).getAllByRole('link').filter((a) => a.getAttribute('aria-current') === 'page')
+      expect(current.map((a) => a.textContent)).toEqual([expect.stringMatching(/^Live/)])
+    }
+  })
+
   it('renders the trip workspace with URL-reflected tabs', async () => {
     const router = renderAt('/trips/trip-bali')
     expect(await screen.findByRole('heading', { name: '5 Days in Bali', level: 1 })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: 'Itinerary' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/trips/trip-bali/itinerary/day/1')) // after the index redirect
     expect(await screen.findByRole('heading', { name: 'Day 1 · Arrival & Seminyak' })).toBeInTheDocument()
+  })
+
+  it('keeps the full trip header for Overview and a one-row header on other tabs (phone)', async () => {
+    const router = renderAt('/trips/trip-bali')
+    await screen.findByRole('heading', { name: '5 Days in Bali', level: 1 })
+    expect(await screen.findByText(/2 travellers/)).toBeInTheDocument()
+    await router.navigate('/trips/trip-bali/memories')
+    expect(await screen.findByRole('link', { name: 'All trips' })).toHaveAttribute('href', '/trips')
+    expect(screen.getByRole('heading', { name: '5 Days in Bali', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Assistant' })).toHaveAttribute('href', '/trips/trip-bali/ai')
+    expect(screen.queryByText(/2 travellers/)).not.toBeInTheDocument()
   })
 
   it('shows a not-found state for an unknown trip and for unknown URLs', async () => {
@@ -69,7 +90,7 @@ describe('app shell', () => {
 
   it('renders 404 for unknown routes', async () => {
     renderAt('/definitely/not/a/route')
-    expect(await screen.findByText('We can’t find that page')).toBeInTheDocument()
+    expect(await screen.findByText('Looks like we took a wrong turn')).toBeInTheDocument()
   })
 })
 
@@ -92,5 +113,20 @@ describe('ResponsiveSheet', () => {
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await waitFor(() => expect(trigger).toHaveFocus()) // Radix restores focus on the next tick
+  })
+
+  it('moves focus to the main content when a sheet opened from its URL closes', async () => {
+    function OpenedFromUrl() {
+      const [open, setOpen] = useState(true)
+      return (
+        <main id="main" tabIndex={-1}>
+          <ResponsiveSheet open={open} onOpenChange={setOpen} title="Lunch"><p>Body</p></ResponsiveSheet>
+        </main>
+      )
+    }
+    render(<OpenedFromUrl />)
+    expect(screen.getByRole('dialog', { name: 'Lunch' })).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(document.getElementById('main')).toHaveFocus())
   })
 })

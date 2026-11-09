@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { RouteEffects } from './RouteEffects'
 import { OfflineBanner } from '@/components/feedback/States'
+import { SkipLink } from '@/components/layout/SkipLink'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 /**
@@ -12,6 +13,7 @@ export function PublicLayout() {
   const tall = useLocation().pathname.startsWith('/t/')
   return (
     <div className="min-h-dvh">
+      <SkipLink />
       <RouteEffects />
       <OfflineBanner />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 pt-[calc(var(--safe-top)+0.75rem)]">
@@ -27,6 +29,7 @@ export function PublicLayout() {
       <footer className="mx-auto flex max-w-5xl flex-wrap gap-x-5 border-t border-border px-4 py-4 pb-[calc(var(--safe-bottom,0px)+1rem)] text-sm text-fg-muted">
         <Link to="/privacy" className="min-h-touch content-center underline-offset-2 hover:underline">Privacy</Link>
         <Link to="/terms" className="min-h-touch content-center underline-offset-2 hover:underline">Terms</Link>
+        <Link to="/credits" className="min-h-touch content-center underline-offset-2 hover:underline">Photo credits</Link>
       </footer>
     </div>
   )

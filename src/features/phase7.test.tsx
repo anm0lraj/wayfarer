@@ -53,7 +53,7 @@ describe('Explore feed', () => {
 
   it('shows saved trips, and an empty state when there are none', async () => {
     const first = renderApp('/saved')
-    expect(await screen.findByText('Nothing saved yet')).toBeInTheDocument()
+    expect(await screen.findByText('Your wishlist is waiting')).toBeInTheDocument()
     first.dispose()
   })
 })
@@ -107,6 +107,18 @@ describe('Public trip page', () => {
     expect(await db.days.where('tripId').equals(copy.id).count()).toBe(7)
     expect(await db.items.where('tripId').equals(copy.id).count()).toBeGreaterThan(10)
     expect(JSON.stringify((await db.publicTrips.get('pub-japan'))!.snapshot)).toBe(before)
+  })
+
+  it('asks for a start date when it is cleared instead of crashing', async () => {
+    renderApp(`${JAPAN}?use=1`)
+    const dialog = await screen.findByRole('dialog', { name: 'Use this itinerary' })
+    fireEvent.change(dialog.querySelector<HTMLInputElement>('input[type=date]')!, { target: { value: '' } })
+    expect(within(dialog).getByText('Choose a start date.')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Copy to my trips' })).toBeDisabled()
+    fireEvent.change(dialog.querySelector<HTMLInputElement>('input[type=date]')!, { target: { value: '2027-03-01' } })
+    expect(within(dialog).getByText(/7 days · 1–7 Mar/)).toBeInTheDocument()
+    expect(within(dialog).queryByText('Choose a start date.')).not.toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Copy to my trips' })).toBeEnabled()
   })
 
   it('opens the copy dialog from the feed’s “Use this itinerary” link', async () => {
@@ -179,7 +191,7 @@ describe('Profile', () => {
     expect(within(stats as HTMLElement).getByText('Countries').previousSibling).toHaveTextContent('2') // Indonesia, India
     expect(await screen.findByRole('link', { name: /5 Days in Bali/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: 'Published' }))
-    expect(await screen.findByText('Nothing published')).toBeInTheDocument()
+    expect(await screen.findByText('Share a trip, inspire a traveller')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: 'Memories' }))
     expect(await screen.findByRole('link', { name: 'Sunset at Baga Beach' })).toBeInTheDocument()
   })

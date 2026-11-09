@@ -10,12 +10,14 @@ import { Input, SearchField } from '@/components/ui/Input'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useTripPlaces } from '@/data/queries/catalog'
+import { LocationPicker } from '@/features/map/LocationPicker'
 import { formatMoney } from '@/lib/money'
-import { itemCategorySchema, timeSchema, type ItineraryDay, type ItineraryItem, type Place, type Trip } from '@/types'
+import { itemCategorySchema, timeSchema, type CustomLocation, type GeoPoint, type ItineraryDay, type ItineraryItem, type Place, type Trip } from '@/types'
 import { CATEGORY_META } from '../categoryMeta'
 import { itemCategoryForPlace } from '../placeCategory'
 import { suggestNextStart } from '../schedule'
 import type { useItineraryActions } from '../useItineraryActions'
+import { thumbnail } from '@/lib/photos/responsive'
 
 type Actions = ReturnType<typeof useItineraryActions>
 
@@ -27,24 +29,13 @@ const FILTERS: Array<{ id: string; label: string; match: (p: Place) => boolean }
   { id: 'shops', label: 'Shopping', match: (p) => p.kind === 'shop' },
 ]
 
-const customSchema = z
-  .object({
+const customSchema = z.object({
     title: z.string().trim().min(1, 'Give it a name'),
     startTime: timeSchema,
     duration: z.string().refine((v) => Number.isInteger(Number(v)) && Number(v) >= 5 && Number(v) <= 1440, 'Enter 5–1440 minutes'),
     category: itemCategorySchema,
-    locationName: z.string(),
-    address: z.string(),
-    lat: z.string(),
-    lng: z.string(),
     cost: z.string().refine((v) => v.trim() === '' || (Number(v) >= 0 && Number.isFinite(Number(v))), 'Enter an amount of 0 or more'),
     notes: z.string(),
-  })
-  .superRefine((d, ctx) => {
-    const has = (s: string) => s.trim() !== ''
-    if (has(d.lat) !== has(d.lng)) ctx.addIssue({ code: 'custom', path: [has(d.lat) ? 'lng' : 'lat'], message: 'Enter both latitude and longitude' })
-    if (has(d.lat) && !(Math.abs(Number(d.lat)) <= 90)) ctx.addIssue({ code: 'custom', path: ['lat'], message: 'Latitude is between −90 and 90' })
-    if (has(d.lng) && !(Math.abs(Number(d.lng)) <= 180)) ctx.addIssue({ code: 'custom', path: ['lng'], message: 'Longitude is between −180 and 180' })
   })
 type CustomValues = z.infer<typeof customSchema>
 
@@ -55,12 +46,16 @@ interface Props {
   open: boolean
   onClose: () => void
   actions: Actions
+  /** Middle of the area the location picker searches around. */
+  near: GeoPoint
 }
 
-export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }: Props) {
+export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions, near }: Props) {
   const places = useTripPlaces(trip.destinationIds)
   const [term, setTerm] = useState('')
   const [filter, setFilter] = useState('all')
+  const [location, setLocation] = useState<CustomLocation>()
+  const [nameOnly, setNameOnly] = useState<string>()
   const inDay = useMemo(() => new Set(dayItems.map((i) => i.placeId).filter(Boolean)), [dayItems])
 
   const t = term.trim().toLowerCase()
@@ -69,7 +64,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
 
   const form = useForm<CustomValues>({
     resolver: zodResolver(customSchema),
-    defaultValues: { title: '', startTime: suggestNextStart(dayItems), duration: '60', category: 'other', locationName: '', address: '', lat: '', lng: '', cost: '', notes: '' },
+    defaultValues: { title: '', startTime: suggestNextStart(dayItems), duration: '60', category: 'other', cost: '', notes: '' },
   })
 
   const addPlace = (p: Place) =>
@@ -79,16 +74,17 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
     })
 
   const addCustom = form.handleSubmit(async (v) => {
-    const hasPoint = v.lat.trim() !== '' && v.lng.trim() !== ''
-    const where = [v.locationName.trim(), v.address.trim()].filter(Boolean).join(' · ')
     await actions.add(day.id, day.dayNumber, {
       title: v.title.trim(), startTime: v.startTime, durationMin: Number(v.duration), category: v.category,
-      description: where || undefined,
+      // A place we could not pin is kept as text, as before; a pinned one is carried by `customLocation`.
+      description: location ? undefined : nameOnly,
       estimatedCost: v.cost.trim() ? { amount: Number(v.cost), currency: 'INR' } : undefined,
-      customLocation: hasPoint ? { name: v.locationName.trim() || v.title.trim(), address: v.address.trim() || undefined, point: { lat: Number(v.lat), lng: Number(v.lng) } } : undefined,
+      customLocation: location,
       notes: v.notes.trim() || undefined,
     })
     form.reset()
+    setLocation(undefined)
+    setNameOnly(undefined)
     onClose()
   })
 
@@ -112,7 +108,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
               const added = inDay.has(p.id)
               return (
                 <li key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2">
-                  <img src={p.images[0]} alt="" className="size-14 shrink-0 rounded-md object-cover" />
+                  <img src={thumbnail(p.images[0])} alt="" className="size-14 shrink-0 rounded-md object-cover" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{p.name}</p>
                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-fg-muted">
@@ -144,13 +140,7 @@ export function AddActivitySheet({ trip, day, dayItems, open, onClose, actions }
                 {itemCategorySchema.options.map((c) => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
               </select>
             </div>
-            <Input label="Location name (optional)" {...form.register('locationName')} />
-            <Input label="Address (optional)" {...form.register('address')} />
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Latitude (optional)" inputMode="decimal" error={form.formState.errors.lat?.message} {...form.register('lat')} />
-              <Input label="Longitude (optional)" inputMode="decimal" error={form.formState.errors.lng?.message} {...form.register('lng')} />
-            </div>
-            <p className="-mt-2 text-xs text-fg-muted">Add coordinates to show this stop on the map.</p>
+            <LocationPicker value={location} onChange={setLocation} near={near} nameOnly={nameOnly} onNameOnlyChange={setNameOnly} fallbackName={form.watch('title')} />
             <Input label="Estimated cost, ₹ (optional)" inputMode="numeric" error={form.formState.errors.cost?.message} {...form.register('cost')} />
             <div className="flex flex-col gap-1.5">
               <label htmlFor="custom-notes" className="text-sm font-medium">Notes (optional)</label>

@@ -101,11 +101,13 @@ export function ItineraryView() {
   if (plan.isError) return <ErrorState title="Couldn’t load the itinerary" onRetry={() => void plan.refetch()} />
   if (!day) {
     return 'itemId' in parsed
-      ? <EmptyState title="We can’t find that activity" description="It may have been deleted." action={<Button asChild><Link to={`${base}/day/1`}>Back to the itinerary</Link></Button>} />
+      ? <EmptyState art="pin" title="We can’t find that activity" description="It may have been deleted." action={<Button asChild><Link to={`${base}/day/1`}>Back to the itinerary</Link></Button>} />
       : <Navigate to={`${base}/day/1`} replace />
   }
 
   const dayPath = `${base}/day/${day.dayNumber}`
+  // Where the location picker searches around and opens its map: this day's first pinned stop, else the destination.
+  const near = route[0] ?? destination.data?.location ?? { lat: 0, lng: 0 }
   const openItem = (i: ItineraryItem) => navigate(`${base}/items/${i.id}`)
   const move = (item: ItineraryItem, by: -1 | 1) => {
     const from = items.findIndex((i) => i.id === item.id)
@@ -194,7 +196,8 @@ export function ItineraryView() {
 
         {dayItemsEmpty ? (
           <EmptyState
-            title={`Nothing planned for Day ${day.dayNumber}`}
+            art="pin"
+            title={`Day ${day.dayNumber} is a blank page`}
             description="Add a place, or let the assistant draft your days — you’ll see a preview before anything changes."
             action={
               <div className="flex flex-wrap justify-center gap-2">
@@ -214,6 +217,7 @@ export function ItineraryView() {
                       item={item} index={index} count={items.length} days={days} selected={item.id === currentSelected} splitView={split}
                       warning={warnings.find((w) => w.itemId === item.id)}
                       directionsHref={point ? maps.links.deepLink(point, 'directions', item.title) : undefined}
+                      prevItemId={items[index - 1]?.id}
                       onOpen={openItem} onSelect={(i) => setSelectedId(i.id)} onMove={move}
                       onMoveToDay={(i, d) => void actions.moveToDay(i, d.id, d.dayNumber)}
                       onDuplicate={(i) => void actions.duplicate(i)} onDelete={(i) => void actions.remove(i)}
@@ -253,9 +257,9 @@ export function ItineraryView() {
         </div>
       )}
 
-      <AddActivitySheet trip={trip} day={day} dayItems={items} open={'dayNumber' in parsed && parsed.add} onClose={() => navigate(dayPath)} actions={actions} />
+      <AddActivitySheet trip={trip} day={day} dayItems={items} open={'dayNumber' in parsed && parsed.add} onClose={() => navigate(dayPath)} actions={actions} near={near} />
       <ActivitySheet
-        trip={trip} item={detailItem} day={day} open={!!detailItem} onClose={() => navigate(dayPath)} actions={actions}
+        trip={trip} item={detailItem} day={day} open={!!detailItem} onClose={() => navigate(dayPath)} actions={actions} near={near}
         booking={detailItem?.bookingId ? plan.data?.bookings.find((b) => b.id === detailItem.bookingId) : undefined}
         point={detailItem ? points.get(detailItem.id) : undefined}
       />

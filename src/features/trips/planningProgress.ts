@@ -17,7 +17,7 @@ export const PLANNED_DAY_MIN_ITEMS = 3
 
 /**
  * How complete a trip's plan is, and what to do next. Weights: itinerary days 50%, accommodation 25%,
- * flights 25%. A "saved" demo booking counts as added — it is a plan entry, not a real reservation.
+ * flights 25% (a saved train or bus counts like a flight). A "saved" demo booking counts as added — it is a plan entry, not a real reservation.
  */
 export function computePlanningProgress(
   trip: Pick<Trip, 'id'>,
@@ -27,7 +27,7 @@ export function computePlanningProgress(
 ): PlanningProgress {
   const live = bookings.filter((b) => b.status !== 'cancelled')
   const hasHotel = live.some((b) => b.type === 'hotel')
-  const hasFlight = live.some((b) => b.type === 'flight')
+  const hasFlight = live.some((b) => b.type === 'flight' || b.type === 'train' || b.type === 'bus')
   const countByDay = new Map<string, number>()
   for (const i of items) countByDay.set(i.dayId, (countByDay.get(i.dayId) ?? 0) + 1)
 

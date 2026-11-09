@@ -7,8 +7,12 @@ const FIREBASE_API = ['https://identitytoolkit.googleapis.com', 'https://securet
 // Web push: getting a token (Firebase Installations + FCM registration) happens from the page.
 const FCM = ['https://fcmregistrations.googleapis.com', 'https://firebaseinstallations.googleapis.com', 'https://fcm.googleapis.com']
 const GOOGLE_SCRIPT ='https://apis.google.com'
-// Free weather and road-route services called from the browser (no keys). See src/services/weather/openMeteo.ts and maps/osrm.ts.
-const LIVE_DATA = ['https://api.open-meteo.com', 'https://router.project-osrm.org']
+// Free weather, road-route and place-search services called from the browser (no keys). See src/services/weather/openMeteo.ts,
+// maps/osrm.ts and geocoding/nominatim.ts.
+const LIVE_DATA = ['https://api.open-meteo.com', 'https://router.project-osrm.org', 'https://nominatim.openstreetmap.org']
+// Photos found for custom places are hotlinked from Unsplash's image CDN, as Unsplash requires (features/place-photos).
+// The search itself runs in our function (api/place-photos.ts), so the browser never calls api.unsplash.com.
+const PLACE_PHOTOS = 'https://images.unsplash.com'
 const AUTH_FRAMES = ['https://*.firebaseapp.com', 'https://accounts.google.com']
 
 export const csp = [
@@ -17,11 +21,11 @@ export const csp = [
   // Tailwind/MapLibre/Framer Motion set inline styles; scripts stay strict.
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
-  `img-src 'self' data: blob: ${OSM}`,
+  `img-src 'self' data: blob: ${OSM} ${PLACE_PHOTOS}`,
   // The service worker caches images by fetching them itself, and a worker's fetches are governed by connect-src, not
   // img-src. Every host allowed in img-src must also be here or images load on the first visit and fail after the
   // worker takes control. (A test enforces this.)
-  `connect-src 'self' blob: data: ${OSM} ${FIREBASE_API.join(' ')} ${FCM.join(' ')} ${LIVE_DATA.join(' ')}`,
+  `connect-src 'self' blob: data: ${OSM} ${FIREBASE_API.join(' ')} ${FCM.join(' ')} ${LIVE_DATA.join(' ')} ${PLACE_PHOTOS}`,
   `frame-src ${AUTH_FRAMES.join(' ')}`,
   "media-src 'self' blob:",
   "worker-src 'self' blob:",

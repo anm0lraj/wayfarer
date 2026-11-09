@@ -18,13 +18,15 @@ export interface ResponsiveSheetProps {
   wide?: 'panel' | 'dialog'
   /** Phone presentation: 'sheet' (default bottom sheet) or 'full' for multi-step flows like Create Trip. */
   phone?: 'sheet' | 'full'
+  /** 1 when the sheet *is* the page (e.g. Create Trip at its own URL), so it carries the page's h1. */
+  headingLevel?: 1 | 2
 }
 
 /**
  * One API, three presentations: bottom sheet (phone), side panel (tablet/desktop) or centred dialog.
  * Built on Radix Dialog, so focus is trapped, Escape closes, and focus returns to the trigger.
  */
-export function ResponsiveSheet({ open, onOpenChange, title, description, children, wide = 'panel', phone = 'sheet' }: ResponsiveSheetProps) {
+export function ResponsiveSheet({ open, onOpenChange, title, description, children, wide = 'panel', phone = 'sheet', headingLevel = 2 }: ResponsiveSheetProps) {
   const layout = useLayoutClass()
   const placement = layout === 'phone' ? (phone === 'full' ? 'full' : 'bottom') : wide === 'dialog' ? 'center' : 'side'
   // The sheet is opened from external state (no Dialog.Trigger), so Radix has nothing to return focus to.
@@ -38,7 +40,11 @@ export function ResponsiveSheet({ open, onOpenChange, title, description, childr
         <Dialog.Content
           onCloseAutoFocus={(e) => {
             e.preventDefault()
-            opener.current?.focus()
+            // A sheet opened straight from its URL has no opener (focus was on <body>), and the opener may have been
+            // re-rendered away meanwhile: then start again from the page's main content rather than losing focus.
+            const target = opener.current
+            if (target && target !== document.body && target.isConnected) target.focus()
+            else document.getElementById('main')?.focus({ preventScroll: true })
             opener.current = null
           }}
           {...(description ? {} : { 'aria-describedby': undefined })}
@@ -53,7 +59,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, description, childr
           {placement === 'bottom' && <div aria-hidden className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border" />}
           <header className="flex items-start justify-between gap-4 px-5 pb-2 pt-4">
             <div>
-              <Dialog.Title className="text-xl font-semibold">{title}</Dialog.Title>
+              <Dialog.Title asChild>{headingLevel === 1 ? <h1 className="text-xl font-semibold">{title}</h1> : <h2 className="text-xl font-semibold">{title}</h2>}</Dialog.Title>
               {description ? <Dialog.Description className="mt-1 text-sm text-fg-muted">{description}</Dialog.Description> : null}
             </div>
             <Dialog.Close asChild>

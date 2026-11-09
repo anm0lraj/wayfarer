@@ -17,7 +17,9 @@
     min-height: 100dvh;
     overscroll-behavior-y: none;
   }
-  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
+  /* Plus Jakarta Sans throughout; headings go through --font-display, with slightly tighter tracking as they grow. */
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 { line-height: 1.15; letter-spacing: -0.02em; }
   :focus-visible { outline: 3px solid rgb(var(--focus)); outline-offset: 2px; border-radius: 4px; }
   ::selection { background: rgb(var(--primary) / 0.25); }
   @media (prefers-reduced-motion: reduce) {
@@ -30,12 +32,85 @@
   }
 }
 
+/*
+ * Native form controls keep their own pickers (best on phones, accessible everywhere) but match the design-system
+ * fields: same font, colours, radius and height, a drawn chevron on selects, and a calendar/clock icon in the muted
+ * text colour in both themes. `:not([multiple])` lifts the select rule above a component's `px-*` utility.
+ */
+@layer components {
+  select:not([multiple]) {
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    color: rgb(var(--fg));
+    background-color: rgb(var(--surface));
+    background-image: var(--select-chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.625rem center;
+    background-size: 1.125rem;
+    padding-right: 2.25rem;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  select:not([multiple]):disabled { cursor: not-allowed; opacity: 0.6; }
+
+  input:is([type='date'], [type='time'], [type='datetime-local'], [type='month']) {
+    font: inherit;
+    color: rgb(var(--fg));
+    /* iOS Safari collapses an empty date field and centres its value; keep it a full-width, left-aligned field. */
+    display: block;
+    min-width: 0;
+    text-align: left;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input:is([type='date'], [type='time'], [type='datetime-local'], [type='month'])::-webkit-date-and-time-value { text-align: left; }
+  input:is([type='date'], [type='time'], [type='datetime-local'], [type='month'])::-webkit-datetime-edit { padding: 0; }
+  input:is([type='date'], [type='time'], [type='datetime-local'], [type='month'])::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0.25rem;
+    opacity: 0.7;
+  }
+  input:is([type='date'], [type='time'], [type='datetime-local'], [type='month'])::-webkit-calendar-picker-indicator:hover { opacity: 1; background-color: rgb(var(--surface-2)); }
+  input[type='number'] { font: inherit; }
+}
+
 @layer utilities {
   .pb-safe { padding-bottom: var(--safe-bottom); }
+  /* Caption scrim for white text over a picture, set on the text block itself so only the strip behind the words is
+     darkened: at least 55% black behind every line (white text then stays above 4.5:1 even over pure white; the
+     brightest stock photos need 54% where captions sit), fading out across the block's short top padding, which must
+     equal --scrim-fade. src/styles/scrim.test.ts checks the numbers. */
+  .scrim-text {
+    background-image: linear-gradient(to top, rgb(0 0 0 / 0.6), rgb(0 0 0 / 0.55) calc(100% - var(--scrim-fade, 1.25rem)), rgb(0 0 0 / 0));
+  }
   .pt-safe { padding-top: var(--safe-top); }
   .sr-only-focusable:not(:focus):not(:focus-within) {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
+}
+
+/* Where toasts sit (Toaster.tsx). AppShell sets data-shell on <html>: phones keep them above the bottom nav, tablets
+   beside the rail, desktops beside the sidebar (bottom-left, clear of the docked assistant on the right). Without the
+   shell (public pages, onboarding) they sit at the bottom, above the home indicator. */
+:root {
+  --toast-left: 0px;
+  --toast-bottom: calc(var(--safe-bottom) + 1rem);
+}
+:root[data-shell] { --toast-bottom: calc(var(--nav-h) + var(--safe-bottom) + 0.75rem); }
+@media (min-width: 640px) {
+  :root[data-shell] { --toast-left: var(--rail-w); --toast-bottom: calc(var(--safe-bottom) + 1.5rem); }
+}
+@media (min-width: 1024px) {
+  :root[data-shell='sidebar'] { --toast-left: var(--sidebar-w); }
+  :root[data-shell='sidebar-collapsed'] { --toast-left: var(--sidebar-w-collapsed); }
+}
+
+/* Map pins are drawn 32px; give them the same 44px tap area as every other control. The marker element is already
+   absolutely positioned by MapLibre, so the pseudo-element can extend from it. */
+.maplibregl-marker:is(button)::after {
+  content: ''; position: absolute; inset: calc((32px - var(--touch)) / 2);
 }
 
 @keyframes story-progress {

@@ -61,7 +61,7 @@ export function PublicFeed() {
 
   return (
     <>
-      <PageHeader title="Public itineraries" description="Trips other travellers have shared. Save one, or copy it and make it yours." />
+      <PageHeader title="Public itineraries" description="Real trips shared by real travellers. Save one, or copy it and make it yours." />
       <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4 max-w-xl">
         <SearchField label="Search itineraries" placeholder="Search by place, title or traveller" value={draft} onChange={(e) => setDraft(e.target.value)} />
       </form>
@@ -81,13 +81,15 @@ export function PublicFeed() {
       {feed.isSuccess && trips.length === 0 && (
         q || destinationId ? (
           <EmptyState
+            art="globe"
             title="No itineraries match"
             description={q ? `Nothing for “${q}”. Try a different place or clear the filters.` : 'Nothing has been shared for that place yet. Try another, or clear the filter.'}
             action={<Button variant="secondary" onClick={() => { setDraft(''); setParams({}, { replace: true }) }}>Clear filters</Button>}
           />
         ) : (
           <EmptyState
-            title="Nothing shared yet"
+            art="globe"
+            title="Be the first to share a trip"
             description="When travellers publish their trips they show up here. Publish one of yours to be the first."
             action={<Button asChild variant="secondary"><Link to="/trips">Your trips</Link></Button>}
           />
@@ -106,7 +108,7 @@ export function PublicFeed() {
                 className="absolute left-0 top-0 grid w-full gap-4 pb-4"
                 style={{ transform: `translateY(${row.start - virtual.options.scrollMargin}px)`, gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
               >
-                {rows[row.index]!.map((t) => <PublicFeedCard key={t.id} trip={t} />)}
+                {rows[row.index]!.map((t) => <PublicFeedCard key={t.id} trip={t} headingLevel={2} />)}
               </div>
             ))}
           </div>

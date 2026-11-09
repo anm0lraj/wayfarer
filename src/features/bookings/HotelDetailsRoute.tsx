@@ -17,6 +17,7 @@ import { cn } from '@/lib/cn'
 import { DemoBadge } from './BookingCard'
 import { nightsBetween, parseHotelSearch, stayTotal, validStay } from './filters'
 import type { Hotel } from '@/types'
+import { responsiveImage, thumbnail } from '@/lib/photos/responsive'
 
 function Gallery({ hotel }: { hotel: Hotel }) {
   const [i, setI] = useState(0)
@@ -26,21 +27,21 @@ function Gallery({ hotel }: { hotel: Hotel }) {
   return (
     <div className="space-y-2">
       <button type="button" onClick={() => setOpen(true)} aria-label={`Open photo ${i + 1} of ${n} full size`} className="block w-full overflow-hidden rounded-lg">
-        <img src={hotel.images[i]} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="aspect-[16/9] w-full object-cover" />
+        <img {...responsiveImage(hotel.images[i], '(min-width: 1024px) 60vw, 100vw')} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="aspect-[16/9] w-full object-cover" />
       </button>
       {n > 1 && (
         <ul className="flex gap-2" aria-label="Photos">
           {hotel.images.map((src, k) => (
             <li key={src}>
               <button type="button" aria-label={`Show photo ${k + 1}`} aria-current={k === i} onClick={() => setI(k)} className={cn('overflow-hidden rounded-md border-2', k === i ? 'border-primary' : 'border-transparent')}>
-                <img src={src} alt="" className="h-14 w-20 object-cover" />
+                <img src={thumbnail(src)} alt="" className="h-14 w-20 object-cover" />
               </button>
             </li>
           ))}
         </ul>
       )}
       <ResponsiveSheet open={open} onOpenChange={setOpen} title={hotel.name} description={`Photo ${i + 1} of ${n}`} wide="dialog">
-        <img src={hotel.images[i]} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="w-full rounded-md object-contain" />
+        <img {...responsiveImage(hotel.images[i], '100vw')} alt={`${hotel.name}, photo ${i + 1} of ${n}`} className="w-full rounded-md object-contain" />
         {n > 1 && (
           <div className="mt-3 flex justify-between">
             <Button variant="secondary" onClick={() => go(-1)}><ChevronLeft aria-hidden className="size-4" /> Previous</Button>
@@ -95,8 +96,10 @@ export function HotelDetails() {
     <div className="space-y-8">
       <Link to={back} className="inline-flex min-h-touch items-center gap-1 text-sm text-fg-muted hover:text-fg"><ChevronLeft aria-hidden className="size-4" /> All stays</Link>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 space-y-8">
+      {/* Phones: photos, name, room choice, then the price and Add button, then the details. Desktop: the price card
+          stays beside everything (sticky). */}
+      <div className="grid gap-x-6 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
           <Gallery hotel={h} />
           <header>
             <h2 className="text-2xl font-bold">{h.name}</h2>
@@ -120,7 +123,27 @@ export function HotelDetails() {
               ))}
             </fieldset>
           </Section>
+        </div>
 
+        <aside aria-label="Price and booking" className="self-start rounded-lg border border-border bg-surface p-4 shadow-sm lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <p><span className="text-2xl font-bold">{formatMoney(perNight)}</span><span className="text-fg-muted"> / night</span></p>
+          <p className="mt-1 text-sm text-fg-muted">{stayOk ? `${formatDateRange(stay.checkIn, stay.checkOut)} · ${stay.guests} guest${stay.guests === 1 ? '' : 's'}` : 'Choose valid dates on the search page'}</p>
+          <p className="mt-3 flex justify-between border-t border-border pt-3 font-semibold"><span>{nights} night{nights === 1 ? '' : 's'}</span><span>{formatMoney(total)}</span></p>
+          <div className="mt-4 space-y-2">
+            <DemoBadge />
+            {savedBooking ? (
+              <>
+                <p role="status" className="font-semibold text-success">Saved to trip</p>
+                <Button variant="secondary" className="w-full" disabled={remove.isPending} onClick={() => remove.mutate(savedBooking.id)}>Remove from trip</Button>
+              </>
+            ) : (
+              <Button className="w-full" disabled={save.isPending || !stayOk} onClick={add}>Add hotel to trip</Button>
+            )}
+            <p className="text-xs text-fg-muted">This saves the stay to your plan. Nothing is reserved or charged.</p>
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-2">
           <Section title="Amenities">
             <ul className="grid gap-2 sm:grid-cols-2">
               {h.amenities.map((a) => <li key={a} className="flex items-center gap-2"><Check aria-hidden className="size-4 text-success" />{a}</li>)}
@@ -143,23 +166,6 @@ export function HotelDetails() {
           </Section>
         </div>
 
-        <aside aria-label="Price and booking" className="self-start rounded-lg border border-border bg-surface p-4 lg:sticky lg:top-20">
-          <p><span className="text-2xl font-bold">{formatMoney(perNight)}</span><span className="text-fg-muted"> / night</span></p>
-          <p className="mt-1 text-sm text-fg-muted">{stayOk ? `${formatDateRange(stay.checkIn, stay.checkOut)} · ${stay.guests} guest${stay.guests === 1 ? '' : 's'}` : 'Choose valid dates on the search page'}</p>
-          <p className="mt-3 flex justify-between border-t border-border pt-3 font-semibold"><span>{nights} night{nights === 1 ? '' : 's'}</span><span>{formatMoney(total)}</span></p>
-          <div className="mt-4 space-y-2">
-            <DemoBadge />
-            {savedBooking ? (
-              <>
-                <p role="status" className="font-semibold text-success">Saved to trip</p>
-                <Button variant="secondary" className="w-full" disabled={remove.isPending} onClick={() => remove.mutate(savedBooking.id)}>Remove from trip</Button>
-              </>
-            ) : (
-              <Button className="w-full" disabled={save.isPending || !stayOk} onClick={add}>Add hotel to trip</Button>
-            )}
-            <p className="text-xs text-fg-muted">This saves the stay to your plan. Nothing is reserved or charged.</p>
-          </div>
-        </aside>
       </div>
     </div>
   )

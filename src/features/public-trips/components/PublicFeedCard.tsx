@@ -7,13 +7,13 @@ import { cn } from '@/lib/cn'
 import type { PublicTrip } from '@/types'
 
 /** A feed post: the trip card plus Save and Use itinerary. Viewing is the card link itself. */
-export function PublicFeedCard({ trip, className }: { trip: PublicTrip; className?: string }) {
+export function PublicFeedCard({ trip, className, headingLevel }: { trip: PublicTrip; className?: string; headingLevel?: 2 | 3 }) {
   const gate = useSignInGate()
   const saved = useSavedPublicIds().data?.has(trip.id) ?? false
   const toggle = useToggleSavePublic()
   return (
     <div className={cn('relative', className)}>
-      <PublicTripCard trip={trip} />
+      <PublicTripCard trip={trip} headingLevel={headingLevel} />
       <button
         type="button"
         aria-pressed={saved}

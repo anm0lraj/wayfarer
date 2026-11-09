@@ -14,3 +14,6 @@ export function haversineKm(a: GeoPoint, b: GeoPoint): number {
 export function estimateTravelMinutes(km: number): number {
   return Math.round(5 + (km / 25) * 60)
 }
+
+/** "-8.69000, 115.16000": five decimals is about a metre. */
+export const formatPoint = (p: GeoPoint) => `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`

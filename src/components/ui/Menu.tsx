@@ -22,7 +22,7 @@ export function MenuItem({ children, onSelect, danger, disabled, icon }: { child
       disabled={disabled}
       onSelect={onSelect}
       className={cn(
-        'flex min-h-touch cursor-pointer select-none items-center gap-2.5 rounded-md px-3 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-2',
+        'flex min-h-touch cursor-pointer select-none items-center gap-2.5 rounded-md px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-2',
         danger && 'text-error',
       )}
     >

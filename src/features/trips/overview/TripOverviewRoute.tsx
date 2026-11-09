@@ -16,6 +16,7 @@ import { useNow } from '@/lib/hooks/useNow'
 import { formatMoney } from '@/lib/money'
 import { OfflineCard } from '@/features/offline/OfflineCard'
 import { PushPermissionCard } from '@/features/notifications/PushPermissionCard'
+import { ReadyToggle } from './ReadyToggle'
 import { TripActions } from './TripActions'
 
 function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
@@ -45,6 +46,10 @@ function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
           </div>
           <ProgressBar value={plan.progress.percent} label={`Planning ${plan.progress.percent}% complete`} />
           <TaskList tasks={plan.progress.tasks} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <ReadyToggle trip={trip} />
+            <p className="text-sm text-fg-muted">Done planning? Your trip then counts down as Upcoming.</p>
+          </div>
         </Card>
       )
     case 'ready':
@@ -57,16 +62,25 @@ function StatePanel({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
           </div>
           <p className="text-fg-muted">Get ready: check your documents, packing and anything still missing.</p>
           <TaskList tasks={plan.progress.tasks} />
-          <Button asChild variant="secondary"><Link to={`${base}/checklist`}>Open trip checklist</Link></Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary"><Link to={`${base}/checklist`}>Open trip checklist</Link></Button>
+            <ReadyToggle trip={trip} />
+          </div>
         </Card>
       )
     case 'active':
       return (
-        <Card className="space-y-3 border-secondary/40 bg-secondary/10 p-5">
-          <h2 className="flex items-center gap-2 text-xl font-semibold"><Radio aria-hidden className="size-5 text-secondary motion-safe:animate-pulse" /> Your trip is live{day ? ` — Day ${day}` : ''}</h2>
-          <p className="text-fg-muted">Live Trip shows today’s plan, the next stop and directions in one simple view.</p>
-          <Button asChild size="lg"><Link to={`${base}/live`}>Open Live Trip <ArrowRight aria-hidden className="size-5" /></Link></Button>
-        </Card>
+        // Happening now: the light orange `live` panel (dark text, orange icon) with the normal blue action.
+        <section aria-labelledby="live-now-h" className="space-y-3 rounded-xl border border-live-border bg-live p-5 sm:p-6">
+          <h2 id="live-now-h" className="flex items-center gap-2.5 text-2xl font-extrabold">
+            <span aria-hidden className="grid size-10 place-items-center rounded-full bg-surface text-secondary shadow-sm"><Radio className="size-5 motion-safe:animate-pulse" strokeWidth={2.4} /></span>
+            Your trip is live{day ? ` — Day ${day}` : ''}
+          </h2>
+          <p className="text-fg-muted">Today’s plan, your next stop and directions, all in one glanceable view.</p>
+          <Button asChild size="lg">
+            <Link to={`${base}/live`}>Open Live Trip <ArrowRight aria-hidden className="size-5" /></Link>
+          </Button>
+        </section>
       )
     case 'completed':
       return (
@@ -104,9 +118,10 @@ function Costs({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
   const activities = sum(plan.items.map((i) => i.estimatedCost?.amount ?? 0))
   const hotels = sum(plan.bookings.filter((b) => b.type === 'hotel' && b.status !== 'cancelled').map((b) => b.price.amount))
   const flights = sum(plan.bookings.filter((b) => b.type === 'flight' && b.status !== 'cancelled').map((b) => b.price.amount))
-  const total = activities + hotels + flights
+  const overland = sum(plan.bookings.filter((b) => (b.type === 'train' || b.type === 'bus') && b.status !== 'cancelled').map((b) => b.price.amount))
+  const total = activities + hotels + flights + overland
   const budget = trip.budget.total?.amount
-  const rows: Array<[string, number]> = [['Activities & food', activities], ['Stays', hotels], ['Flights', flights]]
+  const rows: Array<[string, number]> = [['Activities & food', activities], ['Stays', hotels], ['Flights', flights], ['Trains & buses', overland]]
   return (
     <Card className="space-y-3 p-4">
       <div className="flex items-baseline justify-between"><h3 className="font-semibold">Estimated cost</h3><span className="text-lg font-semibold">{formatMoney({ amount: total, currency: 'INR' })}</span></div>
@@ -121,7 +136,7 @@ function Costs({ trip, plan }: { trip: TripWithState; plan: TripPlan }) {
       <dl className="space-y-1 text-sm">
         {rows.map(([label, amount]) => <div key={label} className="flex justify-between"><dt className="text-fg-muted">{label}</dt><dd>{formatMoney({ amount, currency: 'INR' })}</dd></div>)}
       </dl>
-      <p className="text-xs text-fg-muted">Flights and stays are saved to the trip as demo entries — nothing is booked.</p>
+      <p className="text-xs text-fg-muted">Flights, trains, buses and stays are saved to the trip as demo entries — nothing is booked.</p>
     </Card>
   )
 }
@@ -137,6 +152,9 @@ export function TripOverview() {
   const { days, items, bookings } = plan.data
   const hotel = bookings.find((b) => b.type === 'hotel' && b.status !== 'cancelled')
   const flights = bookings.filter((b) => b.type === 'flight' && b.status !== 'cancelled')
+  const overland = bookings.filter((b) => (b.type === 'train' || b.type === 'bus') && b.status !== 'cancelled')
+  // Once the trip is over, booking prompts and offline prep no longer help.
+  const finished = trip.effectiveState === 'completed' || trip.effectiveState === 'archived'
 
   return (
     <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
@@ -173,15 +191,16 @@ export function TripOverview() {
 
       <aside className="min-w-0 space-y-6 lg:col-span-4">
         <Costs trip={trip} plan={plan.data} />
-        <OfflineCard trip={trip} />
+        {!finished && <OfflineCard trip={trip} />}
 
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold">Bookings</h3>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Stay</span>{hotel ? <span className="truncate font-medium">{hotel.title}</span> : <Link className="font-semibold text-primary" to={`${base}/bookings/hotels`}>Add accommodation</Link>}</li>
-            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Flights</span>{flights.length ? <span className="font-medium">{flights.length} saved</span> : <Link className="font-semibold text-primary" to={`${base}/bookings/flights`}>Add flights</Link>}</li>
+            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Stay</span>{hotel ? <span className="truncate font-medium">{hotel.title}</span> : (finished ? <span className="text-fg-muted">None saved</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/hotels`}>Add accommodation</Link>)}</li>
+            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Flights</span>{flights.length ? <span className="font-medium">{flights.length} saved</span> : (finished ? <span className="text-fg-muted">None saved</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/flights`}>Add flights</Link>)}</li>
+            <li className="flex items-center justify-between gap-2"><span className="text-fg-muted">Trains & buses</span>{overland.length ? <span className="font-medium">{overland.length} saved</span> : (finished ? <span className="text-fg-muted">None saved</span> : <Link className="-mr-2 inline-flex min-h-touch items-center px-2 font-semibold text-primary hover:underline" to={`${base}/bookings/trains`}>Find a train or bus</Link>)}</li>
           </ul>
-          {(hotel || flights.length > 0) && <Badge tone="warning">Saved to trip — not booked</Badge>}
+          {(hotel || flights.length > 0 || overland.length > 0) && <Badge tone="warning">Saved to trip — not booked</Badge>}
           <Link to={`${base}/bookings`} className="inline-flex min-h-touch items-center gap-1 text-sm font-semibold text-primary">All bookings <ChevronRight aria-hidden className="size-4" /></Link>
         </Card>
 

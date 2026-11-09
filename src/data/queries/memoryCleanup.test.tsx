@@ -39,6 +39,7 @@ describe('deleting a memory', () => {
   it('removes its stored photo once the Undo window has passed', async () => {
     const m = await aPhotoMemory()
     const { result } = setup()
+    vi.useRealTimers() // drop the setup file's Date pin: a second fake-timers install would be ignored
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await act(async () => { await result.current.remove(m) })
 
@@ -52,6 +53,7 @@ describe('deleting a memory', () => {
   it('keeps the photo when the deletion is undone', async () => {
     const m = await aPhotoMemory()
     const { result } = setup()
+    vi.useRealTimers() // drop the setup file's Date pin: a second fake-timers install would be ignored
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await act(async () => { await result.current.remove(m) })
 
@@ -64,9 +66,24 @@ describe('deleting a memory', () => {
   it('has nothing to clean up for a note', async () => {
     const m = await memoryRepo.add({ tripId: 'trip-bali', kind: 'text', text: 'A note', capturedAt: '2026-10-13T10:00:00.000Z', uploadState: 'done', stripLocationOnPublic: true })
     const { result } = setup()
+    vi.useRealTimers() // drop the setup file's Date pin: a second fake-timers install would be ignored
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await act(async () => { await result.current.remove(m) })
     await act(async () => { vi.advanceTimersByTime(UNDO_WINDOW_MS * 2) })
     expect(remove).not.toHaveBeenCalled()
+  })
+})
+
+describe('the Undo toast for a deleted photo', () => {
+  it('closes when the photo is removed, even if the toast was paused by hover or focus', async () => {
+    const m = await aPhotoMemory()
+    const { result } = setup()
+    vi.useRealTimers()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    await act(async () => { await result.current.remove(m) })
+    expect(useToastStore.getState().items.some((t) => t.title === 'Memory deleted')).toBe(true)
+    await act(async () => { vi.advanceTimersByTime(UNDO_WINDOW_MS) })
+    expect(remove).toHaveBeenCalled()
+    expect(useToastStore.getState().items.some((t) => t.title === 'Memory deleted')).toBe(false)
   })
 })

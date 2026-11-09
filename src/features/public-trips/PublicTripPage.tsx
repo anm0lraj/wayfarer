@@ -13,11 +13,14 @@ import { CATEGORY_META } from '@/features/itinerary/categoryMeta'
 import { WhenVisible } from '@/components/layout/WhenVisible'
 import { TripMap } from '@/features/map/TripMap'
 import { useDocumentMeta } from '@/lib/hooks/useDocumentMeta'
+import { fetchPriority } from '@/lib/fetchPriority'
 import { formatMoney } from '@/lib/money'
 import type { MapMarker } from '@/services/maps/types'
 import type { GeoPoint, PublicTrip } from '@/types'
 import { PublicTripActions } from './components/PublicTripActions'
 import { UseItinerarySheet } from './components/UseItinerarySheet'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
+import { placeName } from '@/lib/places'
 
 type Snapshot = PublicTrip['snapshot']
 
@@ -25,7 +28,7 @@ function Photo({ mediaUrl, caption }: { mediaUrl: string; caption?: string }) {
   const url = useMediaUrl(mediaUrl)
   return (
     <figure className="overflow-hidden rounded-lg bg-surface-2">
-      {url ? <img src={url} alt={caption ?? 'Trip photo'} loading="lazy" className="aspect-[4/3] w-full object-cover" /> : <Skeleton className="aspect-[4/3] w-full" />}
+      {url ? <img {...responsiveImage(url, CARD_SIZES)} alt={caption ?? 'Trip photo'} loading="lazy" className="aspect-[4/3] w-full object-cover" /> : <Skeleton className="aspect-[4/3] w-full" />}
       {caption && <figcaption className="px-3 py-2 text-sm text-fg-muted">{caption}</figcaption>}
     </figure>
   )
@@ -60,7 +63,7 @@ function DayList({ snap, onPick }: { snap: Snapshot; onPick: (dayNumber: number)
           <section key={day.id} aria-labelledby={`day-${day.id}`}>
             <div className="mb-2 flex items-center justify-between gap-3">
               <h3 id={`day-${day.id}`} className="text-lg font-semibold">Day {day.dayNumber}{day.title ? ` — ${day.title}` : ''}</h3>
-              <Button size="sm" variant="ghost" onClick={() => onPick(day.dayNumber)}><MapPin aria-hidden className="size-4" /> Show on map</Button>
+              <Button size="sm" variant="ghost" className="shrink-0 whitespace-nowrap" onClick={() => onPick(day.dayNumber)}><MapPin aria-hidden className="size-4" /> Show on map</Button>
             </div>
             <ol className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
               {items.map((item) => {
@@ -106,12 +109,12 @@ function Loaded({ trip }: { trip: PublicTrip }) {
   return (
     <article className="space-y-8">
       <div className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-xl">
-        <img src={trip.coverImage} alt="" fetchPriority="high" className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
+        <img {...responsiveImage(trip.coverImage, '100vw')} alt="" {...fetchPriority('high')} className="aspect-[16/9] w-full object-cover sm:aspect-[21/9]" />
       </div>
 
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          {dest && <Badge tone="primary"><MapPin aria-hidden className="size-3.5" />{dest.name}, {dest.country}</Badge>}
+          {dest && <Badge tone="primary"><MapPin aria-hidden className="size-3.5" />{placeName(dest)}</Badge>}
           <Badge>{trip.travelStyle}</Badge>
           {trip.visibility === 'link' && <Badge tone="warning">Unlisted — only people with the link</Badge>}
         </div>

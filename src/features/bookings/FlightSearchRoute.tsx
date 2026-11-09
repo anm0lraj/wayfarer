@@ -12,16 +12,12 @@ import { useTripPlan } from '@/data/queries/plan'
 import type { TripWithState } from '@/data/queries/trips'
 import { formatMoney } from '@/lib/money'
 import { DemoBadge } from './BookingCard'
-import { flightDefaults, type FlightLeg } from './flights'
+import { duration, flightDefaults, wall, type FlightLeg } from './flights'
 import type { Flight } from '@/types'
 
 const AIRPORTS = [
   { code: 'BOM', label: 'Mumbai (BOM)' }, { code: 'DEL', label: 'Delhi (DEL)' }, { code: 'BLR', label: 'Bengaluru (BLR)' }, { code: 'DPS', label: 'Bali (DPS)' },
 ]
-
-/** Wall-clock parts straight from the ISO string, which carries the airport's own offset — so no timezone maths. */
-const wall = (iso: string) => ({ date: new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`)), time: iso.slice(11, 16) })
-const duration = (min: number) => `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, '0')}m`
 
 function FlightCard({ flight, travellers, saved, busy, onAdd, onRemove }: { flight: Flight; travellers: number; saved: boolean; busy: boolean; onAdd: () => void; onRemove: () => void }) {
   const dep = wall(flight.departAt)
@@ -114,13 +110,13 @@ export function FlightSearch() {
       </form>
 
       {from === to ? (
-        <EmptyState title="Choose two different airports" />
+        <EmptyState art="plane" title="Choose two different airports" />
       ) : flights.isPending ? (
         <SkeletonGroup label="Searching flights" className="space-y-3"><Skeleton className="h-32" /><Skeleton className="h-32" /></SkeletonGroup>
       ) : flights.isError ? (
         <ErrorState title="Couldn’t load flights" description="Check your connection and try again." onRetry={() => void flights.refetch()} />
       ) : flights.data.length === 0 ? (
-        <EmptyState title="No flights found" description="The demo only has Mumbai ⇄ Bali on the trip dates. Try those, or another date." />
+        <EmptyState art="plane" title="No flights found" description="The demo only has Mumbai ⇄ Bali on the trip dates. Try those, or another date." />
       ) : (
         <section aria-label="Flight results" className="space-y-3">
           <p role="status" className="flex items-center gap-1 text-sm text-fg-muted">{flights.data.length} flights · {from} <ArrowRight aria-hidden className="size-3.5" /> {to}</p>

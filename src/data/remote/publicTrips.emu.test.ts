@@ -183,13 +183,16 @@ describe('what readers accept from a published page', () => {
     const ref = doc(people.owner.fs, 'publicTrips', page.id)
     const stored = (await getDoc(ref)).data()!
     const item = { id: 'i1', tripId: 't', dayId: 'd', title: 'Temple', startTime: '09:00', durationMin: 60, category: 'sightseeing', position: 0, status: 'upcoming', source: 'user', createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z', notes: 'gate code 4821', bookingId: 'bk_secret' }
-    await setDoc(ref, { ...stored, snapshot: { ...stored.snapshot, items: [item] } })
+    const day = { id: 'd', tripId: 't', dayNumber: 1, date: '2026-12-01', title: 'Arrival', notes: 'driver +62 812 5550 1234' }
+    await setDoc(ref, { ...stored, snapshot: { ...stored.snapshot, days: [day], items: [item] } })
 
     current.db = people.nobody.fs
     const read = await getPublicTrip(page.id)
     expect(read?.snapshot.items[0]).toMatchObject({ title: 'Temple' })
     expect(JSON.stringify(read)).not.toContain('4821')
     expect(JSON.stringify(read)).not.toContain('bk_secret')
+    expect(read?.snapshot.days[0]).toMatchObject({ title: 'Arrival' })
+    expect(JSON.stringify(read)).not.toContain('5550') // day notes
   })
 
   it('skips a page that does not have the expected shape, instead of showing it half-formed', async () => {

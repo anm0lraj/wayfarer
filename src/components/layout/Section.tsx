@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -12,15 +12,17 @@ export function Section({ title, description, to, linkLabel = 'See all', childre
   children: ReactNode
   className?: string
 }) {
+  const headingId = useId()
   return (
-    <section aria-label={title} className={cn('space-y-3', className)}>
-      <div className="flex items-end justify-between gap-3">
+    <section aria-labelledby={headingId} className={cn('space-y-3', className)}>
+      {/* min-h-touch: every heading row is as tall as one with a "See all" link, so side-by-side sections line up. */}
+      <div className="flex min-h-touch items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 id={headingId} className="text-2xl font-bold">{title}</h2>
           {description && <p className="text-sm text-fg-muted">{description}</p>}
         </div>
         {to && (
-          <Link to={to} className="inline-flex min-h-touch shrink-0 items-center gap-0.5 text-sm font-semibold text-primary hover:underline">
+          <Link to={to} className="-mr-3 inline-flex min-h-touch shrink-0 items-center gap-0.5 rounded-full px-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10">
             {linkLabel} <ChevronRight aria-hidden className="size-4" />
           </Link>
         )}
@@ -38,7 +40,7 @@ export function CardRow({ children, className }: { children: ReactNode; classNam
   return (
     <ul
       className={cn(
-        'relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4',
+        'relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 min-[768px]:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3',
         '[&>li]:w-[72%] [&>li]:shrink-0 [&>li]:snap-start sm:[&>li]:w-auto',
         className,
       )}

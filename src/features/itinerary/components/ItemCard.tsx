@@ -1,4 +1,5 @@
 import { forwardRef, type HTMLAttributes } from 'react'
+import { Link } from 'react-router-dom'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { AlertTriangle, ArrowDown, ArrowUp, CalendarPlus, ChevronRight, Copy, GripVertical, MoreVertical, Navigation, Trash2 } from 'lucide-react'
@@ -7,7 +8,8 @@ import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/cn'
 import type { ItineraryDay, ItineraryItem } from '@/types'
 import { CATEGORY_META } from '../categoryMeta'
-import { endTime, type ScheduleWarning } from '../schedule'
+import type { ScheduleWarning } from '../schedule'
+import { EndTime } from './EndTime'
 
 export interface ItemCardActions {
   onOpen: (item: ItineraryItem) => void
@@ -28,11 +30,13 @@ interface ItemCardProps extends ItemCardActions {
   /** When the map is beside the list, tapping selects (and highlights the pin); otherwise it opens details. */
   splitView: boolean
   directionsHref?: string
+  /** The stop before this one: the leg between them can offer local transport options. */
+  prevItemId?: string
 }
 
 /** Presentational card; draggable behaviour comes from the wrappers below. */
 export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?: HTMLAttributes<HTMLButtonElement>; dragging?: boolean; style?: React.CSSProperties }>(
-  ({ item, index, count, days, selected, splitView, warning, directionsHref, handle, dragging, style, ...a }, ref) => {
+  ({ item, index, count, days, selected, splitView, warning, directionsHref, prevItemId, handle, dragging, style, ...a }, ref) => {
     const meta = CATEGORY_META[item.category]
     const Icon = meta.icon
     const others = days.filter((d) => d.id !== item.dayId)
@@ -43,6 +47,14 @@ export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?
           <div className="ml-[3.75rem] flex items-center gap-1.5 py-1.5 text-xs text-fg-muted">
             <Navigation aria-hidden className="size-3.5" />
             <span>{item.travelTimeFromPrevMin} min · {item.distanceFromPrevKm} km</span>
+            {prevItemId && (
+              <Link
+                to={`/trips/${item.tripId}/bookings/local?fromItem=${prevItemId}&toItem=${item.id}`}
+                className="-my-2 ml-1 inline-flex min-h-touch items-center font-semibold text-primary hover:underline"
+              >
+                Local options<span className="sr-only"> for the leg to {item.title}</span>
+              </Link>
+            )}
           </div>
         )}
         {warning && (
@@ -52,16 +64,16 @@ export const ItemCardBody = forwardRef<HTMLDivElement, ItemCardProps & { handle?
           </p>
         )}
         <div className="flex gap-2">
-          <div className="w-14 shrink-0 pt-3 text-right">
+          <div className="w-12 shrink-0 pt-3 text-right">
             <p className="text-sm font-semibold tabular-nums">{item.startTime}</p>
-            <p className="text-xs tabular-nums text-fg-muted">{endTime(item)}</p>
+            <p className="text-xs text-fg-muted"><span className="sr-only">until </span><EndTime item={item} /></p>
           </div>
           <div className={cn('flex min-w-0 flex-1 items-stretch rounded-lg border bg-surface shadow-sm', selected ? 'border-primary ring-2 ring-primary/30' : 'border-border')}>
             <button
               type="button"
               {...handle}
               aria-label={`Reorder ${item.title}. Press space to pick up, arrow keys to move.`}
-              className="grid w-9 shrink-0 cursor-grab touch-none place-items-center rounded-l-lg text-fg-muted hover:bg-surface-2 active:cursor-grabbing"
+              className="grid w-11 shrink-0 cursor-grab touch-none place-items-center rounded-l-lg text-fg-muted hover:bg-surface-2 active:cursor-grabbing"
             >
               <GripVertical aria-hidden className="size-4" />
             </button>

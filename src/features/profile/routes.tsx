@@ -16,6 +16,7 @@ import { useSavedTrips } from '@/data/queries/publicTrips'
 import { useTrips } from '@/data/queries/trips'
 import { db } from '@/data/db'
 import type { Memory } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
 
 const TABS = ['trips', 'published', 'saved', 'memories'] as const
 type Tab = (typeof TABS)[number]
@@ -33,7 +34,7 @@ function MemoryTile({ memory }: { memory: Memory }) {
   const url = useMediaUrl(memory.mediaKey)
   return (
     <Link to={`/trips/${memory.tripId}/memories`} className="relative block aspect-square overflow-hidden rounded-lg bg-surface-2">
-      {url && <img src={url} alt={memory.caption ?? 'Trip photo'} loading="lazy" className="size-full object-cover" />}
+      {url && <img {...responsiveImage(url, CARD_SIZES)} alt={memory.caption ?? 'Trip photo'} loading="lazy" className="size-full object-cover" />}
     </Link>
   )
 }
@@ -53,34 +54,35 @@ function TabBody({ tab }: { tab: Tab }) {
   if (tab === 'trips') {
     if (trips.isPending) return <Skeleton className="h-64 w-full" />
     if (trips.isError) return <ErrorState title="Couldn’t load your trips" onRetry={() => void trips.refetch()} />
-    if (!trips.data.length) return <EmptyState title="No trips yet" description="Plan your first one." action={<Button asChild><Link to="/trips/new">Plan a trip</Link></Button>} />
+    if (!trips.data.length) return <EmptyState title="Where will you go first?" description="Plan your first trip in a couple of minutes. We’ll help with the days." action={<Button asChild><Link to="/trips/new">Plan a trip</Link></Button>} />
     return <ul className={grid}>{trips.data.map((t) => <li key={t.id}><TripCard trip={t} state={t.effectiveState} /></li>)}</ul>
   }
   if (tab === 'published') {
     if (published.isPending) return <Skeleton className="h-64 w-full" />
     if (published.isError) return <ErrorState title="Couldn’t load your published trips" onRetry={() => void published.refetch()} />
-    if (!published.data.length) return <EmptyState title="Nothing published" description="Share a finished trip to inspire other travellers." action={<Button asChild variant="secondary"><Link to="/trips">Choose a trip</Link></Button>} />
+    if (!published.data.length) return <EmptyState art="globe" title="Share a trip, inspire a traveller" description="Publish a finished trip and others can follow in your footsteps." action={<Button asChild variant="secondary"><Link to="/trips">Choose a trip</Link></Button>} />
     return <ul className={grid}>{published.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</ul>
   }
   if (tab === 'saved') {
     if (saved.isPending) return <Skeleton className="h-64 w-full" />
     if (saved.isError) return <ErrorState title="Couldn’t load saved trips" onRetry={() => void saved.refetch()} />
-    if (!saved.data.length) return <EmptyState title="Nothing saved yet" description="Bookmark itineraries you like." action={<Button asChild><Link to="/explore/itineraries">Browse itineraries</Link></Button>} />
+    if (!saved.data.length) return <EmptyState art="pin" title="Your wishlist is waiting" description="Tap the bookmark on any itinerary you love to keep it here." action={<Button asChild><Link to="/explore/itineraries">Browse itineraries</Link></Button>} />
     return <ul className={grid}>{saved.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</ul>
   }
   if (memories.isPending) return <Skeleton className="h-64 w-full" />
   if (memories.isError) return <ErrorState title="Couldn’t load memories" onRetry={() => void memories.refetch()} />
-  if (!memories.data.length) return <EmptyState title="No memories yet" description="Photos you add during a trip appear here." />
+  if (!memories.data.length) return <EmptyState art="camera" title="Your story starts with one photo" description="Photos and notes you add during a trip appear here." />
   return <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{memories.data.map((m) => <li key={m.id}><MemoryTile memory={m} /></li>)}</ul>
 }
 
 /** `/profile/:tab` — who you are, your travel stats, and your trips, published itineraries, saved and memories. */
 export default function Profile() {
-  const { tab = 'trips' } = useParams()
+  const { tab } = useParams()
   const session = useSession()
   const trips = useTrips()
   const destinations = useDestinations()
   const memories = useRecentMemories(500)
+  // `/profile` opens My trips at its own URL, so that tab reads as the current one.
   if (!TABS.includes(tab as Tab)) return <Navigate to="/profile/trips" replace />
 
   const user = session?.user

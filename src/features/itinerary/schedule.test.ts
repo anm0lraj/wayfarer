@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildSeed } from '@/data/seedData'
-import { dayLoad, endTime, fromMinutes, retime, scheduleWarnings, suggestNextStart, toMinutes } from './schedule'
+import { dayLoad, endClock, endDayOffset, endTime, fromMinutes, retime, scheduleWarnings, suggestNextStart, toMinutes } from './schedule'
 import type { ItineraryItem } from '@/types'
 
 const item = (id: string, startTime: string, durationMin: number, travel?: number, title = id): ItineraryItem =>
@@ -12,6 +12,15 @@ describe('time helpers', () => {
     expect(fromMinutes(570)).toBe('09:30')
     expect(fromMinutes(24 * 60 + 30)).toBe('23:59')
     expect(endTime(item('a', '13:00', 75))).toBe('14:15')
+  })
+  it('shows an end after midnight as the next day instead of clamping it to 23:59', () => {
+    expect(endTime(item('a', '22:00', 180))).toBe('01:00 next day')
+    expect(endDayOffset(item('a', '22:00', 180))).toBe(1)
+    expect(endTime(item('a', '23:00', 60))).toBe('00:00 next day')
+    expect(endTime(item('a', '22:59', 60))).toBe('23:59')
+    expect(endTime(item('a', '23:30', 1440 + 120))).toBe('01:30 2 days later')
+    expect(endClock(item('a', '22:00', 180))).toEqual({ clock: '01:00', days: 1 })
+    expect(endClock(item('a', '13:00', 75))).toEqual({ clock: '14:15', days: 0 })
   })
 })
 
@@ -55,6 +64,11 @@ describe('dayLoad / retime / suggestNextStart', () => {
       { id: 'c', startTime: '12:35' }, // 12:25 end + 10 minimum gap → 12:35
     ])
     expect(scheduleWarnings(retime([item('a', '10:00', 60), item('b', '10:30', 60, 23)]).map((t, i) => ({ ...item(t.id, t.startTime, 60, i ? 23 : undefined) })))).toEqual([])
+  })
+  it('retime refuses a day whose stops would start after midnight rather than piling them up at 23:59', () => {
+    const late = [item('a', '21:00', 120), item('b', '21:30', 90, 30, 'Night market'), item('c', '23:00', 60, 20, 'Late bar')]
+    expect(() => retime(late)).toThrow('“Late bar” would start after midnight')
+    expect(retime(late.slice(0, 2))).toEqual([{ id: 'a', startTime: '21:00' }, { id: 'b', startTime: '23:30' }]) // ends 01:00 next day: fine
   })
   it('suggests a start after the last stop', () => {
     expect(suggestNextStart([])).toBe('10:00')

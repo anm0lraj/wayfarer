@@ -1,13 +1,13 @@
 import { DEMO_USER_ID } from '@/data/actor'
 import { estimateTravelMinutes, haversineKm } from '@/lib/geo'
-import { placeholderImage } from '@/lib/placeholder'
+import { img as photo } from '@/lib/photos'
 import type { ChecklistItem, Destination, Flight, Hotel, ItemCategory, ItineraryDay, ItineraryItem, Place, Restaurant, Trip } from '@/types'
 
 export const SEED_TS = '2026-09-20T10:00:00.000Z'
 const ts = { createdAt: SEED_TS, updatedAt: SEED_TS }
 const inr = (amount: number) => ({ amount, currency: 'INR' })
-// Cover images carry no baked-in text: cards overlay their own titles, and a second label would collide.
-const img = (id: string, _label: string) => placeholderImage(id, '', [16, 9])
+// A Commons photo where one is curated (src/lib/photos), else the generated illustration.
+const img = (id: string, _label: string) => photo(id)
 
 export const BALI_TRIP_ID = 'trip-bali'
 

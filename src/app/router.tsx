@@ -38,6 +38,7 @@ export const routes: RouteObject[] = [
           { path: 'signin', element: <SignIn /> },
           { path: 'privacy', lazy: lazyNamed(legal, 'PrivacyPage') },
           { path: 'terms', lazy: lazyNamed(legal, 'TermsPage') },
+          { path: 'credits', lazy: lazyNamed(() => import('@/features/legal/CreditsPage'), 'CreditsPage') },
         ],
       },
       // Explore is browsable when signed out; the shell and nav still apply.
@@ -65,6 +66,9 @@ export const routes: RouteObject[] = [
                   { path: 'bookings/hotels', lazy: lazyNamed(bookings, 'HotelSearch') },
                   { path: 'bookings/hotels/:hotelId', lazy: lazyNamed(bookings, 'HotelDetails') },
                   { path: 'bookings/flights', lazy: lazyNamed(bookings, 'FlightSearch') },
+                  { path: 'bookings/trains', lazy: lazyNamed(bookings, 'TrainSearch') },
+                  { path: 'bookings/buses', lazy: lazyNamed(bookings, 'BusSearch') },
+                  { path: 'bookings/local', lazy: lazyNamed(bookings, 'LocalOptions') },
                   { path: 'checklist', lazy: lazyNamed(trips, 'TripChecklist') },
                   { path: 'memories', lazy: lazyNamed(memories, 'MemoriesTimeline') },
                   { path: 'memories/new', lazy: lazyNamed(memories, 'AddMemory') },
@@ -84,12 +88,13 @@ export const routes: RouteObject[] = [
               { path: 'settings', lazy: lazyDefault(() => import('@/features/settings/routes')) },
               { path: 'settings/:section', lazy: lazyDefault(() => import('@/features/settings/routes')) },
               { path: 'notifications', lazy: lazyDefault(() => import('@/features/notifications/routes')) },
-              ...(import.meta.env.DEV ? [{ path: '_design', lazy: lazyDefault(() => import('./routes/DesignGallery')) }] : []),
             ],
           },
           { path: '*', element: <NotFound /> },
         ],
       },
+      // The design-system library (/_design): development builds only, so it never reaches the production bundle.
+      ...(import.meta.env.DEV ? [{ path: '_design/*', lazy: lazyNamed(() => import('@/features/design-system/routes'), 'DesignSystem') }] : []),
       // Onboarding is its own centred card, outside the shell.
       { path: 'onboarding/:step?', lazy: lazyNamed(() => import('@/features/onboarding/routes'), 'Onboarding') },
     ],

@@ -1,4 +1,4 @@
-import { Bed, Car, Plane, Plus, Ticket } from 'lucide-react'
+import { Bed, Bus, Car, MapPinned, Plane, Plus, Ticket, TrainFront } from 'lucide-react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { toast } from '@/components/feedback/toast'
 import { ErrorState } from '@/components/feedback/States'
@@ -21,6 +21,31 @@ function Empty({ icon: Icon, text, action }: { icon: typeof Plane; text: string;
       <p className="flex items-center gap-2 text-fg-muted"><Icon aria-hidden className="size-5" /> {text}</p>
       {action}
     </div>
+  )
+}
+
+/** One booking type: what is saved, or a compact empty row with its search link beside it. */
+function Saved({ title, description, bookings, icon, empty, find, tz, onRemove, removing }: {
+  title: string
+  description?: string
+  bookings: Booking[]
+  icon: typeof Plane
+  empty: string
+  find: React.ReactNode
+  tz: string
+  onRemove: (b: Booking) => void
+  removing: boolean
+}) {
+  const link = <Button asChild variant="secondary" size="sm">{find}</Button>
+  return (
+    <Section title={title} description={description}>
+      {bookings.length ? (
+        <>
+          <ul className="space-y-2">{bookings.map((b) => <BookingCard key={b.id} tz={tz} booking={b} onRemove={onRemove} removing={removing} />)}</ul>
+          {link}
+        </>
+      ) : <Empty icon={icon} text={empty} action={link} />}
+    </Section>
   )
 }
 
@@ -62,6 +87,7 @@ export function BookingOverview() {
   }
 
   const suggestions = bookableItems(items, bookings)
+  const cardProps = { tz: trip.timezone, onRemove, removing: remove.isPending }
 
   return (
     <div className="space-y-8">
@@ -77,25 +103,24 @@ export function BookingOverview() {
         </div>
       </div>
 
-      <Section title="Flights">
-        {ofType('flight').length ? <ul className="space-y-2">{ofType('flight').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul> : <Empty icon={Plane} text="No flights saved yet." />}
-        <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/flights`}><Plus aria-hidden className="size-4" /> Find flights</Link></Button>
-      </Section>
+      {/* Desktop: two columns, so four short lists don't stretch into one long page. Flights and stays come first. */}
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+        <Saved title="Flights" bookings={ofType('flight')} icon={Plane} empty="No flights saved yet." find={<Link to={`${base}/bookings/flights`}><Plus aria-hidden className="size-4" /> Find flights</Link>} {...cardProps} />
+        <Saved title="Hotels" bookings={ofType('hotel')} icon={Bed} empty="No stay saved yet." find={<Link to={`${base}/bookings/hotels`}><Plus aria-hidden className="size-4" /> Find a hotel</Link>} {...cardProps} />
+        <Saved title="Trains" description="Direct trains from a sample timetable" bookings={ofType('train')} icon={TrainFront} empty="No trains saved yet." find={<Link to={`${base}/bookings/trains`}><Plus aria-hidden className="size-4" /> Find trains</Link>} {...cardProps} />
+        <Saved title="Buses" description="Direct buses from a sample timetable" bookings={ofType('bus')} icon={Bus} empty="No buses saved yet." find={<Link to={`${base}/bookings/buses`}><Plus aria-hidden className="size-4" /> Find buses</Link>} {...cardProps} />
 
-      <Section title="Hotels">
-        {ofType('hotel').length ? <ul className="space-y-2">{ofType('hotel').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul> : <Empty icon={Bed} text="No stay saved yet." />}
-        <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/hotels`}><Plus aria-hidden className="size-4" /> Find a hotel</Link></Button>
-      </Section>
+        <Section title="Activities" description="Experiences from your itinerary you may want to reserve">
+          {ofType('activity').length > 0 && <ul className="space-y-2">{ofType('activity').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul>}
+          <Suggestions label="Activities from your itinerary" items={suggestions.filter((i) => i.category === 'activity')} dayOf={dayOf} onSave={saveItem} busy={save.isPending} empty={ofType('activity').length === 0 ? { icon: Ticket, text: 'No bookable activities in your itinerary yet.' } : undefined} />
+        </Section>
 
-      <Section title="Activities" description="Experiences from your itinerary you may want to reserve">
-        {ofType('activity').length > 0 && <ul className="space-y-2">{ofType('activity').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul>}
-        <Suggestions label="Activities from your itinerary" items={suggestions.filter((i) => i.category === 'activity')} dayOf={dayOf} onSave={saveItem} busy={save.isPending} empty={ofType('activity').length === 0 ? { icon: Ticket, text: 'No bookable activities in your itinerary yet.' } : undefined} />
-      </Section>
-
-      <Section title="Transport" description="Transfers and rides from your itinerary">
-        {ofType('transport').length > 0 && <ul className="space-y-2">{ofType('transport').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul>}
-        <Suggestions label="Transport from your itinerary" items={suggestions.filter((i) => i.category === 'transport')} dayOf={dayOf} onSave={saveItem} busy={save.isPending} empty={ofType('transport').length === 0 ? { icon: Car, text: 'No paid transport in your itinerary yet.' } : undefined} />
-      </Section>
+        <Section title="Transport" description="Transfers and rides from your itinerary">
+          <Button asChild variant="secondary" size="sm"><Link to={`${base}/bookings/local`}><MapPinned aria-hidden className="size-4" /> Local options between stops</Link></Button>
+          {ofType('transport').length > 0 && <ul className="space-y-2">{ofType('transport').map((b) => <BookingCard key={b.id} tz={trip.timezone} booking={b} onRemove={onRemove} removing={remove.isPending} />)}</ul>}
+          <Suggestions label="Transport from your itinerary" items={suggestions.filter((i) => i.category === 'transport')} dayOf={dayOf} onSave={saveItem} busy={save.isPending} empty={ofType('transport').length === 0 ? { icon: Car, text: 'No paid transport in your itinerary yet.' } : undefined} />
+        </Section>
+      </div>
     </div>
   )
 }

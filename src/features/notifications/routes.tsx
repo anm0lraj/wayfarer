@@ -44,7 +44,7 @@ export function NotificationsRoute() {
         )}
         {isError && <ErrorState title="Couldn’t load notifications" onRetry={() => void refetch()} />}
         {data && data.length === 0 && (
-          <EmptyState title="Nothing yet" description="Reminders about your trips will show up here: countdowns, check-ins and what’s coming next." action={<Button asChild><Link to="/trips">Go to your trips</Link></Button>} />
+          <EmptyState art="plane" title="All quiet for now" description="Countdowns, check-in reminders and what’s coming next will land here as your trip gets closer." action={<Button asChild><Link to="/trips">Go to your trips</Link></Button>} />
         )}
         {data && data.length > 0 && (
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">

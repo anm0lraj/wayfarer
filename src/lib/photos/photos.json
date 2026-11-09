@@ -1,0 +1,782 @@
+{
+  "bali": {
+    "file": "File:Bali, Rice fields, Rice terraces in East Bali, Indonesia.jpg",
+    "title": "Bali, Rice fields, Rice terraces in East Bali, Indonesia",
+    "author": "Vyacheslav Argenberg",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bali,_Rice_fields,_Rice_terraces_in_East_Bali,_Indonesia.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "bali-cover": {
+    "file": "File:Padang Padang Beach Bali.jpg",
+    "title": "Padang Padang Beach Bali",
+    "author": "TMFalkner",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Padang_Padang_Beach_Bali.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "delhi": {
+    "file": "File:Humayun Tomb in Delhi-Front view.JPG",
+    "title": "Humayun Tomb in Delhi-Front view",
+    "author": "Onlineolddelhi",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Humayun_Tomb_in_Delhi-Front_view.JPG",
+    "width": 1280,
+    "height": 800
+  },
+  "g-baga": {
+    "file": "File:Baga Beach-Goa India-Andres Larin.jpg",
+    "title": "Baga Beach-Goa India-Andres Larin",
+    "author": "Saaremees",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Baga_Beach-Goa_India-Andres_Larin.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "g-fontainhas": {
+    "file": "File:Streets of Fontainhas, Panaji (03).jpg",
+    "title": "Streets of Fontainhas, Panaji (03)",
+    "author": "iMahesh",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Streets_of_Fontainhas,_Panaji_(03).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "g-fort-aguada": {
+    "file": "File:Fort Aguada, Goa, India.jpg",
+    "title": "Fort Aguada, Goa, India",
+    "author": "ShadesofIndia",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Fort_Aguada,_Goa,_India.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "g-palolem": {
+    "file": "File:Palolem Beach, South Goa.jpg",
+    "title": "Palolem Beach, South Goa",
+    "author": "iMahesh",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Palolem_Beach,_South_Goa.jpg",
+    "width": 1280,
+    "height": 720
+  },
+  "g-shack": {
+    "file": "File:Sunloungers at Palolem beach.jpg",
+    "title": "Sunloungers at Palolem beach",
+    "author": "Ravi Dwivedi",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sunloungers_at_Palolem_beach.jpg",
+    "width": 1280,
+    "height": 720
+  },
+  "goa": {
+    "file": "File:Colva beach area.jpg",
+    "title": "Colva beach area",
+    "author": "Hussain Nellikkal",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Colva_beach_area.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "goa-1": {
+    "file": "File:Baga beach sun set view with aura.jpg",
+    "title": "Baga beach sun set view with aura",
+    "author": "Gayatri Priyadarshini",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Baga_beach_sun_set_view_with_aura.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "goa-2": {
+    "file": "File:Fish Curry Rice Thali (25910628531).jpg",
+    "title": "Fish Curry Rice Thali (25910628531)",
+    "author": "goanfishcurryrice3",
+    "licence": "CC BY-SA 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Fish_Curry_Rice_Thali_(25910628531).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "goa-3": {
+    "file": "File:Aguada sunset.jpg",
+    "title": "Aguada sunset",
+    "author": "Kako D5600",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Aguada_sunset.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "goa-4": {
+    "file": "File:Streets of Fontainhas, Panaji (02).jpg",
+    "title": "Streets of Fontainhas, Panaji (02)",
+    "author": "iMahesh",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Streets_of_Fontainhas,_Panaji_(02).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "goa-cover": {
+    "file": "File:Agonda beach - panoramio.jpg",
+    "title": "Agonda beach - panoramio",
+    "author": "Tuderna",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Agonda_beach_-_panoramio.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-coral-resort1": {
+    "file": "File:-bali resort. Tanning at the beach (6288105043).jpg",
+    "title": "-bali resort. Tanning at the beach (6288105043)",
+    "author": "Jadi from Iran",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:-bali_resort._Tanning_at_the_beach_(6288105043).jpg",
+    "width": 1280,
+    "height": 770
+  },
+  "h-coral-resort2": {
+    "file": "File:Beach house (26648024363).jpg",
+    "title": "Beach house (26648024363)",
+    "author": "Matthew Trudeau Photography from Murrells inlet , USA",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Beach_house_(26648024363).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-coral-resort3": {
+    "file": "File:Endless Water (Unsplash).jpg",
+    "title": "Endless Water (Unsplash)",
+    "author": "Alex Bertha alexbertha",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Endless_Water_(Unsplash).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-kayu-homestay1": {
+    "file": "File:Balinese Traditional House.jpg",
+    "title": "Balinese Traditional House",
+    "author": "Michael Gunther",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Balinese_Traditional_House.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-kayu-homestay2": {
+    "file": "File:Swimming pool and Makuti-thatched villa in Malindi.jpg",
+    "title": "Swimming pool and Makuti-thatched villa in Malindi",
+    "author": "Lebu Ayiga",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Swimming_pool_and_Makuti-thatched_villa_in_Malindi.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-kayu-homestay3": {
+    "file": "File:Sigiriya resort5.jpg",
+    "title": "Sigiriya resort5",
+    "author": "Paranikanth02",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sigiriya_resort5.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-seminyak-garden1": {
+    "file": "File:Downtown Ubud Bali Indonesia - panoramio (26).jpg",
+    "title": "Downtown Ubud Bali Indonesia - panoramio (26)",
+    "author": "Michelle Maria",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Downtown_Ubud_Bali_Indonesia_-_panoramio_(26).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-seminyak-garden2": {
+    "file": "File:GX-214 - Tropical palms sway beside a serene pool reflecting the bright white villas elegant balcony and expansive glass windows.jpg",
+    "title": "GX-214 - Tropical palms sway beside a serene pool reflecting the bright white villas elegant balcony and expansive glass windows",
+    "author": "Palm Beach Police Department",
+    "licence": "Public domain",
+    "licenceUrl": "https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain",
+    "source": "https://commons.wikimedia.org/wiki/File:GX-214_-_Tropical_palms_sway_beside_a_serene_pool_reflecting_the_bright_white_villas_elegant_balcony_and_expansive_glass_windows.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-seminyak-garden3": {
+    "file": "File:Swimming Pool in a hotel in Tamil Nadu 03.jpg",
+    "title": "Swimming Pool in a hotel in Tamil Nadu 03",
+    "author": "Kritzolina",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Swimming_Pool_in_a_hotel_in_Tamil_Nadu_03.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-sunset-boutique1": {
+    "file": "File:Balinese Traditional House Shrines 1452.jpg",
+    "title": "Balinese Traditional House Shrines 1452",
+    "author": "Michael Gunther",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Balinese_Traditional_House_Shrines_1452.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-sunset-boutique2": {
+    "file": "File:Modern bedroom design in a stylish hotel room featuring geometric patterns and soft linens.jpg",
+    "title": "Modern bedroom design in a stylish hotel room featuring geometric patterns and soft linens",
+    "author": "Shixart1985",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Modern_bedroom_design_in_a_stylish_hotel_room_featuring_geometric_patterns_and_soft_linens.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "h-sunset-boutique3": {
+    "file": "File:GX-213 - Tropical palms sway beside a serene pool leading to a white villa with a curved staircase under clear blue skies.jpg",
+    "title": "GX-213 - Tropical palms sway beside a serene pool leading to a white villa with a curved staircase under clear blue skies",
+    "author": "Palm Beach Police Department",
+    "licence": "Public domain",
+    "licenceUrl": "https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain",
+    "source": "https://commons.wikimedia.org/wiki/File:GX-213_-_Tropical_palms_sway_beside_a_serene_pool_leading_to_a_white_villa_with_a_curved_staircase_under_clear_blue_skies.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-arashiyama": {
+    "file": "File:Bamboo Forest, Arashiyama, Kyoto, Japan.jpg",
+    "title": "Bamboo Forest, Arashiyama, Kyoto, Japan",
+    "author": "Basile Morin",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bamboo_Forest,_Arashiyama,_Kyoto,_Japan.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-fushimi": {
+    "file": "File:Torii path with lantern at Fushimi Inari Taisha Shrine, Kyoto, Japan.jpg",
+    "title": "Torii path with lantern at Fushimi Inari Taisha Shrine, Kyoto, Japan",
+    "author": "Basile Morin",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Torii_path_with_lantern_at_Fushimi_Inari_Taisha_Shrine,_Kyoto,_Japan.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-gion": {
+    "file": "File:JP 日本 Japan 京都 Kyoto Higashiyama-ku Gion 花見小路通 Hanamikoji Dori 10am morning June 2026 N13P 21.jpg",
+    "title": "JP 日本 Japan 京都 Kyoto Higashiyama-ku Gion 花見小路通 Hanamikoji Dori 10am morning June 2026 N13P 21",
+    "author": "HAGAT hOMSZE",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:JP_%E6%97%A5%E6%9C%AC_Japan_%E4%BA%AC%E9%83%BD_Kyoto_Higashiyama-ku_Gion_%E8%8A%B1%E8%A6%8B%E5%B0%8F%E8%B7%AF%E9%80%9A_Hanamikoji_Dori_10am_morning_June_2026_N13P_21.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-kaiseki": {
+    "file": "File:IMG-2023-12-2-kaisekifuuteishoku.jpg",
+    "title": "IMG-2023-12-2-kaisekifuuteishoku",
+    "author": "Htheword",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:IMG-2023-12-2-kaisekifuuteishoku.jpg",
+    "width": 1280,
+    "height": 721
+  },
+  "j-kinkaku": {
+    "file": "File:Water reflection of Kinkaku-ji Temple a sunny day, Kyoto, Japan.jpg",
+    "title": "Water reflection of Kinkaku-ji Temple a sunny day, Kyoto, Japan",
+    "author": "Basile Morin",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Water_reflection_of_Kinkaku-ji_Temple_a_sunny_day,_Kyoto,_Japan.jpg",
+    "width": 1280,
+    "height": 720
+  },
+  "j-meiji": {
+    "file": "File:Meiji Shrine Minami-tamagaki-torii 2023-01-26.jpg",
+    "title": "Meiji Shrine Minami-tamagaki-torii 2023-01-26",
+    "author": "Asanagi",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Meiji_Shrine_Minami-tamagaki-torii_2023-01-26.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-nishiki": {
+    "file": "File:Tsukemono shop by collinox in Nishiki Ichiba, Kyoto.jpg",
+    "title": "Tsukemono shop by collinox in Nishiki Ichiba, Kyoto",
+    "author": "collinox",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tsukemono_shop_by_collinox_in_Nishiki_Ichiba,_Kyoto.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-ramen": {
+    "file": "File:Tonkotsu ramen in Tokyo.jpg",
+    "title": "Tonkotsu ramen in Tokyo",
+    "author": "Syced",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Tonkotsu_ramen_in_Tokyo.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-senso-ji": {
+    "file": "File:Senso-ji Temple @ Asakusa (13824517393).jpg",
+    "title": "Senso-ji Temple @ Asakusa (13824517393)",
+    "author": "Guilhem Vellut from Annecy, France",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Senso-ji_Temple_@_Asakusa_(13824517393).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-shibuya": {
+    "file": "File:Tokyo Shibuya Scramble Crossing 2018-10-09.jpg",
+    "title": "Tokyo Shibuya Scramble Crossing 2018-10-09",
+    "author": "Benh LIEU SONG ( Flickr )",
+    "licence": "CC BY-SA 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tokyo_Shibuya_Scramble_Crossing_2018-10-09.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-tsukiji": {
+    "file": "File:Tsukiji Outer Market -06.jpg",
+    "title": "Tsukiji Outer Market -06",
+    "author": "Aimaimyi",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tsukiji_Outer_Market_-06.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "j-yanaka": {
+    "file": "File:Yanaka Ginza 2.jpg",
+    "title": "Yanaka Ginza 2",
+    "author": "Christophe95",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Yanaka_Ginza_2.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "jaipur": {
+    "file": "File:East facade Hawa Mahal Jaipur from ground level (July 2022) - img 01.jpg",
+    "title": "East facade Hawa Mahal Jaipur from ground level (July 2022) - img 01",
+    "author": "Chainwit.",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:East_facade_Hawa_Mahal_Jaipur_from_ground_level_(July_2022)_-_img_01.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "japan": {
+    "file": "File:Chureito Pagoda and Mount Fuji 2023-03-07.jpg",
+    "title": "Chureito Pagoda and Mount Fuji 2023-03-07",
+    "author": "Stjepko Krehula",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chureito_Pagoda_and_Mount_Fuji_2023-03-07.jpg",
+    "width": 1280,
+    "height": 721
+  },
+  "jodhpur": {
+    "file": "File:Mehrangarh Fort 2, Jodhpur, Rajasthan, India.jpg",
+    "title": "Mehrangarh Fort 2, Jodhpur, Rajasthan, India",
+    "author": "Yann ( talk )",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mehrangarh_Fort_2,_Jodhpur,_Rajasthan,_India.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "manali": {
+    "file": "File:Snow Rohtang Range Manali May24 A7CR 00128.jpg",
+    "title": "Snow Rohtang Range Manali May24 A7CR 00128",
+    "author": "This Photo was taken by Timothy A. Gonsalves . Feel free to use my photos, but please mention me as the author. I would ",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Snow_Rohtang_Range_Manali_May24_A7CR_00128.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-batu-bolong": {
+    "file": "File:Canggu beach 2.jpg",
+    "title": "Canggu beach 2",
+    "author": "Mx. Granger",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Canggu_beach_2.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-campuhan": {
+    "file": "File:Campuhan ridge walk Ubud Bali 20120827b.jpg",
+    "title": "Campuhan ridge walk Ubud Bali 20120827b",
+    "author": "Tigerente",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Campuhan_ridge_walk_Ubud_Bali_20120827b.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-dps": {
+    "file": "File:Ngurah Rai International Airport International Terminal, 2026, 08.jpg",
+    "title": "Ngurah Rai International Airport International Terminal, 2026, 08",
+    "author": "Chris Olszewski",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ngurah_Rai_International_Airport_International_Terminal,_2026,_08.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-jimbaran-bay": {
+    "file": "File:Jimbaran Beach, Bali SF0001.jpg",
+    "title": "Jimbaran Beach, Bali SF0001",
+    "author": "Stefan Fussan",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Jimbaran_Beach,_Bali_SF0001.jpg",
+    "width": 1280,
+    "height": 640
+  },
+  "p-kecak": {
+    "file": "File:Kecak fire dance at sunset.jpg",
+    "title": "Kecak fire dance at sunset",
+    "author": "Krisdenna",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kecak_fire_dance_at_sunset.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-kuta-market": {
+    "file": "File:Bali fruit stall 2.JPG",
+    "title": "Bali fruit stall 2",
+    "author": "Midori",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bali_fruit_stall_2.JPG",
+    "width": 1280,
+    "height": 800
+  },
+  "p-monkey-forest": {
+    "file": "File:Holy Spring Temple in Ubud Monkey Forest - 2015.02 - panoramio.jpg",
+    "title": "Holy Spring Temple in Ubud Monkey Forest - 2015.02 - panoramio",
+    "author": "rheins",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Holy_Spring_Temple_in_Ubud_Monkey_Forest_-_2015.02_-_panoramio.jpg",
+    "width": 1280,
+    "height": 721
+  },
+  "p-nyang-nyang": {
+    "file": "File:Nyangnyangbeach.jpg",
+    "title": "Nyangnyangbeach",
+    "author": "User:(WT-shared) Burmesedays",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nyangnyangbeach.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-sanur-beach": {
+    "file": "File:Morning in Sanur Beach, Bali.jpg",
+    "title": "Morning in Sanur Beach, Bali",
+    "author": "Danangtrihartanto",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Morning_in_Sanur_Beach,_Bali.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-seminyak-beach": {
+    "file": "File:Seminyak Beach 02.jpg",
+    "title": "Seminyak Beach 02",
+    "author": "Christophe95",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Seminyak_Beach_02.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-seminyak-village": {
+    "file": "File:Bali seminyak.jpg",
+    "title": "Bali seminyak",
+    "author": "Jeong seolah",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Bali_seminyak.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-sidemen": {
+    "file": "File:SIDEMEN EAST BALI RICE TERRACE.jpg",
+    "title": "SIDEMEN EAST BALI RICE TERRACE",
+    "author": "Adimelali Bali",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:SIDEMEN_EAST_BALI_RICE_TERRACE.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-spa": {
+    "file": "File:Mansion Resort and Spa in Bali - 31.jpg",
+    "title": "Mansion Resort and Spa in Bali - 31",
+    "author": "Kate Branch",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mansion_Resort_and_Spa_in_Bali_-_31.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-tanah-lot": {
+    "file": "File:Tanah Lot, Bali, Indonesia, 20220827 0957 1103.jpg",
+    "title": "Tanah Lot, Bali, Indonesia, 20220827 0957 1103",
+    "author": "Jakub Hałun",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tanah_Lot,_Bali,_Indonesia,_20220827_0957_1103.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-tegallalang": {
+    "file": "File:Rice terraces, Bali.jpg",
+    "title": "Rice terraces, Bali",
+    "author": "Vyacheslav Argenberg",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Rice_terraces,_Bali.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-tirta-empul": {
+    "file": "File:Pura Tirta Empul Bali 20120828b.jpg",
+    "title": "Pura Tirta Empul Bali 20120828b",
+    "author": "Tigerente",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pura_Tirta_Empul_Bali_20120828b.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-tukad-cepung": {
+    "file": "File:Tukad Cepung Waterfall (52462237566).jpg",
+    "title": "Tukad Cepung Waterfall (52462237566)",
+    "author": "Bex Walton from London, England",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tukad_Cepung_Waterfall_(52462237566).jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "p-uluwatu-temple": {
+    "file": "File:Kuta Bali Indonesia Pura-Luhur-Uluwatu-03.jpg",
+    "title": "Kuta Bali Indonesia Pura-Luhur-Uluwatu-03",
+    "author": "CEphoto, Uwe Aranas",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kuta_Bali_Indonesia_Pura-Luhur-Uluwatu-03.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "paris": {
+    "file": "File:Eiffel Tower in 2022 05.jpg",
+    "title": "Eiffel Tower in 2022 05",
+    "author": "Maksim Sokolov (maxergon.com)",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Eiffel_Tower_in_2022_05.jpg",
+    "width": 1280,
+    "height": 798
+  },
+  "pub-bali": {
+    "file": "File:Rice fields, Bedulu near Ubud, Bali, Indonesia, 20220824 1039 0665.jpg",
+    "title": "Rice fields, Bedulu near Ubud, Bali, Indonesia, 20220824 1039 0665",
+    "author": "Jakub Hałun",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Rice_fields,_Bedulu_near_Ubud,_Bali,_Indonesia,_20220824_1039_0665.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "pub-bali-budget": {
+    "file": "File:Jerman Beach, Kuta, Bali, Indonesia, 20220825 1329 0831.jpg",
+    "title": "Jerman Beach, Kuta, Bali, Indonesia, 20220825 1329 0831",
+    "author": "Jakub Hałun",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Jerman_Beach,_Kuta,_Bali,_Indonesia,_20220825_1329_0831.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "pub-goa": {
+    "file": "File:Anjuna Beach 25012016.jpg",
+    "title": "Anjuna Beach 25012016",
+    "author": "Nikhilb239",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Anjuna_Beach_25012016.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "pub-goa-food": {
+    "file": "File:Goan typical meal -- fish, curry and rice.jpg",
+    "title": "Goan typical meal -- fish, curry and rice",
+    "author": "Fredericknoronha",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Goan_typical_meal_--_fish,_curry_and_rice.jpg",
+    "width": 1280,
+    "height": 719
+  },
+  "pub-japan": {
+    "file": "File:Yasaka-dori early morning with street lanterns and the Tower of Yasaka (Hokan-ji Temple), Kyoto, Japan.jpg",
+    "title": "Yasaka-dori early morning with street lanterns and the Tower of Yasaka (Hokan-ji Temple), Kyoto, Japan",
+    "author": "Basile Morin",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Yasaka-dori_early_morning_with_street_lanterns_and_the_Tower_of_Yasaka_(Hokan-ji_Temple),_Kyoto,_Japan.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "pub-kyoto-3": {
+    "file": "File:Kiyomizu-dera, Kyoto, November 2016 -01.jpg",
+    "title": "Kiyomizu-dera, Kyoto, November 2016 -01",
+    "author": "Martin Falbisoner",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kiyomizu-dera,_Kyoto,_November_2016_-01.jpg",
+    "width": 1280,
+    "height": 788
+  },
+  "pub-tokyo-4": {
+    "file": "File:Sumida river06s3872.jpg",
+    "title": "Sumida river06s3872",
+    "author": "663highland",
+    "licence": "CC BY 2.5",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.5",
+    "source": "https://commons.wikimedia.org/wiki/File:Sumida_river06s3872.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "pub-ubud-slow": {
+    "file": "File:500px photo (137035547).jpeg",
+    "title": "500px photo (137035547)",
+    "author": "Kim Wong",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:500px_photo_(137035547).jpeg",
+    "width": 1280,
+    "height": 800
+  },
+  "r-canggu-cafe": {
+    "file": "File:NOT avocado on toast with fried egg - Black Mocha 2025-08-12.jpg",
+    "title": "NOT avocado on toast with fried egg - Black Mocha 2025-08-12",
+    "author": "Andy Li",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:NOT_avocado_on_toast_with_fried_egg_-_Black_Mocha_2025-08-12.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "r-jimbaran-grill": {
+    "file": "File:Ikan kakap bakar madu.JPG",
+    "title": "Ikan kakap bakar madu",
+    "author": "Midori",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ikan_kakap_bakar_madu.JPG",
+    "width": 1280,
+    "height": 711
+  },
+  "r-kayu-dinner": {
+    "file": "File:Nasi Campur Ayam Bali.jpg",
+    "title": "Nasi Campur Ayam Bali",
+    "author": "Eny Santiati",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nasi_Campur_Ayam_Bali.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "r-padi-hijau": {
+    "file": "File:Bebek tutu.jpg",
+    "title": "Bebek tutu",
+    "author": "casey yancey from brooklyn",
+    "licence": "CC BY 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bebek_tutu.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "r-pagi-kitchen": {
+    "file": "File:Green smoothie bowl with berries and seeds.jpg",
+    "title": "Green smoothie bowl with berries and seeds",
+    "author": "Miscellaneous contributor",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Green_smoothie_bowl_with_berries_and_seeds.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "r-sanur-warung": {
+    "file": "File:Gurame bakar kecap 2.JPG",
+    "title": "Gurame bakar kecap 2",
+    "author": "Gunawan Kartapranata",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gurame_bakar_kecap_2.JPG",
+    "width": 1280,
+    "height": 800
+  },
+  "r-ubud-vegan": {
+    "file": "File:Gado-gado - Bali 2025-09-25.jpg",
+    "title": "Gado-gado - Bali 2025-09-25",
+    "author": "Andy Li",
+    "licence": "CC0",
+    "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Gado-gado_-_Bali_2025-09-25.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "r-warung-sari": {
+    "file": "File:Nasi campur, Ubud, Indonesia.jpg",
+    "title": "Nasi campur, Ubud, Indonesia",
+    "author": "Vyacheslav Argenberg",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nasi_campur,_Ubud,_Indonesia.jpg",
+    "width": 1280,
+    "height": 800
+  },
+  "udaipur": {
+    "file": "File:City Palace Udaipur Rajasthan India.JPG",
+    "title": "City Palace Udaipur Rajasthan India",
+    "author": "Hirumon",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:City_Palace_Udaipur_Rajasthan_India.JPG",
+    "width": 1280,
+    "height": 800
+  }
+}

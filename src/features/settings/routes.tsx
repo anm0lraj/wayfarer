@@ -16,6 +16,7 @@ import { usePendingChanges, useSyncState } from '@/features/sync/useSyncStatus'
 import { env } from '@/config/env'
 import { APP_VERSION } from '@/config/version'
 import { resetDemoData } from '@/data/seed'
+import { wallClockLabel } from '@/lib/dates'
 import { promptInstall, usePwa } from '@/lib/pwa'
 import { useTheme, type ThemePreference } from '@/lib/theme'
 import { useServices } from '@/services'
@@ -47,13 +48,24 @@ function SyncStatusSection() {
   )
 }
 
+/** One settings group: title and a line of context on top, its controls underneath. */
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <Card className="p-5">
+    <Card className="p-5 sm:p-6">
       <h2 className="text-lg font-semibold">{title}</h2>
-      {description && <p className="mt-1 text-fg-muted">{description}</p>}
+      {description && <p className="mt-1 max-w-prose text-fg-muted">{description}</p>}
       <div className="mt-4 flex flex-wrap items-center gap-2">{children}</div>
     </Card>
+  )
+}
+
+/** A run of sections; the titled one keeps demo and developer switches apart from personal settings. */
+function Group({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={title} className="space-y-3">
+      {title && <p aria-hidden className="px-1 text-sm font-semibold text-fg-muted">{title}</p>}
+      <div className="space-y-4">{children}</div>
+    </section>
   )
 }
 
@@ -110,60 +122,66 @@ export default function SettingsRoute() {
   }
 
   return (
-    <>
+    <div className="max-w-3xl">
       <PageHeader title="Settings" />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Section title="Appearance" description="Follows your device by default.">
-          {themes.map((t) => <Chip key={t.value} selected={preference === t.value} onClick={() => setPreference(t.value)}>{t.label}</Chip>)}
-        </Section>
+      <div className="space-y-8">
+        <Group>
+          <Section title="Account" description={env.backend === 'firebase' ? `You’re signed in as ${session?.user.email ?? session?.user.name ?? 'a traveller'}.` : 'You’re signed in as the demo traveller.'}>
+            <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
+            <Button variant="secondary" onClick={() => void downloadData()}>Download my data</Button>
+            <Button variant="secondary" disabled={signingOut.busy} onClick={() => void signingOut.signOut()}>Sign out</Button>
+            {signingOut.dialog}
+            <div className="mt-2 flex w-full flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+              <p className="text-sm text-fg-muted">Removes your trips, photos and settings for good.</p>
+              <Button variant="danger" onClick={() => void deleteAccount()}>Delete account and data</Button>
+            </div>
+          </Section>
 
-        <div id="notifications" className="scroll-mt-20 lg:col-span-2">
-          <Card className="space-y-4 p-5">
-            <div><h2 className="text-lg font-semibold">Notifications</h2><p className="mt-1 text-fg-muted">Choose which reminders you get. They always appear in the app; system notifications need your permission.</p></div>
-            <PushPermissionCard />
+          <Section title="Appearance" description="Follows your device by default.">
+            {themes.map((t) => <Chip key={t.value} selected={preference === t.value} onClick={() => setPreference(t.value)}>{t.label}</Chip>)}
+          </Section>
+
+          <Card id="notifications" className="scroll-mt-20 space-y-4 p-5 sm:p-6">
+            <div><h2 className="text-lg font-semibold">Notifications</h2><p className="mt-1 max-w-prose text-fg-muted">Choose which reminders you get. They always appear in the app; system notifications need your permission.</p></div>
+            <PushPermissionCard inset />
             <PushDeviceStatus />
             <NotificationSettings />
           </Card>
-        </div>
 
-        <Section title="Demo date simulator" description={simulatedNow ? `Simulating ${format(new Date(simulatedNow), 'd MMM yyyy, HH:mm')}.` : 'Preview Upcoming, Live and Completed states without waiting for real dates.'}>
-          {presets.map((p) => <Chip key={p.iso} selected={simulatedNow === p.iso} onClick={() => setSimulatedNow(p.iso)}>{p.label}</Chip>)}
-          <Button variant="secondary" disabled={!simulatedNow} onClick={() => setSimulatedNow(null)}>Use real time</Button>
-        </Section>
+          <Section title="Install the app" description={installed ? 'Wayfarer is installed on this device.' : 'Add Wayfarer to your home screen or desktop. It opens full-screen and works offline.'}>
+            {!installed && installEvent && <Button onClick={() => void promptInstall()}>Install Wayfarer</Button>}
+            {!installed && !installEvent && <p className="max-w-prose text-sm text-fg-muted">Your browser didn’t offer an install button. In Chrome or Edge, use the install icon in the address bar. On iPhone or iPad, tap Share, then Add to Home Screen.</p>}
+          </Section>
 
-        <Section title="Environment" description={env.isProduction ? 'Production build.' : 'Development build. Data here never touches production.'}>
-          <Badge>{env.appEnv}</Badge>
-          <Badge>{env.backend === 'firebase' ? `Backend: ${env.firebase?.projectId}` : 'Backend: demo (in this browser)'}</Badge>
-        </Section>
+          {env.backend === 'firebase' && <SyncStatusSection />}
 
-        {env.backend === 'firebase' && <SyncStatusSection />}
+          <Section title="About" description="How Wayfarer handles your data, and the rules of use.">
+            <Button asChild variant="secondary"><Link to="/privacy">Privacy notice</Link></Button>
+            <Button asChild variant="secondary"><Link to="/terms">Terms of use</Link></Button>
+            <Button asChild variant="secondary"><Link to="/credits">Photo credits</Link></Button>
+            <Button variant="secondary" onClick={() => setFeedbackOpen(true)}>Send feedback</Button>
+            <Badge>Version {APP_VERSION}</Badge>
+            <FeedbackSheet open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+          </Section>
+        </Group>
 
-        <Section title="Demo tools" description="Developer switches for trying error and offline states.">
-          <Chip selected={aiDown} onClick={toggleAi}>Simulate AI unavailable</Chip>
-          {env.backend === 'mock' && <Button variant="danger" onClick={() => void reset()}>Reset demo data</Button>}
-        </Section>
+        <Group title="Demo and developer">
+          <Section title="Demo date simulator" description={simulatedNow ? `Simulating ${wallClockLabel(simulatedNow)}.` : 'Preview Upcoming, Live and Completed states without waiting for real dates.'}>
+            {presets.map((p) => <Chip key={p.iso} selected={simulatedNow === p.iso} onClick={() => setSimulatedNow(p.iso)}>{p.label}</Chip>)}
+            <Button variant="secondary" disabled={!simulatedNow} onClick={() => setSimulatedNow(null)}>Use real time</Button>
+          </Section>
 
-        <Section title="Install the app" description={installed ? 'Wayfarer is installed on this device.' : 'Add Wayfarer to your home screen or desktop. It opens full-screen and works offline.'}>
-          {!installed && installEvent && <Button onClick={() => void promptInstall()}>Install Wayfarer</Button>}
-          {!installed && !installEvent && <p className="text-sm text-fg-muted">Your browser didn’t offer an install button. In Chrome or Edge, use the install icon in the address bar. On iPhone or iPad, tap Share, then Add to Home Screen.</p>}
-        </Section>
+          <Section title="Demo tools" description="Developer switches for trying error and offline states.">
+            <Chip selected={aiDown} onClick={toggleAi}>Simulate AI unavailable</Chip>
+            {env.backend === 'mock' && <Button variant="danger" onClick={() => void reset()}>Reset demo data</Button>}
+          </Section>
 
-        <Section title="About" description="How Wayfarer handles your data, and the rules of use.">
-          <Button asChild variant="secondary"><Link to="/privacy">Privacy notice</Link></Button>
-          <Button asChild variant="secondary"><Link to="/terms">Terms of use</Link></Button>
-          <Button variant="secondary" onClick={() => setFeedbackOpen(true)}>Send feedback</Button>
-          <Badge>Version {APP_VERSION}</Badge>
-          <FeedbackSheet open={feedbackOpen} onOpenChange={setFeedbackOpen} />
-        </Section>
-
-        <Section title="Account" description={env.backend === 'firebase' ? `You’re signed in as ${session?.user.email ?? session?.user.name ?? 'a traveller'}.` : 'You’re signed in as the demo traveller.'}>
-          <Button asChild variant="secondary"><Link to="/onboarding/you">Travel preferences</Link></Button>
-          <Button variant="secondary" disabled={signingOut.busy} onClick={() => void signingOut.signOut()}>Sign out</Button>
-          {signingOut.dialog}
-          <Button variant="secondary" onClick={() => void downloadData()}>Download my data</Button>
-          <Button variant="danger" onClick={() => void deleteAccount()}>Delete account and data</Button>
-        </Section>
+          <Section title="Environment" description={env.isProduction ? 'Production build.' : 'Development build. Data here never touches production.'}>
+            <Badge>{env.appEnv}</Badge>
+            <Badge>{env.backend === 'firebase' ? `Backend: ${env.firebase?.projectId}` : 'Backend: demo (in this browser)'}</Badge>
+          </Section>
+        </Group>
       </div>
-    </>
+    </div>
   )
 }

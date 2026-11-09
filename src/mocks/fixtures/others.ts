@@ -1,5 +1,6 @@
 import { DEMO_USER_ID } from '@/data/actor'
 import { estimateTravelMinutes, haversineKm } from '@/lib/geo'
+import { img as photo } from '@/lib/photos'
 import { placeholderImage } from '@/lib/placeholder'
 import { SEED_TS } from './bali'
 import type {
@@ -8,7 +9,8 @@ import type {
 
 const ts = { createdAt: SEED_TS, updatedAt: SEED_TS }
 const inr = (amount: number) => ({ amount, currency: 'INR' })
-const img = (id: string, _label: string) => placeholderImage(id, '', [16, 9])
+// A Commons photo where one is curated (src/lib/photos), else the generated illustration.
+const img = (id: string, _label: string) => photo(id)
 
 export const demoUser: User = {
   id: DEMO_USER_ID, name: 'Anmol', email: 'demo@wayfarer.test', homeLocation: 'Mumbai, India', bio: 'Slow-travel enthusiast. Food first, photos second.',

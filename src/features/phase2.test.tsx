@@ -31,6 +31,16 @@ describe('Home', () => {
     expect(await within(screen.getByRole('region', { name: 'Memories' })).findByText('Sunset at Baga Beach')).toBeInTheDocument()
   })
 
+  it('offers post-trip steps, not planning prompts, for finished trips', async () => {
+    useClockStore.setState({ simulatedNow: '2026-10-20T10:00:00+08:00' }) // after Bali; Goa ended earlier
+    renderApp('/')
+    const after = await screen.findByRole('region', { name: 'After your trip' })
+    expect(await within(after).findAllByText('5 Days in Bali')).toHaveLength(2)
+    expect(within(after).getAllByRole('link', { name: /Share this trip/ })[0]).toHaveAttribute('href', '/trips/trip-bali/share')
+    expect(within(after).getAllByRole('link', { name: /Add memories/ })[0]).toHaveAttribute('href', '/trips/trip-bali/memories/new')
+    expect(screen.queryByRole('region', { name: 'Continue planning' })).not.toBeInTheDocument()
+  })
+
   it('shows a live banner while a trip is active', async () => {
     useClockStore.setState({ simulatedNow: '2026-10-13T10:00:00+08:00' })
     renderApp('/')
@@ -198,12 +208,34 @@ describe('Trip overview', () => {
     expect(await screen.findByText('Turn your memories into a shareable trip?')).toBeInTheDocument()
   })
 
+  it('marks a trip as ready (it then counts down as Upcoming), with undo, and back to planning', async () => {
+    renderApp('/trips/trip-bali') // planning; 1 Oct is 11 days before departure
+    const mark = await screen.findByRole('button', { name: 'Mark as ready' })
+    expect(screen.queryByText('Upcoming')).not.toBeInTheDocument()
+    await userEvent.click(mark)
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('ready'))
+    expect(await screen.findByRole('button', { name: 'Back to planning' })).toBeInTheDocument()
+    expect(screen.getAllByText('Upcoming').length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: 'Open trip checklist' })).toBeInTheDocument()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+    // The Undo write runs after the archive's refetch of every query; on a loaded CI runner that can pass the 1 s default.
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'), { timeout: 5000 })
+    expect(await screen.findByRole('button', { name: 'Mark as ready' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Mark as ready' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to planning' }))
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'))
+    expect(await screen.findByRole('button', { name: 'Mark as ready' })).toBeInTheDocument()
+  })
+
   it('archives with undo and deletes only after confirmation', async () => {
     const router = renderApp('/trips/trip-bali')
     await userEvent.click(await screen.findByRole('button', { name: 'Archive trip' }))
     await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('archived'))
     await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
-    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'))
+    // The Undo write runs after the archive's refetch of every query; on a loaded CI runner that can pass the 1 s default.
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'), { timeout: 5000 })
 
     router.navigate('/trips/trip-bali')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete trip' }))

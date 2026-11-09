@@ -10,7 +10,7 @@ import { useSession } from '@/app/providers/session'
 import { sharingAvailable } from '@/data/queries/invites'
 import { SharePeopleSheet } from '@/features/sharing/SharePeopleSheet'
 import { coverFromFile } from '@/lib/media/image'
-import { placeholderImage } from '@/lib/placeholder'
+import { img } from '@/lib/photos'
 
 /** Cover photo, archive / restore and delete. Deleting is permanent, so it needs an explicit confirmation. */
 export function TripActions({ trip }: { trip: TripWithState }) {
@@ -33,7 +33,7 @@ export function TripActions({ trip }: { trip: TripWithState }) {
     await tripRepo.transition(trip.id, archived ? 'planning' : 'archived')
     await qc.invalidateQueries()
     toast(archived ? { title: 'Trip restored' } : {
-      title: 'Trip archived', action: { label: 'Undo', onClick: () => void tripRepo.transition(trip.id, 'planning').then(() => qc.invalidateQueries()) },
+      title: 'Trip archived', action: { label: 'Undo', onClick: () => void run(async () => { await tripRepo.transition(trip.id, 'planning'); await qc.invalidateQueries() }, 'Couldn’t restore the trip') },
     })
     if (!archived) navigate('/trips')
   }, archived ? 'Couldn’t restore the trip' : 'Couldn’t archive the trip')
@@ -56,16 +56,16 @@ export function TripActions({ trip }: { trip: TripWithState }) {
     }, 'Couldn’t use that photo')
   }
   const resetCover = () => run(async () => {
-    await tripRepo.update(trip.id, { coverImage: placeholderImage(trip.destinationIds[0] ?? trip.id, '', [16, 9]) })
+    await tripRepo.update(trip.id, { coverImage: img(trip.destinationIds[0] ?? trip.id) })
     await qc.invalidateQueries()
-    toast({ title: 'Using the illustration again' })
+    toast({ title: 'Using the destination photo again' })
   }, 'Couldn’t change the cover')
 
   return (
     <div className="flex flex-wrap gap-2 border-t border-border pt-3">
       <input ref={fileRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label="Choose a cover photo" onChange={(e) => { setCover(e.target.files?.[0]); e.target.value = '' }} />
       <Button variant="secondary" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>{hasOwnCover ? 'Change cover photo' : 'Add cover photo'}</Button>
-      {hasOwnCover && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void resetCover()}>Use illustration</Button>}
+      {hasOwnCover && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void resetCover()}>Use destination photo</Button>}
       {canShare && <Button variant="secondary" size="sm" onClick={() => setSharing(true)}>Share with people</Button>}
       {canShare && <SharePeopleSheet trip={trip} open={sharing} onOpenChange={setSharing} />}
       <Button variant="secondary" size="sm" disabled={busy} onClick={() => void toggleArchive()}>{archived ? 'Restore trip' : 'Archive trip'}</Button>

@@ -3,6 +3,7 @@ import {
   budgetTierSchema, geoPointSchema, idSchema, interestSchema, isoDateSchema, isoDateTimeSchema, moneySchema,
   timeSchema, timestampsSchema, travelerGroupSchema, visibilitySchema,
 } from './common'
+import { autoPhotoSchema } from './placePhoto'
 
 /** States that are persisted. `upcoming`, `active`, `completed` are derived from dates (see features/trips/tripState). */
 export const storedTripStateSchema = z.enum(['draft', 'planning', 'ready', 'archived'])
@@ -42,6 +43,8 @@ export const itineraryDaySchema = z.object({
   title: z.string().optional(),
   destinationId: idSchema.optional(),
   notes: z.string().optional(),
+  /** Set by every write (`put` in repositories/shared.ts) so sync can tell the newer copy. Absent on rows from before it existed. */
+  updatedAt: isoDateTimeSchema.optional(),
 })
 export type ItineraryDay = z.infer<typeof itineraryDaySchema>
 
@@ -53,6 +56,7 @@ export const itemStatusSchema = z.enum(['upcoming', 'on_the_way', 'in_progress',
 export type ItemStatus = z.infer<typeof itemStatusSchema>
 
 export const customLocationSchema = z.object({ name: z.string(), address: z.string().optional(), point: geoPointSchema })
+export type CustomLocation = z.infer<typeof customLocationSchema>
 
 export const itineraryItemSchema = z
   .object({
@@ -71,6 +75,8 @@ export const itineraryItemSchema = z
     distanceFromPrevKm: z.number().nonnegative().optional(),
     travelTimeFromPrevMin: z.number().int().nonnegative().optional(),
     image: z.string().optional(),
+    /** A photo found automatically for a custom place with no catalogue photo (see features/place-photos). */
+    autoPhoto: autoPhotoSchema.optional(),
     notes: z.string().optional(),
     bookingId: idSchema.optional(),
     status: itemStatusSchema,
@@ -87,6 +93,8 @@ export const checklistItemSchema = z.object({
   autoRule: z.enum(['flight_booked', 'hotel_booked', 'activities_booked']).optional(),
   done: z.boolean(),
   dueDate: isoDateSchema.optional(),
+  /** As on days: stamped by every write, absent on older rows. */
+  updatedAt: isoDateTimeSchema.optional(),
 })
 export type ChecklistItem = z.infer<typeof checklistItemSchema>
 

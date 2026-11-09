@@ -1,4 +1,4 @@
-import type { Flight, Hotel, Money } from '@/types'
+import type { Booking, Flight, Hotel, Money, TransitService } from '@/types'
 
 export interface HotelQuery {
   destinationId: string
@@ -21,9 +21,17 @@ export interface FlightQuery {
   travellers?: number
 }
 
+/** Cities are ids from `data/transitCities`. */
+export interface TransitQuery {
+  from: string
+  to: string
+  date: string
+  travellers?: number
+}
+
 export interface BookingRequest {
   tripId: string
-  type: 'flight' | 'hotel' | 'activity' | 'transport'
+  type: Booking['type']
   refId: string
   title: string
   price: Money
@@ -43,5 +51,7 @@ export interface BookingService {
   searchHotels(q: HotelQuery, signal?: AbortSignal): Promise<Hotel[]>
   getHotel(id: string, signal?: AbortSignal): Promise<Hotel | undefined>
   searchFlights(q: FlightQuery, signal?: AbortSignal): Promise<Flight[]>
+  searchTrains(q: TransitQuery, signal?: AbortSignal): Promise<TransitService[]>
+  searchBuses(q: TransitQuery, signal?: AbortSignal): Promise<TransitService[]>
   createBooking(req: BookingRequest): Promise<BookingResult>
 }

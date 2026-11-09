@@ -44,6 +44,9 @@ const truncate = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n 
 /** A cover that is a photo can be served as an image; the generated illustrations are SVG, which link previews do not draw. */
 export const coverIsPhoto = (cover: string) => /^data:image\/(jpeg|png|webp);base64,/.test(cover)
 
+/** A self-hosted stock photo (`/photos/<id>-1280.webp`, see src/lib/photos) is already a file on the site. */
+export const stockCover = (cover: string) => /^\/photos\/[a-z0-9-]+-1280\.webp$/.test(cover)
+
 export function decodeCover(cover: string): { type: string; bytes: Uint8Array } | undefined {
   const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(cover)
   return m ? { type: m[1]!, bytes: Uint8Array.from(Buffer.from(m[2]!, 'base64')) } : undefined
@@ -58,7 +61,8 @@ export function previewDescription(t: PreviewTrip): string {
 export function buildHead(t: PreviewTrip, slug: string, origin: string): { title: string; tags: string } {
   const title = `${t.title} · Wayfarer`
   const url = `${origin}/t/${encodeURIComponent(slug)}`
-  const image = coverIsPhoto(t.coverImage) ? `${origin}/api/og-image?slug=${encodeURIComponent(slug)}` : `${origin}/og-default.png`
+  const image = coverIsPhoto(t.coverImage) ? `${origin}/api/og-image?slug=${encodeURIComponent(slug)}`
+    : stockCover(t.coverImage) ? `${origin}${t.coverImage}` : `${origin}/og-default.png`
   const description = previewDescription(t)
   const tags = [
     `<meta name="description" content="${escapeHtml(description)}" />`,
@@ -79,9 +83,13 @@ export function buildHead(t: PreviewTrip, slug: string, origin: string): { title
   return { title, tags }
 }
 
-/** Puts the trip's tags and title into the app's HTML, replacing the generic ones. */
+/**
+ * Puts the trip's tags and title into the app's HTML, replacing the generic ones. The replacement is a function so
+ * `$` in a title or description is kept as written (a string would be read as `$&`, `$$`, … patterns).
+ */
 export function injectHead(html: string, head: { title: string; tags: string }): string {
+  const replacement = `<title>${escapeHtml(head.title)}</title>\n    ${head.tags}`
   return html
     .replace(/<meta name="description"[^>]*>\s*/i, '')
-    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(head.title)}</title>\n    ${head.tags}`)
+    .replace(/<title>[\s\S]*?<\/title>/i, () => replacement)
 }

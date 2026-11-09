@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { announce } from '@/lib/a11y/announce'
 import { useTheme, type ThemePreference } from '@/lib/theme'
+import { cn } from '@/lib/cn'
 
 const order: ThemePreference[] = ['system', 'light', 'dark']
 const labels: Record<ThemePreference, string> = { system: 'System', light: 'Light', dark: 'Dark' }
@@ -23,7 +24,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       }}
       title={`Theme: ${labels[preference]} — click for ${labels[next]}`}
       aria-label={`Theme: ${labels[preference]}. Switch to ${labels[next]}`}
-      className={className ?? 'grid min-h-touch min-w-touch place-items-center rounded-full text-fg-muted hover:bg-surface-2 hover:text-fg'}
+      className={cn('grid min-h-touch min-w-touch place-items-center rounded-full text-fg-muted hover:bg-surface-2 hover:text-fg', className)}
     >
       <Icon aria-hidden className="size-5" />
     </button>

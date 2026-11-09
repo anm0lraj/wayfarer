@@ -15,11 +15,11 @@ const SIGNED_IN = [
   '/', '/trips', '/trips/new/destination', '/explore', '/explore/itineraries', '/explore/bali', '/ai', '/profile', '/profile/saved', '/saved',
   '/settings', '/notifications', '/onboarding/you',
   '/trips/trip-bali', '/trips/trip-bali/itinerary', '/trips/trip-bali/itinerary/day/2', '/trips/trip-bali/map', '/trips/trip-bali/bookings',
-  '/trips/trip-bali/bookings/hotels', '/trips/trip-bali/bookings/hotels/h-sunset-boutique', '/trips/trip-bali/bookings/flights', '/trips/trip-bali/checklist',
+  '/trips/trip-bali/bookings/hotels', '/trips/trip-bali/bookings/hotels/h-sunset-boutique', '/trips/trip-bali/bookings/flights', '/trips/trip-bali/bookings/trains', '/trips/trip-bali/bookings/buses', '/trips/trip-bali/bookings/local', '/trips/trip-bali/checklist',
   '/trips/trip-bali/memories', '/trips/trip-bali/memories/new', '/trips/trip-bali/stories/new', '/trips/trip-bali/share', '/trips/trip-bali/ai',
   '/trips/trip-goa/stories/story-goa-1',
 ]
-const PUBLIC = ['/t/7-days-in-japan-food-culture-k7p2', '/signin', '/explore/itineraries', '/privacy', '/terms']
+const PUBLIC = ['/t/7-days-in-japan-food-culture-k7p2', '/signin', '/explore/itineraries', '/privacy', '/terms', '/credits']
 
 beforeAll(() => installMockApi())
 beforeEach(async () => {
@@ -68,6 +68,6 @@ describe('routes render real screens', () => {
 
   it('unknown URLs get a helpful 404', async () => {
     renderApp('/definitely/not/here')
-    expect(await screen.findByText('We can’t find that page')).toBeInTheDocument()
+    expect(await screen.findByText('Looks like we took a wrong turn')).toBeInTheDocument()
   })
 })

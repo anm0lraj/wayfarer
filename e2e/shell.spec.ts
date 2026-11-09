@@ -38,6 +38,9 @@ test('navigates between primary areas with real URLs and back/forward', async ({
 test('trip workspace tabs are URLs and the seeded Bali trip loads', async ({ page }) => {
   // Several links on Home mention the trip (its card, "continue planning", similarly named public itineraries), so
   // pick the trip's own card by its URL rather than by a name that may match more as the page fills in.
+  // Home lists only trips still ahead, so pin the demo date before the Bali trip (the real date is past it).
+  await page.addInitScript(() => localStorage.setItem('demo-clock', JSON.stringify({ state: { simulatedNow: '2026-10-01T10:00:00+08:00' }, version: 0 })))
+  await page.goto('/')
   await page.locator('a[href="/trips/trip-bali"]').first().click()
   await expect(page).toHaveURL(/\/trips\/trip-bali$/)
   await page.getByRole('link', { name: 'Map' }).click()
@@ -60,7 +63,7 @@ test('demo date simulator makes the Live entry appear', async ({ page }) => {
 
 test('unknown URLs show the 404 state', async ({ page }) => {
   await page.goto('/no/such/page')
-  await expect(page.getByText('We can’t find that page')).toBeVisible()
+  await expect(page.getByText('Looks like we took a wrong turn')).toBeVisible()
 })
 
 // A scrolling row whose hidden (sr-only) children sit outside it used to widen the whole page on phones.

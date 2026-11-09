@@ -69,7 +69,8 @@ export const publicTripRepo = {
       budgetRange: [{ amount: Math.round(total * 0.85), currency: trip.budget.total?.currency ?? 'INR' }, { amount: Math.round(total * 1.15), currency: trip.budget.total?.currency ?? 'INR' }],
       travelStyle: trip.budget.tier, tips: opts.tips ?? [],
       snapshot: {
-        days,
+        // Fields picked one by one, so a private field added to days later (like `notes` today) stays out unless chosen.
+        days: days.map(({ id, tripId: t, dayNumber, date, title, destinationId }) => ({ id, tripId: t, dayNumber, date, title, destinationId })),
         items: items.map(({ notes: _n, bookingId: _b, ...rest }) => rest),
         places,
         memories: (opts.includeMemories === false ? [] : memories)
@@ -114,7 +115,7 @@ export const publicTripRepo = {
       for (const it of items) {
         await itineraryRepo.addItem(trip.id, target.id, {
           title: it.title, startTime: it.startTime, durationMin: it.durationMin, category: it.category, placeId: it.placeId,
-          description: it.description, estimatedCost: it.estimatedCost, customLocation: it.customLocation, source: 'template', image: it.image,
+          description: it.description, estimatedCost: it.estimatedCost, customLocation: it.customLocation, source: 'template', image: it.image, autoPhoto: it.autoPhoto,
         })
       }
     }

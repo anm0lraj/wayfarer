@@ -1,13 +1,15 @@
 import { Cloud, CloudLightning, CloudRain, CloudSnow, CloudSun, Sun, type LucideIcon } from 'lucide-react'
 import type { WeatherCondition } from '@/services/weather/types'
+import { cn } from '@/lib/cn'
 
 const icons: Record<WeatherCondition, LucideIcon> = { sunny: Sun, partly_cloudy: CloudSun, cloudy: Cloud, rain: CloudRain, storm: CloudLightning, snow: CloudSnow }
 const words: Record<WeatherCondition, string> = { sunny: 'Sunny', partly_cloudy: 'Partly cloudy', cloudy: 'Cloudy', rain: 'Rain', storm: 'Thunderstorms', snow: 'Snow' }
 
+/** Today's weather as an icon and temperature; the condition is spoken (sr-only) and shown as a tooltip. */
 export function WeatherChip({ condition, tempC, className }: { condition: WeatherCondition; tempC: number; className?: string }) {
   const Icon = icons[condition]
   return (
-    <span className={`inline-flex items-center gap-1.5 ${className ?? ''}`} title={words[condition]}>
+    <span className={cn('inline-flex items-center gap-1.5', className)} title={words[condition]}>
       <Icon aria-hidden className="size-4" />
       <span>{tempC}°C</span>
       <span className="sr-only">{words[condition]}</span>

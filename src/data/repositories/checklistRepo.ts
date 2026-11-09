@@ -10,8 +10,14 @@ export async function resolveChecklist(tripId: string): Promise<ChecklistItem[]>
     db.bookings.where('tripId').equals(tripId).toArray(),
   ])
   const has = (type: string) => bookings.some((b) => b.type === type && b.status !== 'cancelled')
-  const auto: Record<string, boolean> = { flight_booked: has('flight'), hotel_booked: has('hotel'), activities_booked: has('activity') }
-  return items.map((i) => (i.autoRule ? { ...i, done: auto[i.autoRule] ?? false } : i))
+  const overland = has('train') || has('bus')
+  const auto: Record<string, boolean> = { flight_booked: has('flight') || overland, hotel_booked: has('hotel'), activities_booked: has('activity') }
+  return items.map((i) => {
+    if (!i.autoRule) return i
+    // The "getting there" item is ticked by a flight, or by a train or bus when there is no flight.
+    if (i.autoRule === 'flight_booked' && overland && !has('flight')) return { ...i, done: true, label: 'Train or bus saved to trip' }
+    return { ...i, done: auto[i.autoRule] ?? false }
+  })
 }
 
 export const checklistRepo = {

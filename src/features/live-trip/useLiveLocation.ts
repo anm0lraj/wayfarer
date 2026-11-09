@@ -29,12 +29,17 @@ export function useLiveLocation() {
   const { geolocation } = useServices()
   const [state, setState] = useState<LocationState>(() => (geolocation.isSupported() ? { kind: 'off' } : { kind: 'unsupported' }))
   const stop = useRef<(() => void) | null>(null)
+  // Bumped by Off and by unmount: an answer to an older request (the prompt can stay open a long time) is ignored,
+  // so it can't start a watch, turn the opt-in back on or set state on a closed screen.
+  const attempt = useRef(0)
 
   const begin = useCallback(async () => {
     if (!geolocation.isSupported()) return setState({ kind: 'unsupported' })
+    const mine = ++attempt.current
     setState({ kind: 'locating' })
     try {
       const point = await geolocation.getPosition() // browser prompt appears here, after our explanation
+      if (mine !== attempt.current) return
       setState({ kind: 'on', point })
       writeOptIn(true)
       stop.current?.()
@@ -43,6 +48,7 @@ export function useLiveLocation() {
         (e) => setState(e.code === 1 ? { kind: 'denied' } : { kind: 'error', message: 'Your location is temporarily unavailable.' }),
       )
     } catch (e) {
+      if (mine !== attempt.current) return
       const code = (e as Partial<GeolocationPositionError>).code
       if (code === 1) setState({ kind: 'denied' })
       else setState({ kind: 'error', message: code === 3 ? 'Finding your location took too long.' : 'We couldn’t find your location.' })
@@ -50,6 +56,7 @@ export function useLiveLocation() {
   }, [geolocation])
 
   const disable = useCallback(() => {
+    attempt.current++
     stop.current?.()
     stop.current = null
     writeOptIn(false)
@@ -59,6 +66,7 @@ export function useLiveLocation() {
   // Resume quietly if they opted in before AND the browser already granted it — no new prompt.
   useEffect(() => {
     let cancelled = false
+    const requests = attempt // the ref object itself (stable), not a stale copy of its value
     if (readOptIn()) {
       void geolocation.permission().then((p: LocationPermission) => {
         if (cancelled) return
@@ -68,7 +76,9 @@ export function useLiveLocation() {
     }
     return () => {
       cancelled = true
+      requests.current++ // a fix still on its way belongs to a closed screen
       stop.current?.()
+      stop.current = null
     }
   }, [geolocation, begin])
 

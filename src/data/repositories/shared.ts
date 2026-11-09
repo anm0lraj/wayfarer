@@ -1,3 +1,4 @@
+import type { Table } from 'dexie'
 import { nanoid } from 'nanoid'
 import { getActorId } from '../actor'
 import { db } from '../db'
@@ -29,15 +30,30 @@ export async function requireTripAccess(tripId: string, action: TripAction): Pro
   if (!can(await getRole(tripId), action)) throw new PermissionError(action)
 }
 
-/** Writes an entity to the local table and queues the change for sync. */
-export async function put<T extends { id: string }>(entity: string, table: { put(v: T): Promise<unknown> }, value: T) {
-  await table.put(value)
-  await enqueue(entity, value.id, 'put', value)
+/**
+ * Tables whose rows have no `updatedAt` set by their repository: `put` stamps it, so sync (adopt and conflicts, newer
+ * wins) can compare copies. Rows written before this have none; any copy with a timestamp beats one without.
+ */
+const STAMPED = new Set(['days', 'checklist'])
+
+/**
+ * Writes an entity to the local table and queues the change for sync, in one transaction: a download applied meanwhile
+ * (`applyRemote` in data/remote/firestoreSync.ts) sees either neither or both, so it can never overwrite the edit.
+ */
+export async function put<T extends { id: string }>(entity: string, table: Table<T, string>, value: NoInfer<T>) {
+  if (STAMPED.has(entity)) value = { ...value, updatedAt: nowIso() }
+  await db.transaction('rw', table, db.syncQueue, async () => {
+    await table.put(value)
+    await enqueue(entity, value.id, 'put', value)
+  })
 }
 
-export async function del(entity: string, table: { get(id: string): Promise<unknown>; delete(id: string): Promise<unknown> }, id: string) {
-  // A delete has no document to read the owner from, so remember which trip it belonged to for the remote path.
-  const tripId = ((await table.get(id)) as { tripId?: string } | undefined)?.tripId
-  await table.delete(id)
-  await enqueue(entity, id, 'delete', tripId ? { tripId } : undefined)
+/** Deletes locally and queues the delete, in one transaction (as `put`), so a download can't bring the record back. */
+export async function del<T>(entity: string, table: Table<T, string>, id: string) {
+  await db.transaction('rw', table, db.syncQueue, async () => {
+    // A delete has no document to read the owner from, so remember which trip it belonged to for the remote path.
+    const tripId = ((await table.get(id)) as { tripId?: string } | undefined)?.tripId
+    await table.delete(id)
+    await enqueue(entity, id, 'delete', tripId ? { tripId } : undefined)
+  })
 }

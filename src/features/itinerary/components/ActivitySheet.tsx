@@ -10,41 +10,31 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { bookingRepo, catalogRepo, itineraryRepo } from '@/data/repositories'
+import { LocationPicker } from '@/features/map/LocationPicker'
+import { PlacePhotoFigure } from '@/features/place-photos/PlacePhotoFigure'
+import { useItemPhoto } from '@/features/place-photos/useItemPhoto'
 import { useQuery } from '@tanstack/react-query'
 import { useServices } from '@/services'
-import { itemCategorySchema, timeSchema, type Booking, type GeoPoint, type ItineraryDay, type ItineraryItem, type Trip } from '@/types'
+import { itemCategorySchema, timeSchema, type Booking, type CustomLocation, type GeoPoint, type ItineraryDay, type ItineraryItem, type Trip } from '@/types'
 import { CATEGORY_META } from '../categoryMeta'
 import { endTime } from '../schedule'
 import type { useItineraryActions } from '../useItineraryActions'
 
 type Actions = ReturnType<typeof useItineraryActions>
 
-const schema = z
-  .object({
+const schema = z.object({
     title: z.string().trim().min(1, 'Give it a name'),
     startTime: timeSchema,
     duration: z.string().refine((v) => Number.isInteger(Number(v)) && Number(v) >= 5 && Number(v) <= 1440, 'Enter 5–1440 minutes'),
     category: itemCategorySchema,
     cost: z.string().refine((v) => v.trim() === '' || (Number(v) >= 0 && Number.isFinite(Number(v))), 'Enter an amount of 0 or more'),
     notes: z.string(),
-    locName: z.string(),
-    locAddress: z.string(),
-    lat: z.string(),
-    lng: z.string(),
-  })
-  .superRefine((d, ctx) => {
-    const has = (s: string) => s.trim() !== ''
-    if (has(d.lat) !== has(d.lng)) ctx.addIssue({ code: 'custom', path: [has(d.lat) ? 'lng' : 'lat'], message: 'Enter both latitude and longitude' })
-    if (has(d.lat) && !(Math.abs(Number(d.lat)) <= 90)) ctx.addIssue({ code: 'custom', path: ['lat'], message: 'Latitude is between −90 and 90' })
-    if (has(d.lng) && !(Math.abs(Number(d.lng)) <= 180)) ctx.addIssue({ code: 'custom', path: ['lng'], message: 'Longitude is between −180 and 180' })
   })
 type Values = z.infer<typeof schema>
 
 const valuesFor = (item: ItineraryItem): Values => ({
   title: item.title, startTime: item.startTime, duration: String(item.durationMin), category: item.category,
   cost: item.estimatedCost ? String(item.estimatedCost.amount) : '', notes: item.notes ?? '',
-  locName: item.customLocation?.name ?? '', locAddress: item.customLocation?.address ?? '',
-  lat: item.customLocation ? String(item.customLocation.point.lat) : '', lng: item.customLocation ? String(item.customLocation.point.lng) : '',
 })
 
 interface Props {
@@ -56,27 +46,35 @@ interface Props {
   actions: Actions
   booking?: Booking
   point?: GeoPoint
+  /** Middle of the area the location picker searches around. */
+  near: GeoPoint
 }
 
 /** View and edit one activity: time, duration, notes, cost, location and reservation. */
-export function ActivitySheet({ trip, item, day, open, onClose, actions, booking, point }: Props) {
+export function ActivitySheet({ trip, item, day, open, onClose, actions, booking, point, near }: Props) {
   const { maps } = useServices()
   const qc = useQueryClient()
   const place = useQuery({ queryKey: ['place', item?.placeId], enabled: !!item?.placeId, staleTime: Infinity, queryFn: () => catalogRepo.getPlace(item!.placeId!) }).data
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: item ? valuesFor(item) : undefined })
   const [reservation, setReservation] = useState({ name: '', ref: '' })
+  const [location, setLocation] = useState<CustomLocation>()
+  const [nameOnly, setNameOnly] = useState<string>()
+  const photo = useItemPhoto(item, place)
 
-  useEffect(() => { if (item) form.reset(valuesFor(item)) }, [item?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!item) return
+    form.reset(valuesFor(item))
+    setLocation(item.customLocation)
+    setNameOnly(undefined)
+  }, [item?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!item || !day) return null
 
   const save = form.handleSubmit(async (v) => {
-    const hasPoint = v.lat.trim() !== '' && v.lng.trim() !== ''
     await actions.update(item.id, {
       title: v.title.trim(), startTime: v.startTime, durationMin: Number(v.duration), category: v.category, notes: v.notes.trim() || undefined,
       estimatedCost: v.cost.trim() ? { amount: Number(v.cost), currency: 'INR' } : undefined,
-      ...(item.placeId ? {} : {
-        customLocation: hasPoint ? { name: v.locName.trim() || v.title.trim(), address: v.locAddress.trim() || undefined, point: { lat: Number(v.lat), lng: Number(v.lng) } } : undefined,
-      }),
+      // Catalogue places are read-only; a custom stop can set, move or clear its pin (clearing writes an explicit undefined).
+      ...(item.placeId ? {} : { customLocation: location, ...(!location && nameOnly ? { description: nameOnly } : {}) }),
     })
     toast({ title: 'Saved' })
     onClose()
@@ -103,6 +101,7 @@ export function ActivitySheet({ trip, item, day, open, onClose, actions, booking
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title={item.title} description={`Day ${day.dayNumber} · ${item.startTime}–${endTime(item)} · ${meta.label}`}>
       <form noValidate onSubmit={(e) => void save(e)} className="space-y-4">
+        {photo && <PlacePhotoFigure photo={photo} seed={item.id} />}
         <Input label="Name" error={form.formState.errors.title?.message} {...form.register('title')} />
         <div className="grid grid-cols-2 gap-3">
           <Input label="Start time" type="time" error={form.formState.errors.startTime?.message} {...form.register('startTime')} />
@@ -127,14 +126,7 @@ export function ActivitySheet({ trip, item, day, open, onClose, actions, booking
           {place ? (
             <p className="flex items-start gap-2 text-sm"><MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" /><span><span className="font-medium">{place.name}</span>{place.address ? <><br /><span className="text-fg-muted">{place.address}</span></> : null}</span></p>
           ) : (
-            <>
-              <Input label="Place name" {...form.register('locName')} />
-              <Input label="Address" {...form.register('locAddress')} />
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Latitude" inputMode="decimal" error={form.formState.errors.lat?.message} {...form.register('lat')} />
-                <Input label="Longitude" inputMode="decimal" error={form.formState.errors.lng?.message} {...form.register('lng')} />
-              </div>
-            </>
+            <LocationPicker hideLabel value={location} onChange={setLocation} near={near} nameOnly={nameOnly} onNameOnlyChange={setNameOnly} fallbackName={form.watch('title')} />
           )}
           {point && (
             <Button asChild variant="secondary" size="sm"><a href={maps.links.deepLink(point, 'directions', item.title)} target="_blank" rel="noopener noreferrer"><Navigation aria-hidden className="size-4" /> Directions</a></Button>

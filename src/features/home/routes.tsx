@@ -19,6 +19,8 @@ import { currentDayNumber } from '@/features/trips/tripState'
 import { countdownLabel, dateInTimezone } from '@/lib/dates'
 import { useNow } from '@/lib/hooks/useNow'
 import type { Memory } from '@/types'
+import { CARD_SIZES, responsiveImage } from '@/lib/photos/responsive'
+import { cn } from '@/lib/cn'
 
 const PLANNING_STATES = new Set(['draft', 'planning', 'ready', 'upcoming'])
 
@@ -30,13 +32,19 @@ function greeting(now: Date) {
 function LiveBanner({ trip }: { trip: TripWithState }) {
   const day = currentDayNumber(trip, useNow())
   return (
-    <Link to={`/trips/${trip.id}/live`} className="flex items-center gap-3 rounded-lg bg-secondary p-4 text-secondary-fg shadow-md">
-      <Radio aria-hidden className="size-6 shrink-0 motion-safe:animate-pulse" />
-      <span className="min-w-0 flex-1">
-        <span className="block font-semibold">You’re on {trip.title}{day ? ` — Day ${day}` : ''}</span>
-        <span className="block text-sm opacity-90">Open Live Trip for today’s plan and directions</span>
+    // Happening now: the light orange `live` panel (dark text, orange icon), with the normal blue action.
+    <Link to={`/trips/${trip.id}/live`} className="lift flex items-center gap-4 rounded-xl border border-live-border bg-live p-4 text-fg shadow-sm sm:p-5">
+      <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-surface text-secondary shadow-sm">
+        <Radio className="size-6 motion-safe:animate-pulse" strokeWidth={2.4} />
       </span>
-      <ChevronRight aria-hidden className="size-5 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-xl font-extrabold leading-tight">You’re on {trip.title}{day ? ` — Day ${day}` : ''}</span>
+        <span className="mt-0.5 block text-sm text-fg-muted">Today’s plan, your next stop and directions, one tap away</span>
+      </span>
+      <span aria-hidden className="hidden min-h-touch shrink-0 items-center gap-1 rounded-md bg-primary px-4 font-semibold text-primary-fg shadow-primary sm:inline-flex">
+        Open Live Trip <ChevronRight className="size-4" />
+      </span>
+      <ChevronRight aria-hidden className="size-6 shrink-0 text-fg-muted sm:hidden" />
     </Link>
   )
 }
@@ -45,9 +53,28 @@ function MemoryThumb({ memory }: { memory: Memory }) {
   const url = useMediaUrl(memory.mediaKey)
   return (
     <Link to={`/trips/${memory.tripId}/memories`} className="group relative block aspect-square overflow-hidden rounded-lg bg-surface-2">
-      {url && <img src={url} alt={memory.caption ? '' : 'Trip photo'} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />}
+      {url && <img {...responsiveImage(url, CARD_SIZES)} alt={memory.caption ? '' : 'Trip photo'} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />}
       {memory.caption && <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-2 py-1 text-xs font-medium text-white">{memory.caption}</span>}
     </Link>
+  )
+}
+
+interface PromptRow { id: string; label: string; to: string; trip: TripWithState }
+
+/** A short list of next steps, each naming its trip. */
+function PromptList({ rows }: { rows: PromptRow[] }) {
+  return (
+    <Card className="divide-y divide-border">
+      {rows.map((t) => (
+        <Link key={`${t.trip.id}-${t.id}`} to={t.to} className="flex min-h-touch items-center gap-3 px-4 py-3 hover:bg-surface-2">
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">{t.label}</span>
+            <span className="block truncate text-sm text-fg-muted">{t.trip.title}</span>
+          </span>
+          <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-muted" />
+        </Link>
+      ))}
+    </Card>
   )
 }
 
@@ -62,14 +89,24 @@ export default function HomeRoute() {
 
   const active = trips.data?.find((t) => t.effectiveState === 'active')
   const upcoming = (trips.data ?? []).filter((t) => PLANNING_STATES.has(t.effectiveState))
-  const tasks = upcoming.flatMap((t) => (plans[t.id]?.progress.tasks ?? []).map((task) => ({ ...task, trip: t }))).slice(0, 6)
+  const tasks: PromptRow[] = upcoming.flatMap((t) => (plans[t.id]?.progress.tasks ?? []).map((task) => ({ ...task, trip: t }))).slice(0, 6)
+  // A finished trip has nothing left to plan: offer what comes next instead (spec §39 step 16).
+  const finished = (trips.data ?? []).filter((t) => t.effectiveState === 'completed').sort((a, b) => b.endDate.localeCompare(a.endDate)).slice(0, 2)
+  const afterTrip: PromptRow[] = finished.flatMap((t) => [
+    { id: 'memories', label: 'Add memories', to: `/trips/${t.id}/memories/new`, trip: t },
+    { id: 'share', label: 'Share this trip', to: `/trips/${t.id}/share`, trip: t },
+  ])
+
+  const showUpcoming = !(active && upcoming.length === 0)
+  // Thumbnails fill whole rows: four photos make two rows of two rather than three and an orphan.
+  const memoryCols = (memories.data?.length ?? 0) % 3 === 1 ? 'grid-cols-2 lg:grid-cols-2' : 'grid-cols-3 lg:grid-cols-3'
 
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{greeting(now)}{session ? `, ${session.user.name}` : ''}</h1>
-          <p className="mt-1 text-fg-muted">Where to next?</p>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">{greeting(now)}{session ? `, ${session.user.name}` : ''}</h1>
+          <p className="mt-1 text-lg text-fg-muted">Where are we heading next?</p>
         </div>
         <Button asChild><Link to="/trips/new/destination"><Plus aria-hidden className="size-5" /> Plan a Trip</Link></Button>
       </header>
@@ -78,8 +115,12 @@ export default function HomeRoute() {
 
       <InvitationsCard />
 
-      <div className="space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0">
-        <div className="min-w-0 space-y-8 lg:col-span-8">
+      {/* Phones and tablets read top to bottom: your trip, what to do next, then inspiration. On desktop the
+          next steps sit in a right-hand column beside the trip and the inspiration rows. */}
+      <div className="space-y-8 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-8 lg:gap-y-8 lg:space-y-0">
+        {/* While a trip is live and nothing else is coming up, the live banner says it all: no "plan a trip" empty state under it. */}
+        {showUpcoming && (
+        <div className="min-w-0 lg:col-span-8 lg:row-start-1">
           <Section title="Upcoming trips" to="/trips" linkLabel="All trips">
             {trips.isPending && (
               <SkeletonGroup label="Loading trips" className="grid gap-3 sm:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="hidden h-64 sm:block" /></SkeletonGroup>
@@ -87,8 +128,8 @@ export default function HomeRoute() {
             {trips.isError && <ErrorState title="Couldn’t load your trips" onRetry={() => void trips.refetch()} />}
             {trips.data && upcoming.length === 0 && (
               <EmptyState
-                title="No trips on the horizon"
-                description="Pick a destination and we’ll build a day-by-day plan with you."
+                title="Your next adventure starts here"
+                description="Pick a place you’ve been dreaming about and we’ll sketch out the days together."
                 action={<Button asChild><Link to="/trips/new/destination">Plan a Trip</Link></Button>}
               />
             )}
@@ -102,14 +143,47 @@ export default function HomeRoute() {
               </ul>
             )}
           </Section>
+        </div>
+        )}
 
-          <Section title="Explore" description="Destinations travellers love right now" to="/explore">
+        <aside className="min-w-0 space-y-8 lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1">
+          {(trips.isPending || upcoming.length > 0) && (
+            <Section title="Continue planning">
+              {trips.isPending ? (
+                <Skeleton className="h-40" />
+              ) : tasks.length === 0 ? (
+                <Card className="p-4 text-sm text-fg-muted">You’re all caught up. Time to start packing!</Card>
+              ) : (
+                <PromptList rows={tasks} />
+              )}
+            </Section>
+          )}
+
+          {afterTrip.length > 0 && (
+            <Section title="After your trip" description="Relive the best bits and inspire the next traveller">
+              <PromptList rows={afterTrip} />
+            </Section>
+          )}
+
+          <Section title="Memories">
+            {memories.isPending ? (
+              <Skeleton className="h-32" />
+            ) : memories.data && memories.data.length > 0 ? (
+              <ul className={cn('grid gap-2 sm:grid-cols-6', memoryCols)}>{memories.data.map((m) => <li key={m.id}><MemoryThumb memory={m} /></li>)}</ul>
+            ) : (
+              <Card className="flex items-center gap-3 p-4 text-sm text-fg-muted"><ImageIcon aria-hidden className="size-5 shrink-0" /> Snap a photo on your trip and it lands right here.</Card>
+            )}
+          </Section>
+        </aside>
+
+        <div className={cn('min-w-0 space-y-8 lg:col-span-8', showUpcoming ? 'lg:row-start-2' : 'lg:row-start-1')}>
+          <Section title="Explore" description="Places travellers can’t stop talking about" to="/explore">
             {destinations.isPending && <SkeletonGroup label="Loading destinations" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="aspect-[4/3]" /><Skeleton className="aspect-[4/3]" /></SkeletonGroup>}
             {destinations.isError && <ErrorState onRetry={() => void destinations.refetch()} />}
             {destinations.data && <CardRow>{destinations.data.slice(0, 6).map((d, i) => <li key={d.id}><DestinationCard destination={d} priority={i === 0 && upcoming.length === 0} /></li>)}</CardRow>}
           </Section>
 
-          <Section title="Inspiration" description="Itineraries from other travellers" to="/explore/itineraries">
+          <Section title="Inspiration" description="Real trips by real travellers. Borrow a plan and make it yours." to="/explore/itineraries">
             {publicTrips.isPending && <SkeletonGroup label="Loading itineraries" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Skeleton className="h-60" /><Skeleton className="h-60" /></SkeletonGroup>}
             {publicTrips.isError && <ErrorState title="Couldn’t load itineraries" onRetry={() => void publicTrips.refetch()} />}
             {publicTrips.data && publicTrips.data.length > 0 && <CardRow>{publicTrips.data.map((t) => <li key={t.id}><PublicTripCard trip={t} /></li>)}</CardRow>}
@@ -118,38 +192,6 @@ export default function HomeRoute() {
             )}
           </Section>
         </div>
-
-        <aside className="min-w-0 space-y-8 lg:col-span-4">
-          <Section title="Continue planning">
-            {trips.isPending ? (
-              <Skeleton className="h-40" />
-            ) : tasks.length === 0 ? (
-              <Card className="p-4 text-sm text-fg-muted">You’re all caught up. Nice work.</Card>
-            ) : (
-              <Card className="divide-y divide-border">
-                {tasks.map((t) => (
-                  <Link key={`${t.trip.id}-${t.id}`} to={t.to} className="flex min-h-touch items-center gap-3 px-4 py-3 hover:bg-surface-2">
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-medium">{t.label}</span>
-                      <span className="block truncate text-sm text-fg-muted">{t.trip.title}</span>
-                    </span>
-                    <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-muted" />
-                  </Link>
-                ))}
-              </Card>
-            )}
-          </Section>
-
-          <Section title="Memories">
-            {memories.isPending ? (
-              <Skeleton className="h-32" />
-            ) : memories.data && memories.data.length > 0 ? (
-              <ul className="grid grid-cols-3 gap-2">{memories.data.map((m) => <li key={m.id}><MemoryThumb memory={m} /></li>)}</ul>
-            ) : (
-              <Card className="flex items-center gap-3 p-4 text-sm text-fg-muted"><ImageIcon aria-hidden className="size-5 shrink-0" /> Photos you add during a trip will show up here.</Card>
-            )}
-          </Section>
-        </aside>
       </div>
     </div>
   )

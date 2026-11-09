@@ -2,9 +2,9 @@ import { Bytes, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/data/db'
 import { getBlob, putBlob } from '@/data/blobStore'
 import { plainBlob } from '@/lib/media/plainBlob'
-import { placeholderImage } from '@/lib/placeholder'
 import { getDb } from '@/services/firebase/firestore'
 import { FIRESTORE_MEDIA_LIMITS } from './limits'
+import { seedImage } from './seedImage'
 import type { StorageService } from './types'
 
 const urlCache = new Map<string, string>()
@@ -43,7 +43,7 @@ export const firestoreMediaService: StorageService = {
   },
 
   async getUrl(key) {
-    if (key.startsWith('seed:')) return placeholderImage(key.split(':')[1] ?? key)
+    if (key.startsWith('seed:')) return seedImage(key)
     const cached = urlCache.get(key)
     if (cached) return cached
     const pub = /^public\/([^/]+)\/([^/]+)$/.exec(key)

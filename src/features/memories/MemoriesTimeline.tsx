@@ -11,6 +11,7 @@ import type { TripWithState } from '@/data/queries/trips'
 import { useOnline } from '@/lib/hooks/useOnline'
 import type { Memory, Story } from '@/types'
 import { MemoryCard } from './components/MemoryCard'
+import { thumbnail } from '@/lib/photos/responsive'
 
 const visibilityMeta = { private: { label: 'Private', icon: Lock }, friends: { label: 'Friends', icon: Users }, public: { label: 'Public', icon: Globe } } as const
 
@@ -19,8 +20,8 @@ function StoryTile({ story, tripId, cover }: { story: Story; tripId: string; cov
   const v = visibilityMeta[story.visibility]
   return (
     <Link to={`/trips/${tripId}/stories/${story.id}`} className="relative block aspect-[9/16] w-32 shrink-0 overflow-hidden rounded-lg bg-surface-2 sm:w-36">
-      {url && <img src={url} alt="" className="size-full object-cover" />}
-      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-2.5 text-white">
+      {url && <img src={thumbnail(url)} alt="" className="size-full object-cover" />}
+      <span className="scrim-text absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-10 text-white [--scrim-fade:2.5rem]">
         <span className="block text-sm font-semibold">{story.title}</span>
         <span className="mt-0.5 flex items-center gap-1 text-xs opacity-90"><v.icon aria-hidden className="size-3" />{v.label} · {story.slides.length} slides</span>
       </span>
@@ -89,7 +90,8 @@ export function MemoriesTimeline() {
 
       {all.length === 0 ? (
         <EmptyState
-          title="No memories yet"
+          art="camera"
+          title="Your story starts with one photo"
           description={trip.effectiveState === 'active' ? 'Snap a photo, jot a note or record a voice note — it’s filed under today’s activity automatically.' : 'Photos, notes and voice notes from your trip will be collected here, day by day.'}
           action={canAdd ? <Button asChild><Link to={`${base}/memories/new`}>Add your first memory</Link></Button> : undefined}
         />

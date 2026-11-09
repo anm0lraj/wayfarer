@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, MapPin, Pause, Play, X } from 'lucide-react'
 import { useMediaUrl } from '@/data/queries/media'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { cn } from '@/lib/cn'
 import type { ItineraryItem, Memory, Story } from '@/types'
+import { responsiveImage } from '@/lib/photos/responsive'
 
 const SLIDE_MS = 6000
 
@@ -17,7 +19,7 @@ interface Props {
 function Backdrop({ memory }: { memory?: Memory }) {
   const url = useMediaUrl(memory?.mediaKey)
   if (!memory) return <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
-  if (memory.kind === 'photo') return url ? <img src={url} alt={memory.caption ?? ''} className="absolute inset-0 size-full object-cover" /> : <div className="absolute inset-0 bg-slate-800" />
+  if (memory.kind === 'photo') return url ? <img {...responsiveImage(url, '100vw')} alt={memory.caption ?? ''} className="absolute inset-0 size-full object-cover" /> : <div className="absolute inset-0 bg-slate-800" />
   if (memory.kind === 'video') return url ? <video src={url} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" aria-label={memory.caption ?? 'Video'} /> : <div className="absolute inset-0 bg-slate-800" />
   if (memory.kind === 'voice') return <div className="absolute inset-0 grid place-items-center bg-slate-800 p-6">{url && <audio src={url} controls aria-label={memory.caption ?? 'Voice note'} className="w-full" />}</div>
   return (
@@ -64,12 +66,13 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
 
   if (!slide) return null
 
-  return (
+  // Rendered into <body>: the page transition wraps routes in a transformed element, and a transform turns
+  // `position: fixed` into "fixed to that element", which left a strip of the app header showing above the story.
+  return createPortal(
     <div role="dialog" aria-modal="true" aria-label={`Story: ${story.title}`} className="fixed inset-0 z-[60] grid place-items-center bg-black/90 sm:p-4">
       <div className="relative h-full w-full overflow-hidden bg-slate-900 text-white sm:h-[min(100%,52rem)] sm:w-auto sm:aspect-[9/16] sm:rounded-xl">
         <Backdrop memory={memory} />
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent" />
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/70 to-transparent" />
 
         <div className="absolute inset-x-0 top-0 z-10 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="flex gap-1" role="progressbar" aria-label="Story progress" aria-valuemin={1} aria-valuemax={slides.length} aria-valuenow={index + 1} aria-valuetext={`Slide ${index + 1} of ${slides.length}`}>
@@ -97,7 +100,7 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
         <button type="button" tabIndex={-1} aria-hidden onClick={prev} className="absolute inset-y-24 left-0 w-1/3" />
         <button type="button" tabIndex={-1} aria-hidden onClick={next} className="absolute inset-y-24 right-0 w-2/3" />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="scrim-text pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-3 px-5 pt-12 [--scrim-fade:3rem] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {slide.sticker && <p aria-hidden className="text-6xl drop-shadow">{slide.sticker}</p>}
           {slide.text && <p className="text-2xl font-bold leading-snug drop-shadow">{slide.text}</p>}
           {memory?.caption && memory.kind !== 'text' && <p className="text-sm opacity-90">{memory.caption}</p>}
@@ -112,6 +115,7 @@ export function StoryViewer({ story, memories, items, onClose }: Props) {
           <button type="button" onClick={next} aria-label={index + 1 === slides.length ? 'Finish story' : 'Next slide'} className="pointer-events-auto grid size-11 place-items-center rounded-full bg-black/40"><ChevronRight aria-hidden className="size-6" /></button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
