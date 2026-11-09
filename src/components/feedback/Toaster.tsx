@@ -10,7 +10,7 @@ import { toastDuration, useToastStore } from './toast'
 export function Toaster() {
   const { items, remove } = useToastStore()
   return (
-    <Toast.Provider swipeDirection="down" duration={toastDuration.plain} label="Notifications">
+    <Toast.Provider swipeDirection="down" duration={toastDuration.plain}>
       {items.map((t) => (
         <Toast.Root
           key={t.id}

@@ -98,7 +98,7 @@ function StoryForm({ trip, initial }: { trip: TripWithState; initial?: Story }) 
     <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
       <div className="space-y-5">
         <h2 className="text-xl font-semibold">{initial ? 'Edit story' : 'Create a story'}</h2>
-        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Day 2 — Bali" maxLength={60} />
+        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`Day 1 — ${trip.title}`} maxLength={60} />
         <div className="flex flex-col gap-1.5">
           <label htmlFor="story-day" className="text-sm font-medium">Show memories from</label>
           <select id="story-day" value={dayId} onChange={(e) => setDayId(e.target.value)} className={field}>

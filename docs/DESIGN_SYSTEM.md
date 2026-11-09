@@ -102,7 +102,7 @@ Each has a page at `/_design/components/<id>` with live variants and states, a p
 | Feedback | Skeleton (`skeleton`) | card, list | `SkeletonGroup label` | shapes aria-hidden; group role=status “Loading …” |
 | Feedback | States (`states`) | EmptyState (art), ErrorState (+ retry), OfflineState | `title`, `description`, `action`, `as`, `art`, `onRetry` | error role=alert, offline role=status |
 | Feedback | OfflineBanner (`offline-banner`) | live (only while offline) | — | role=status |
-| Feedback | Toast (`toast`) | plain, with Undo, with description | `toast({ title, description, action, durationMs })` | Radix toast region (F8), title announced |
+| Feedback | Toast (`toast`) | plain, with Undo, with description | `toast({ title, description, action, durationMs })` | Radix toast region (F8), announced once (polite); above the phone nav, bottom-left on desktop; 10 s with an action |
 | Navigation | App navigation (`navigation`) | BottomNav 390, NavRail 820, Sidebar 1440 (+ collapse) | Sidebar `collapsed`, `onToggle` | nav “Primary”, aria-current, aria-expanded |
 | Navigation | TabNav (`tab-nav`) | trip workspace links | `label`, TabLink = NavLink props | nav landmark of links, aria-current |
 | Navigation | Stepper (`stepper`) | first, middle, last step | `steps`, `current` | role=group “Progress”, aria-live step text |
