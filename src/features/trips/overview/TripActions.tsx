@@ -33,7 +33,7 @@ export function TripActions({ trip }: { trip: TripWithState }) {
     await tripRepo.transition(trip.id, archived ? 'planning' : 'archived')
     await qc.invalidateQueries()
     toast(archived ? { title: 'Trip restored' } : {
-      title: 'Trip archived', action: { label: 'Undo', onClick: () => void tripRepo.transition(trip.id, 'planning').then(() => qc.invalidateQueries()) },
+      title: 'Trip archived', action: { label: 'Undo', onClick: () => void run(async () => { await tripRepo.transition(trip.id, 'planning'); await qc.invalidateQueries() }, 'Couldn’t restore the trip') },
     })
     if (!archived) navigate('/trips')
   }, archived ? 'Couldn’t restore the trip' : 'Couldn’t archive the trip')

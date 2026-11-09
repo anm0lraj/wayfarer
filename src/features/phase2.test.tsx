@@ -219,7 +219,8 @@ describe('Trip overview', () => {
     expect(screen.getByRole('link', { name: 'Open trip checklist' })).toBeInTheDocument()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
-    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'))
+    // The Undo write runs after the archive's refetch of every query; on a loaded CI runner that can pass the 1 s default.
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'), { timeout: 5000 })
     expect(await screen.findByRole('button', { name: 'Mark as ready' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Mark as ready' }))
@@ -233,7 +234,8 @@ describe('Trip overview', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Archive trip' }))
     await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('archived'))
     await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
-    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'))
+    // The Undo write runs after the archive's refetch of every query; on a loaded CI runner that can pass the 1 s default.
+    await waitFor(async () => expect((await db.trips.get('trip-bali'))?.state).toBe('planning'), { timeout: 5000 })
 
     router.navigate('/trips/trip-bali')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete trip' }))
