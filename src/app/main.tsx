@@ -14,7 +14,7 @@ initTheme()
 installImageFallback() // a stock photo that can't load (offline, before it was cached) is drawn as its illustration
 installErrorReporting() // crash reports to /api/report (deployed environments only)
 // Serves /api/* in-page. The live assistant, push (test notification) and account deletion are real functions, so their paths go through.
-installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.pushKey ? ['/api/push/'] : []), ...(env.backend === 'firebase' ? ['/api/account/', '/api/report'] : [])] })
+installMockApi({ passThrough: [...(env.ai === 'live' ? ['/api/ai/'] : []), ...(env.placePhotos === 'live' ? ['/api/place-photos'] : []), ...(env.pushKey ? ['/api/push/'] : []), ...(env.backend === 'firebase' ? ['/api/account/', '/api/report'] : [])] })
 
 initInstallPrompt()
 if (import.meta.env.PROD) {

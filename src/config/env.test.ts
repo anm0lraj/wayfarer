@@ -38,4 +38,10 @@ describe('environment configuration', () => {
   it('rejects an unknown environment name', () => {
     expect(() => parseEnv({ VITE_APP_ENV: 'staging' })).toThrow('Invalid environment configuration')
   })
+
+  it('switches place photos between the catalogue mock and Unsplash, mock by default', () => {
+    expect(parseEnv({}).placePhotos).toBe('mock')
+    expect(parseEnv({ VITE_PLACE_PHOTOS: 'live' }).placePhotos).toBe('live')
+    expect(() => parseEnv({ VITE_PLACE_PHOTOS: 'unsplash' })).toThrow('Invalid environment configuration')
+  })
 })

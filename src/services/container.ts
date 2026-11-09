@@ -7,6 +7,7 @@ import type { GeocodingService } from './geocoding/types'
 import type { GeolocationService } from './geolocation/geolocation'
 import type { MapService } from './maps/types'
 import type { NotificationService } from './notifications/types'
+import type { PlacePhotoService } from './placePhotos/types'
 import type { StorageService } from './storage/types'
 import type { WeatherService } from './weather/types'
 import { catalogueFor } from '@/features/ai/catalogue'
@@ -24,6 +25,8 @@ import { mapService } from './maps/mock'
 import { osrmRouting } from './maps/osrm'
 import { lazyPush } from './notifications/lazy'
 import { createNotificationService, noPush } from './notifications/mock'
+import { createLivePlacePhotos } from './placePhotos/live'
+import { mockPlacePhotos } from './placePhotos/mock'
 import { lazyStorageService } from './storage/lazy'
 import { FIRESTORE_MEDIA_LIMITS } from './storage/limits'
 import { storageService } from './storage/mock'
@@ -36,6 +39,7 @@ export interface Services {
   bookings: BookingService
   weather: WeatherService
   geocoding: GeocodingService
+  placePhotos: PlacePhotoService
   auth: AuthService
   storage: StorageService
   notifications: NotificationService
@@ -52,6 +56,7 @@ export const defaultServices: Services = {
   bookings: bookingService,
   weather: env.weather === 'live' ? openMeteoWeather : weatherService,
   geocoding: env.geocoding === 'live' ? nominatimGeocoding : mockGeocoding,
+  placePhotos: env.placePhotos === 'live' ? createLivePlacePhotos({ getToken: () => authAdapter.idToken() }) : mockPlacePhotos,
   auth: authAdapter,
   storage: env.backend === 'firebase' ? lazyStorageService(async () => (await import('./storage/firestoreMedia')).firestoreMediaService, FIRESTORE_MEDIA_LIMITS) : storageService,
   notifications: createNotificationService(env.backend === 'firebase' && env.pushKey ? lazyPush(async () => (await import('./notifications/push')).firebasePush) : noPush),
